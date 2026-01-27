@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\TestingController;
 | AUTH
 |--------------------------------------------------------------------------
 */
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
