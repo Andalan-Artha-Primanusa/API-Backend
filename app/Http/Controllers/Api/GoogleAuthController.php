@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ApiResponse;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -19,24 +20,37 @@ class GoogleAuthController extends Controller
 
     public function callback()
     {
-        $googleUser = Socialite::driver('google')
-            ->stateless()
-            ->user();
+        try {
+            $googleUser = Socialite::driver('google')
+                ->stateless()
+                ->user();
 
-        $user = User::firstOrCreate(
-            ['email' => $googleUser->getEmail()],
-            [
-                'name' => $googleUser->getName(),
-                'password' => Hash::make(Str::random(16)),
-            ]
-        );
+            $user = User::firstOrCreate(
+                ['email' => $googleUser->getEmail()],
+                [
+                    'name' => $googleUser->getName(),
+                    'password' => Hash::make(Str::random(16)),
+                ]
+            );
 
-        $token = $user->createToken('google-auth')->plainTextToken;
+            // 🔥 SINGLE LOGIN
+            $user->tokens()->delete();
 
-        return response()->json([
-            'success' => true,
-            'user' => $user,
-            'token' => $token,
-        ]);
+            $token = $user->createToken('google-auth')->plainTextToken;
+
+            return ApiResponse::success(
+                'Login Google berhasil',
+                [
+                    'user' => $user,
+                    'token' => $token,
+                ]
+            );
+        } catch (\Throwable $e) {
+            return ApiResponse::error(
+                'Google authentication gagal',
+                'Invalid OAuth response',
+                401
+            );
+        }
     }
 }

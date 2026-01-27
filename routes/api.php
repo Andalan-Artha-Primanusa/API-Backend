@@ -1,17 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\TestingController;
+use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\GoogleAuthController;
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
-
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +16,9 @@ Route::post('/register', [AuthController::class, 'register']);
 
 /*
 |--------------------------------------------------------------------------
-| AUTH google
+| AUTH GOOGLE (SSO)
 |--------------------------------------------------------------------------
 */
-
 Route::prefix('auth')->group(function () {
     Route::get('/google', [GoogleAuthController::class, 'redirect']);
     Route::get('/google/callback', [GoogleAuthController::class, 'callback']);
@@ -39,7 +30,6 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
-
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/users', [UserProfileController::class, 'index']);

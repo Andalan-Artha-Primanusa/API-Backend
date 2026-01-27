@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ApiResponse;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,55 +13,66 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
+        // 🔥 SINGLE LOGIN
+        $user->tokens()->delete();
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return ApiResponse::success(
+            'Register berhasil',
+            [
                 'user' => $user,
-                'token' => $user->createToken('api-token')->plainTextToken,
-            ]
-        ], 201);
+                'token' => $token,
+            ],
+            201
+        );
     }
 
     public function login(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $validated['email'])->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah'],
             ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
+        // 🔥 SINGLE LOGIN
+        $user->tokens()->delete();
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return ApiResponse::success(
+            'Login berhasil',
+            [
                 'user' => $user,
-                'token' => $user->createToken('api-token')->plainTextToken,
+                'token' => $token,
             ]
-        ]);
+        );
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['success' => true]);
+        return ApiResponse::success('Logout berhasil');
     }
 }
