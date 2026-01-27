@@ -7,11 +7,40 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Annotations as OA; // ✅ INI KUNCI UTAMA
 
+/**
+ * @OA\Tag(
+ *     name="Auth",
+ *     description="Authentication API"
+ * )
+ */
 class AuthController extends Controller
 {
     /**
-     * REGISTER
+     * @OA\Post(
+     *     path="/api/register",
+     *     summary="Register user baru",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation"},
+     *             @OA\Property(property="name", type="string", example="Raul Mahya"),
+     *             @OA\Property(property="email", type="string", format="email", example="raul@mail.com"),
+     *             @OA\Property(property="password", type="string", example="password123"),
+     *             @OA\Property(property="password_confirmation", type="string", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Register berhasil"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validasi gagal"
+     *     )
+     * )
      */
     public function register(Request $request)
     {
@@ -40,7 +69,27 @@ class AuthController extends Controller
     }
 
     /**
-     * LOGIN
+     * @OA\Post(
+     *     path="/api/login",
+     *     summary="Login user",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", example="raul@mail.com"),
+     *             @OA\Property(property="password", type="string", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login berhasil"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Email atau password salah"
+     *     )
+     * )
      */
     public function login(Request $request)
     {
@@ -57,9 +106,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // Hapus token lama (opsional, biar 1 device 1 token)
         $user->tokens()->delete();
-
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
@@ -73,7 +120,20 @@ class AuthController extends Controller
     }
 
     /**
-     * LOGOUT
+     * @OA\Post(
+     *     path="/api/logout",
+     *     summary="Logout user",
+     *     tags={"Auth"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout berhasil"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function logout(Request $request)
     {
@@ -86,7 +146,20 @@ class AuthController extends Controller
     }
 
     /**
-     * PROFILE (optional)
+     * @OA\Get(
+     *     path="/api/profile",
+     *     summary="Get profile user login",
+     *     tags={"Auth"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Profile user"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function profile(Request $request)
     {
