@@ -9,6 +9,7 @@ use OpenApi\Attributes as OA;
     version: "1.0.0",
     description: "API Documentation Laravel 11"
 )]
+
 #[OA\SecurityScheme(
     securityScheme: "bearerAuth",
     type: "http",
@@ -19,40 +20,65 @@ use OpenApi\Attributes as OA;
 /* =====================
  | AUTH
  ===================== */
+
 #[OA\PathItem(
     path: "/api/login",
     post: new OA\Post(
         operationId: "auth_login",
         tags: ["Auth"],
         summary: "Login user",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["email", "password"],
+                properties: [
+                    new OA\Property(property: "email", type: "string", example: "raul@mail.com"),
+                    new OA\Property(property: "password", type: "string", example: "password123"),
+                ]
+            )
+        ),
         responses: [
-            new OA\Response(response: 200, description: "OK"),
-            new OA\Response(response: 401, description: "Unauthorized")
+            new OA\Response(response: 200, description: "Login berhasil"),
+            new OA\Response(response: 401, description: "Unauthorized"),
         ]
     )
 )]
+
 #[OA\PathItem(
     path: "/api/register",
     post: new OA\Post(
         operationId: "auth_register",
         tags: ["Auth"],
         summary: "Register user",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["name", "email", "password", "password_confirmation"],
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "Raul Mahya"),
+                    new OA\Property(property: "email", type: "string", example: "raul@mail.com"),
+                    new OA\Property(property: "password", type: "string", example: "password123"),
+                    new OA\Property(property: "password_confirmation", type: "string", example: "password123"),
+                ]
+            )
+        ),
         responses: [
-            new OA\Response(response: 201, description: "Created"),
-            new OA\Response(response: 422, description: "Validation error")
+            new OA\Response(response: 201, description: "Register berhasil"),
+            new OA\Response(response: 422, description: "Validation error"),
         ]
     )
 )]
+
 #[OA\PathItem(
     path: "/api/logout",
     post: new OA\Post(
         operationId: "auth_logout",
         tags: ["Auth"],
-        security: [["bearerAuth" => []]],
         summary: "Logout user",
+        security: [["bearerAuth" => []]],
         responses: [
-            new OA\Response(response: 200, description: "OK"),
-            new OA\Response(response: 401, description: "Unauthenticated")
+            new OA\Response(response: 200, description: "Logout berhasil"),
+            new OA\Response(response: 401, description: "Unauthenticated"),
         ]
     )
 )]
@@ -60,55 +86,77 @@ use OpenApi\Attributes as OA;
 /* =====================
  | USER PROFILE
  ===================== */
+
 #[OA\PathItem(
     path: "/api/users",
     get: new OA\Get(
-        operationId: "user_get_all",
+        operationId: "users_get_all",
         tags: ["User Profile"],
-        security: [["bearerAuth" => []]],
         summary: "Get all users",
+        security: [["bearerAuth" => []]],
         responses: [
-            new OA\Response(response: 200, description: "OK")
+            new OA\Response(response: 200, description: "OK"),
         ]
     ),
     post: new OA\Post(
-        operationId: "user_create",
+        operationId: "users_create",
         tags: ["User Profile"],
-        security: [["bearerAuth" => []]],
         summary: "Create user",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["name", "email"],
+                properties: [
+                    new OA\Property(property: "name", type: "string"),
+                    new OA\Property(property: "email", type: "string"),
+                    new OA\Property(property: "phone", type: "string"),
+                ]
+            )
+        ),
         responses: [
-            new OA\Response(response: 201, description: "Created")
+            new OA\Response(response: 201, description: "User created"),
         ]
     )
 )]
+
 #[OA\PathItem(
     path: "/api/users/{id}",
     get: new OA\Get(
-        operationId: "user_get_by_id",
+        operationId: "users_get_by_id",
         tags: ["User Profile"],
-        security: [["bearerAuth" => []]],
         summary: "Get user by ID",
+        security: [["bearerAuth" => []]],
         responses: [
             new OA\Response(response: 200, description: "OK"),
-            new OA\Response(response: 404, description: "Not found")
+            new OA\Response(response: 404, description: "Not found"),
         ]
     ),
     put: new OA\Put(
-        operationId: "user_update",
+        operationId: "users_update",
         tags: ["User Profile"],
-        security: [["bearerAuth" => []]],
         summary: "Update user",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string"),
+                    new OA\Property(property: "phone", type: "string"),
+                ]
+            )
+        ),
         responses: [
-            new OA\Response(response: 200, description: "Updated")
+            new OA\Response(response: 200, description: "Updated"),
         ]
     ),
     delete: new OA\Delete(
-        operationId: "user_delete",
+        operationId: "users_delete",
         tags: ["User Profile"],
-        security: [["bearerAuth" => []]],
         summary: "Delete user",
+        security: [["bearerAuth" => []]],
         responses: [
-            new OA\Response(response: 200, description: "Deleted")
+            new OA\Response(response: 200, description: "Deleted"),
         ]
     )
 )]
@@ -116,6 +164,7 @@ use OpenApi\Attributes as OA;
 /* =====================
  | SYSTEM
  ===================== */
+
 #[OA\PathItem(
     path: "/api/_health",
     get: new OA\Get(
@@ -123,8 +172,9 @@ use OpenApi\Attributes as OA;
         tags: ["System"],
         summary: "Health check",
         responses: [
-            new OA\Response(response: 200, description: "OK")
+            new OA\Response(response: 200, description: "OK"),
         ]
     )
 )]
+
 class SwaggerBootstrap {}
