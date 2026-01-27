@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TestingController;
+use App\Http\Controllers\Api\GoogleAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,17 @@ use App\Http\Controllers\Api\TestingController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+
+/*
+|--------------------------------------------------------------------------
+| AUTH google
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('auth')->group(function () {
+    Route::get('/google', [GoogleAuthController::class, 'redirect']);
+    Route::get('/google/callback', [GoogleAuthController::class, 'callback']);
+});
 
 /*
 |--------------------------------------------------------------------------

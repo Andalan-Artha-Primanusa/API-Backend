@@ -83,6 +83,44 @@ use OpenApi\Attributes as OA;
     )
 )]
 
+#[OA\PathItem(
+    path: "/api/auth/google",
+    get: new OA\Get(
+        operationId: "auth_google_redirect",
+        tags: ["Auth"],
+        summary: "Login using Google (SSO)",
+        description: "Redirect user to Google OAuth login page",
+        responses: [
+            new OA\Response(response: 302, description: "Redirect to Google"),
+        ]
+    )
+)]
+
+#[OA\PathItem(
+    path: "/api/auth/google/callback",
+    get: new OA\Get(
+        operationId: "auth_google_callback",
+        tags: ["Auth"],
+        summary: "Google OAuth callback",
+        description: "Handle Google OAuth callback and return API token",
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Login success",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "success", type: "boolean"),
+                        new OA\Property(property: "token", type: "string"),
+                        new OA\Property(property: "user", type: "object"),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: "Google authentication failed"),
+        ]
+    )
+)]
+
+
 /* =====================
  | USER PROFILE
  ===================== */
