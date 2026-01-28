@@ -120,6 +120,57 @@
                 ]
             }
         },
+        "/api/auth/google": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login using Google (SSO)",
+                "description": "Redirect user to Google OAuth login page",
+                "operationId": "auth_google_redirect",
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Google"
+                    }
+                }
+            }
+        },
+        "/api/auth/google/callback": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Google OAuth callback",
+                "description": "Handle Google OAuth callback and return API token",
+                "operationId": "auth_google_callback",
+                "responses": {
+                    "200": {
+                        "description": "Login success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Google authentication failed"
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "tags": [
