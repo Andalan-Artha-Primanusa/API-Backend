@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class UserProfile extends Model
 {
     protected $fillable = [
-    'name',
-    'email',
-    'phone'
-];
+        'user_id',
+        'phone',
+        'address',
+        'birth_date'
+    ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

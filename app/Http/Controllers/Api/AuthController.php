@@ -8,9 +8,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Services\UserService;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        protected UserService $userService
+    ) {}
+
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -19,25 +24,15 @@ class AuthController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        $user = $this->userService->register($validated);
 
-        // 🔥 SINGLE LOGIN
         $user->tokens()->delete();
-
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return ApiResponse::success(
-            'Register berhasil',
-            [
-                'user' => $user,
-                'token' => $token,
-            ],
-            201
-        );
+        return ApiResponse::success('Register berhasil', [
+            'user' => $user,
+            'token' => $token,
+        ], 201);
     }
 
     public function login(Request $request)
@@ -47,26 +42,15 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = $this->userService->login($validated);
 
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Email atau password salah'],
-            ]);
-        }
-
-        // 🔥 SINGLE LOGIN
         $user->tokens()->delete();
-
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return ApiResponse::success(
-            'Login berhasil',
-            [
-                'user' => $user,
-                'token' => $token,
-            ]
-        );
+        return ApiResponse::success('Login berhasil', [
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
 
     public function logout(Request $request)

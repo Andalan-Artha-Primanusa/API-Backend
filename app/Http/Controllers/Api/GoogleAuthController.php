@@ -14,7 +14,6 @@ class GoogleAuthController extends Controller
     public function redirect()
     {
         return Socialite::driver('google')
-            ->stateless()
             ->redirect();
     }
 
@@ -25,7 +24,7 @@ class GoogleAuthController extends Controller
                 ->stateless()
                 ->user();
 
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['email' => $googleUser->getEmail()],
                 [
                     'name' => $googleUser->getName(),

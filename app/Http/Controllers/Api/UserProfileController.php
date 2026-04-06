@@ -13,23 +13,25 @@ class UserProfileController extends Controller
     {
         return ApiResponse::success(
             'Data user profile berhasil diambil',
-            UserProfile::all()
+            UserProfile::with('user')->get()
         );
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:user_profiles',
             'phone' => 'nullable|string',
+            'address' => 'nullable|string',
+            'birth_date' => 'nullable|date',
         ]);
 
-        $user = UserProfile::create($data);
+        $data['user_id'] = auth()->id();
+
+        $profile = UserProfile::create($data);
 
         return ApiResponse::success(
             'User profile berhasil dibuat',
-            $user,
+            $profile,
             201
         );
     }
@@ -45,7 +47,11 @@ class UserProfileController extends Controller
     public function update(Request $request, $id)
     {
         $user = UserProfile::findOrFail($id);
-        $user->update($request->only(['name', 'phone']));
+        $user->update($request->only([
+            'phone',
+            'address',
+            'birth_date'
+        ]));
 
         return ApiResponse::success(
             'User profile berhasil diupdate',
@@ -55,7 +61,7 @@ class UserProfileController extends Controller
 
     public function destroy($id)
     {
-        UserProfile::findOrFail($id)->delete();
+        UserProfile::with('user')->findOrFail($id)->delete();
 
         return ApiResponse::success('User profile berhasil dihapus');
     }

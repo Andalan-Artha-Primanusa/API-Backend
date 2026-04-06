@@ -13,9 +13,16 @@ return new class extends Migration
     {
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+
+            // 🔥 RELASI KE USERS (WAJIB)
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
             $table->string('phone')->nullable();
+            $table->text('address')->nullable();
+            $table->date('birth_date')->nullable();
+
             $table->timestamps();
         });
     }

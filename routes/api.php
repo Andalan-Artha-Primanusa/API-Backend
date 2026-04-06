@@ -32,9 +32,9 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/users', [UserProfileController::class, 'index']);
-    Route::post('/users', [UserProfileController::class, 'store']);
-    Route::get('/users/{id}', [UserProfileController::class, 'show']);
-    Route::put('/users/{id}', [UserProfileController::class, 'update']);
-    Route::delete('/users/{id}', [UserProfileController::class, 'destroy']);
+    Route::get('/profiles', [UserProfileController::class, 'index']);
+    Route::post('/profiles', [UserProfileController::class, 'store']);
+    Route::get('/profiles/{id}', [UserProfileController::class, 'show']);
+    Route::put('/profiles/{id}', [UserProfileController::class, 'update']);
+    Route::delete('/profiles/{id}', [UserProfileController::class, 'destroy']);
 });
