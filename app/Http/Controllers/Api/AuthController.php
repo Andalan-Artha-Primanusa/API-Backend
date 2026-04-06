@@ -25,12 +25,16 @@ class AuthController extends Controller
         ]);
 
         $user = $this->userService->register($validated);
+        $user->assignRole('employee');
 
         $user->tokens()->delete();
         $token = $user->createToken('api-token')->plainTextToken;
 
         return ApiResponse::success('Register berhasil', [
-            'user' => $user,
+            'user' => [
+                ...$user->toArray(),
+                'roles' => $user->getRoleNames()
+            ],
             'token' => $token,
         ], 201);
     }
@@ -48,7 +52,10 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return ApiResponse::success('Login berhasil', [
-            'user' => $user,
+            'user' => [
+                ...$user->toArray(),
+                'roles' => $user->getRoleNames()
+            ],
             'token' => $token,
         ]);
     }
