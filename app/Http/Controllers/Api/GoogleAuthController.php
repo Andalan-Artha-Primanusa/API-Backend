@@ -30,6 +30,7 @@ class GoogleAuthController extends Controller
                 [
                     'name' => $googleUser->getName(),
                     'password' => Hash::make(Str::random(16)),
+                    'role' => User::ROLE_EMPLOYEE
                 ]
             );
 

@@ -13,6 +13,10 @@ class UserProfile extends Model
         'birth_date'
     ];
 
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

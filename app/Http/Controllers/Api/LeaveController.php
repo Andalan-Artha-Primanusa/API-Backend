@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Leave;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class LeaveController extends Controller
 {
@@ -35,13 +36,13 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole('employee')) {
+        if ($user->isEmployee()) {
             return response()->json(
                 Leave::where('user_id', $user->id)->get()
             );
         }
 
-        if ($user->hasAnyRole(['manager', 'hr', 'admin', 'super_admin'])) {
+        if ($user->isManager() || $user->isHR() || $user->isAdmin()) {
             return response()->json(
                 Leave::with('user')->get()
             );
@@ -55,7 +56,7 @@ class LeaveController extends Controller
     {
         $leave = Leave::findOrFail($id);
 
-        if (! $request->user()->hasAnyRole(['manager', 'hr'])) {
+        if (!($request->user()->isManager() || $request->user()->isHR())) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 

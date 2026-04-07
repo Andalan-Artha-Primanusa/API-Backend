@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ApiResponse;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 
@@ -13,24 +14,61 @@ class EmployeeController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole('employee')) {
-            return response()->json($user->employee);
-        }
+        // EMPLOYEE → lihat data sendiri
+        if ($user->isEmployee()) {
 
-        if ($user->hasAnyRole(['hr', 'admin', 'super_admin'])) {
-            return response()->json(
-                Employee::with('user')->get()
+            if (!$user->employee) {
+                return ApiResponse::error(
+                    'Employee belum dibuat',
+                    'Employee data belum tersedia',
+                    404
+                );
+            }
+
+            return ApiResponse::success(
+                'Data employee sendiri',
+                $user->employee
             );
         }
 
-        return response()->json(['message' => 'Forbidden'], 403);
+        // HR / ADMIN → lihat semua
+        if ($user->isHR() || $user->isAdmin()) {
+
+            $query = Employee::with('user');
+
+            // 🔍 FILTER
+            if ($request->has('department')) {
+                $query->where('department', $request->department);
+            }
+
+            // 🔎 SEARCH
+            if ($request->has('search')) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%')
+                        ->orWhere('email', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            // ↕️ SORT
+            $sort = $request->get('sort', 'id');
+            $order = $request->get('order', 'asc');
+
+            $query->orderBy($sort, $order);
+
+            return ApiResponse::success(
+                'Data semua employee',
+                $query->paginate(5)
+            );
+        }
+
+        return ApiResponse::error('Forbidden', 'Unauthorized', 403);
     }
 
-    // 🔥 CREATE EMPLOYEE (HR ONLY)
+    // 🔥 CREATE EMPLOYEE
     public function store(Request $request)
     {
-        if (! $request->user()->hasAnyRole(['hr', 'admin', 'super_admin'])) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        if (!($request->user()->isHR() || $request->user()->isAdmin())) {
+            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
         }
 
         $data = $request->validate([
@@ -44,10 +82,11 @@ class EmployeeController extends Controller
 
         $employee = Employee::create($data);
 
-        return response()->json([
-            'message' => 'Employee berhasil dibuat',
-            'data' => $employee
-        ], 201);
+        return ApiResponse::success(
+            'Employee berhasil dibuat',
+            $employee,
+            201
+        );
     }
 
     // 🔥 DETAIL
@@ -56,11 +95,14 @@ class EmployeeController extends Controller
         $user = $request->user();
         $employee = Employee::with('user')->findOrFail($id);
 
-        if ($user->hasRole('employee') && $employee->user_id !== $user->id) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        if ($user->isEmployee() && $employee->user_id !== $user->id) {
+            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
         }
 
-        return response()->json($employee);
+        return ApiResponse::success(
+            'Detail employee',
+            $employee
+        );
     }
 
     // 🔥 UPDATE
@@ -68,8 +110,8 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
 
-        if (! $request->user()->hasAnyRole(['hr', 'admin', 'super_admin'])) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        if (!($request->user()->isHR() || $request->user()->isAdmin())) {
+            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
         }
 
         $employee->update($request->only([
@@ -78,23 +120,21 @@ class EmployeeController extends Controller
             'salary'
         ]));
 
-        return response()->json([
-            'message' => 'Employee updated',
-            'data' => $employee
-        ]);
+        return ApiResponse::success(
+            'Employee berhasil diupdate',
+            $employee
+        );
     }
 
     // 🔥 DELETE
     public function destroy($id, Request $request)
     {
-        if (! $request->user()->hasRole('super_admin')) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        if (!$request->user()->isSuperAdmin()) {
+            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
         }
 
         Employee::findOrFail($id)->delete();
 
-        return response()->json([
-            'message' => 'Employee deleted'
-        ]);
+        return ApiResponse::success('Employee berhasil dihapus');
     }
 }

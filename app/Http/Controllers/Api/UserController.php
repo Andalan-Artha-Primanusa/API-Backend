@@ -11,18 +11,17 @@ class UserController extends Controller
     public function assignRole(Request $request, $id)
     {
         $request->validate([
-            'role' => 'required|exists:roles,name'
+            'role' => 'required|in:super_admin,admin,hr,manager,employee'
         ]);
 
         $user = User::findOrFail($id);
 
-        // 🔥 replace role lama
-        $user->syncRoles([$request->role]);
+        $user->role = $request->role;
+        $user->save();
 
         return response()->json([
             'message' => 'Role berhasil diupdate',
             'user' => $user,
-            'roles' => $user->getRoleNames()
         ]);
     }
 }

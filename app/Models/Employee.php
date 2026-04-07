@@ -16,6 +16,11 @@ class Employee extends Model
         'salary',
     ];
 
+    protected $casts = [
+        'hire_date' => 'date',
+        'salary' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -25,5 +30,10 @@ class Employee extends Model
     public function manager()
     {
         return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function subordinates()
+    {
+        return $this->hasMany(Employee::class, 'manager_id');
     }
 }

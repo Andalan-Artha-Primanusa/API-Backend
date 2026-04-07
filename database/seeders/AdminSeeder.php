@@ -11,26 +11,23 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         // 🔴 SUPER ADMIN
-        $superAdmin = User::firstOrCreate(
+        User::firstOrCreate(
             ['email' => 'superadmin@gmail.com'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('superadmin123'),
+                'role' => User::ROLE_SUPER_ADMIN
             ]
         );
 
-        $superAdmin->assignRole('super_admin');
-
-
         // 🟡 ADMIN
-        $admin = User::firstOrCreate(
+        User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Admin',
                 'password' => Hash::make('admin123'),
+                'role' => User::ROLE_ADMIN
             ]
         );
-
-        $admin->assignRole('admin');
     }
 }
