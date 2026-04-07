@@ -14,7 +14,9 @@ use App\Http\Controllers\Api\LocationController;
 | PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
-
+Route::get('/', function () {
+    return response()->noContent(); // 204 No Content
+});
 // AUTH
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
