@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Web\ProfileController;
+use App\Http\Controllers\Api\AuthController;
+
 
 Route::get('/', function () {
-    return redirect('/login');
+    return redirect('/login');  
 });
 
 Route::get('/login', function () {
@@ -14,6 +17,14 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-Route::get('/employee/profile', function () {
-    return view('employee.profile');
-})->name('employee.profile');
+
+/*
+|--------------------------------------------------------------------------
+| Auth Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/employee/profile', [ProfileController::class, 'index'])
+    ->name('employee.profile');
+
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);

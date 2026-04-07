@@ -158,6 +158,14 @@
                 <div class="sidebar-avatar" id="userAvatar">SA</div>
                 <div><div class="sidebar-user-name" id="userName">Admin</div><div class="sidebar-user-role" id="userRole">HR Administrator</div></div>
             </div>
+            <div style="margin-top:10px;">
+                <button onclick="logout()" class="btn btn-outline" style="width:100%; justify-content:center;">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M16 13v-2H7V8l-5 4 5 4v-3h9zm3-10H9c-1.1 0-2 .9-2 2v4h2V5h10v14H9v-4H7v4c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                    </svg>
+                    Logout
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -288,5 +296,40 @@ if (user.name) {
         document.getElementById('userRole').textContent = user.roles[0].replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 }
+
+async function logout() {
+    if (!confirm('Are you sure you want to logout?')) return;
+
+    try {
+        const token = localStorage.getItem('auth_token'); // ✅ FIX
+
+        if (token) {
+            await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+        }
+
+        // clear storage
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+
+        window.location.href = '/login';
+
+    } catch (error) {
+        console.error('Logout error:', error);
+
+        localStorage.clear();
+        window.location.href = '/login';
+    }
+}
+
+if (!localStorage.getItem('auth_token')) {
+    window.location.href = '/login';
+}
+
 </script>
 @endpush

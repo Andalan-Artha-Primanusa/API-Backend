@@ -254,7 +254,7 @@
             <div class="remember-row">
                 <input type="checkbox" id="remember"><label for="remember">Stay signed in for 30 days</label>
             </div>
-            <button type="submit" class="btn-primary" id="submitBtn">
+            <button type="button" class="btn-primary" id="submitBtn">
                 <span id="btnText">Sign In</span>
                 <svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             </button>
@@ -289,8 +289,8 @@ function togglePassword() {
     input.type = input.type === 'password' ? 'text' : 'password';
 }
 
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
+document.getElementById('submitBtn').addEventListener('click', async function() {
+
     const btn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
     const btnIcon = document.getElementById('btnIcon');
@@ -304,26 +304,36 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     try {
         const response = await fetch('/api/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({
                 email: document.getElementById('emailInput').value,
                 password: document.getElementById('passwordInput').value
             })
         });
+
         const data = await response.json();
-        if (response.ok && data.success && data.data && data.data.token) {
+        console.log(data);
+
+        if (response.ok && data.data && data.data.token) {
             localStorage.setItem('auth_token', data.data.token);
             localStorage.setItem('user', JSON.stringify(data.data.user || {}));
+
             window.location.href = '/employee/profile';
         } else {
-            errorAlert.textContent = data.message || 'Invalid email or password.';
-            errorAlert.style.display = 'block';
-            btn.classList.remove('loading'); btnText.textContent = 'Sign In'; btnIcon.style.display = 'inline';
+            throw new Error(data.message || 'Login gagal');
         }
-    } catch (error) {
-        errorAlert.textContent = 'Connection error. Please check your server.';
+
+    } catch (err) {
+        console.error(err);
+        errorAlert.textContent = err.message;
         errorAlert.style.display = 'block';
-        btn.classList.remove('loading'); btnText.textContent = 'Sign In'; btnIcon.style.display = 'inline';
+
+        btn.classList.remove('loading');
+        btnText.textContent = 'Sign In';
+        btnIcon.style.display = 'inline';
     }
 });
 </script>
