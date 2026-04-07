@@ -59,10 +59,7 @@ class User extends Authenticatable
         return $this->hasOne(UserProfile::class);
     }
 
-    public function hasRole(string $role): bool
-    {
-        return $this->role === $role;
-    }
+
 
     public function hasAnyRole(array $roles): bool
     {
@@ -105,5 +102,29 @@ class User extends Authenticatable
     public function employee()
     {
         return $this->hasOne(Employee::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_roles');
+    }
+
+    public function hasRole(string $roleName): bool
+    {
+        return $this->roles()->where('name', $roleName)->exists();
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        // 🔥 super admin bypass
+        if ($this->hasRole('super_admin')) {
+            return true;
+        }
+
+        return $this->roles()
+            ->whereHas('permissions', function ($q) use ($permission) {
+                $q->where('name', $permission);
+            })
+            ->exists();
     }
 }

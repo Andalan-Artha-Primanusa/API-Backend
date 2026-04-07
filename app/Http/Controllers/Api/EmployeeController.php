@@ -14,7 +14,7 @@ class EmployeeController extends Controller
     {
         $user = $request->user();
 
-        // EMPLOYEE → lihat data sendiri
+        // 🔥 EMPLOYEE → hanya lihat data sendiri
         if ($user->isEmployee()) {
 
             if (!$user->employee) {
@@ -31,53 +31,57 @@ class EmployeeController extends Controller
             );
         }
 
-        // HR / ADMIN → lihat semua
-        if ($user->isHR() || $user->isAdmin()) {
-
-            $query = Employee::with('user');
-
-            // 🔍 FILTER
-            if ($request->has('department')) {
-                $query->where('department', $request->department);
-            }
-
-            // 🔎 SEARCH
-            if ($request->has('search')) {
-                $query->whereHas('user', function ($q) use ($request) {
-                    $q->where('name', 'like', '%' . $request->search . '%')
-                        ->orWhere('email', 'like', '%' . $request->search . '%');
-                });
-            }
-
-            // ↕️ SORT
-            $sort = $request->get('sort', 'id');
-            $order = $request->get('order', 'asc');
-
-            $query->orderBy($sort, $order);
-
-            return ApiResponse::success(
-                'Data semua employee',
-                $query->paginate(5)
-            );
+        // 🔐 PERMISSION CHECK
+        if (!$user->hasPermission('employee.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        // 🔥 QUERY
+        $query = Employee::with('user');
+
+        // 🔍 FILTER
+        if ($request->has('department')) {
+            $query->where('department', $request->department);
+        }
+
+        // 🔎 SEARCH
+        if ($request->has('search')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // ↕️ SORT
+        $allowedSort = ['id', 'department', 'salary', 'hire_date'];
+
+        $sort = in_array($request->get('sort'), $allowedSort)
+            ? $request->get('sort')
+            : 'id';
+        $order = $request->get('order') === 'desc' ? 'desc' : 'asc';
+
+        $query->orderBy($sort, $order);
+
+        return ApiResponse::success(
+            'Data semua employee',
+            $query->paginate(5)
+        );
     }
 
     // 🔥 CREATE EMPLOYEE
     public function store(Request $request)
     {
-        if (!($request->user()->isHR() || $request->user()->isAdmin())) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        if (!$request->user()->hasPermission('employee.create')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
         $data = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'employee_code' => 'required|unique:employees',
-            'position' => 'required|string',
-            'department' => 'required|string',
-            'hire_date' => 'nullable|date',
-            'salary' => 'nullable|numeric',
+            'user_id' => ['required', 'exists:users,id'],
+            'employee_code' => ['required', 'unique:employees'],
+            'position' => ['required', 'string'],
+            'department' => ['required', 'string'],
+            'hire_date' => ['nullable', 'date'],
+            'salary' => ['nullable', 'numeric'],
         ]);
 
         $employee = Employee::create($data);
@@ -110,8 +114,8 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
 
-        if (!($request->user()->isHR() || $request->user()->isAdmin())) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        if (!$request->user()->hasPermission('employee.update')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
         $employee->update($request->only([
@@ -129,8 +133,8 @@ class EmployeeController extends Controller
     // 🔥 DELETE
     public function destroy($id, Request $request)
     {
-        if (!$request->user()->isSuperAdmin()) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        if (!$request->user()->hasPermission('employee.delete')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
         Employee::findOrFail($id)->delete();

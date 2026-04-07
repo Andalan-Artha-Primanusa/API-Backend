@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             EmployeeSeeder::class,
             LeaveSeeder::class,
+            RbacSeeder::class,
+            ApprovalFlowSeeder::class,
         ]);
     }
 }

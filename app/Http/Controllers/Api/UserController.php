@@ -5,23 +5,49 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Helpers\ApiResponse;
 
 class UserController extends Controller
 {
     public function assignRole(Request $request, $id)
     {
-        $request->validate([
-            'role' => 'required|in:super_admin,admin,hr,manager,employee'
+        $user = $request->user();
+
+        //  Permission / Super Admin bypass
+        if (!$user->isSuperAdmin() && !$user->hasPermission('user.assign_role')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $targetUser = User::findOrFail($id);
+
+        //  Protect super admin
+        if ($targetUser->isSuperAdmin()) {
+            return ApiResponse::error('Tidak bisa mengubah Super Admin', null, 403);
+        }
+
+        $data = $request->validate([
+            'role_ids' => ['required', 'array'],
+            'role_ids.*' => ['exists:roles,id']
         ]);
 
-        $user = User::findOrFail($id);
+        $targetUser->roles()->sync($data['role_ids']);
 
-        $user->role = $request->role;
-        $user->save();
+        return ApiResponse::success(
+            'Role berhasil diassign',
+            $targetUser->roles()->get()
+        );
+    }
 
-        return response()->json([
-            'message' => 'Role berhasil diupdate',
-            'user' => $user,
-        ]);
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasPermission('user.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $users = User::with('roles')->get();
+
+        return ApiResponse::success('List users', $users);
     }
 }

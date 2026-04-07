@@ -12,6 +12,8 @@ class Leave extends Model
         'end_date',
         'reason',
         'status',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
@@ -41,5 +43,10 @@ class Leave extends Model
     public function isRejected(): bool
     {
         return $this->status === self::STATUS_REJECTED;
+    }
+
+    public function flow()
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 }

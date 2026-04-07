@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
@@ -27,73 +30,56 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES (SANCTUM)
+| PROTECTED ROUTES
 |--------------------------------------------------------------------------
 */
-
 Route::middleware('auth:sanctum')->group(function () {
 
-    // AUTH
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | USER PROFILE
-    |--------------------------------------------------------------------------
-    */
+    // PROFILE
     Route::apiResource('profiles', UserProfileController::class);
 
-    /*
-    |--------------------------------------------------------------------------
-    | EMPLOYEE
-    |--------------------------------------------------------------------------
-    */
+    // EMPLOYEE
     Route::apiResource('employees', EmployeeController::class);
 
-    /*
-    |--------------------------------------------------------------------------
-    | LEAVE
-    |--------------------------------------------------------------------------
-    */
+    // LEAVE
     Route::get('/leaves', [LeaveController::class, 'index']);
     Route::post('/leaves', [LeaveController::class, 'store']);
     Route::put('/leaves/{id}', [LeaveController::class, 'update']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | USER MANAGEMENT
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | ATTENDANCE (ABSENSI)
-    |--------------------------------------------------------------------------
-    */
+    // ATTENDANCE
     Route::prefix('attendance')->group(function () {
+        Route::post('/check-in', [AttendanceController::class, 'checkIn']);
+        Route::post('/check-out', [AttendanceController::class, 'checkOut']);
+        Route::get('/history', [AttendanceController::class, 'history']);
+        Route::get('/today', [AttendanceController::class, 'today']);
+        Route::get('/all', [AttendanceController::class, 'all']);
+        Route::get('/{id}', [AttendanceController::class, 'show']);
+        Route::delete('/{id}', [AttendanceController::class, 'destroy']);
+    });
 
-    // ✅ CHECK-IN & CHECK-OUT
-    Route::post('/check-in', [AttendanceController::class, 'checkIn']);
-    Route::post('/check-out', [AttendanceController::class, 'checkOut']);
-    // ✅ USER
-    Route::get('/history', [AttendanceController::class, 'history']);
-    Route::get('/today', [AttendanceController::class, 'today']);
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN CONTROL (RBAC)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('admin')->group(function () {
 
-    // 🔥 ADMIN (SEMUA DATA ABSENSI)
-    Route::get('/all', [AttendanceController::class, 'all']);
+        // 🔥 LIST
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index']);
 
-    // 🔥 DETAIL ABSENSI (optional)
-    Route::get('/{id}', [AttendanceController::class, 'show']);
-
-    // 🔥 DELETE ABSENSI (optional admin)
-    Route::delete('/{id}', [AttendanceController::class, 'destroy']);
-
+        // 🔥 ASSIGN
+        Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
+        Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+    });
 });
-});
+
 /*
 |--------------------------------------------------------------------------
-| LOCATION (MASTER DATA LOKASI)
+| LOCATION
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
