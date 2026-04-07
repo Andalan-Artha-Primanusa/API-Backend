@@ -73,10 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::prefix('attendance')->group(function () {
 
-    // ✅ CHECK-IN & CHECK-OUT
     Route::post('/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('/check-out', [AttendanceController::class, 'checkOut']);
-    // ✅ USER
     Route::get('/history', [AttendanceController::class, 'history']);
     Route::get('/today', [AttendanceController::class, 'today']);
 
