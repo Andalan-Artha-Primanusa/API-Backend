@@ -6,7 +6,10 @@ use App\Http\Controllers\Api\AuthController;
 
 
 Route::get('/', function () {
-    return redirect('/login');  
+    return response()->json([
+        'success' => true,
+        'message' => 'API HRIS aktif 🚀'
+    ]);
 });
 
 Route::get('/login', function () {
