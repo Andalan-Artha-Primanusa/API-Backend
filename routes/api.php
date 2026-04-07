@@ -15,7 +15,10 @@ use App\Http\Controllers\Api\LocationController;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return response()->noContent(); // 204 No Content
+    return response()->json([
+        'success' => true,
+        'message' => 'API HRIS aktif 🚀'
+    ]);
 });
 // AUTH
 Route::post('/login', [AuthController::class, 'login']);
