@@ -9,10 +9,8 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // ✅ LOCAL ONLY
-    'allowed_origins' => [
-        'http://localhost:5173',
-    ],
+    // Configurable via .env for production deployment
+    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')),
 
     'allowed_origins_patterns' => [],
 

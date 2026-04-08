@@ -18,9 +18,12 @@ use App\Http\Controllers\Api\PermissionController;
 |--------------------------------------------------------------------------
 */
 
-// AUTH
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+// AUTH — rate-limited to prevent brute-force
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1');
+
+Route::post('/register', [AuthController::class, 'register'])
+    ->middleware('throttle:3,1');
 
 // GOOGLE SSO
 Route::prefix('auth')->group(function () {
@@ -59,29 +62,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [AttendanceController::class, 'destroy']);
     });
 
+    // LOCATION
+    Route::apiResource('locations', LocationController::class);
+
     /*
     |--------------------------------------------------------------------------
     | ADMIN CONTROL (RBAC)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('admin')->group(function () {
+});
 
-        // 🔥 LIST
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->group(function () {
+
         Route::get('/roles', [RoleController::class, 'index']);
         Route::get('/permissions', [PermissionController::class, 'index']);
         Route::get('/users', [UserController::class, 'index']);
 
-        // 🔥 ASSIGN
         Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
         Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
     });
-});
-
-/*
-|--------------------------------------------------------------------------
-| LOCATION
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
-    Route::apiResource('locations', LocationController::class);
-});

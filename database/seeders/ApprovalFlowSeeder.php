@@ -9,37 +9,47 @@ use App\Models\Role;
 
 class ApprovalFlowSeeder extends Seeder
 {
+    /**
+     * Fully idempotent: safe to run multiple times without creating duplicates.
+     */
     public function run(): void
     {
-        //  ambil role
         $manager = Role::where('name', 'manager')->first();
         $hr = Role::where('name', 'hr')->first();
 
         if (!$manager || !$hr) {
-            $this->command->error('Role manager / hr belum ada!');
+            $this->command?->error('Role manager / hr not found! Run RbacSeeder first.');
             return;
         }
 
-        //  buat flow
-        $flow = ApprovalFlow::create([
-            'name' => 'Leave Approval Flow',
-            'module' => 'leave',
-        ]);
+        // Create or find the leave approval flow
+        $flow = ApprovalFlow::firstOrCreate(
+            ['module' => 'leave'],
+            ['name' => 'Leave Approval Flow']
+        );
 
-        //  step 1 → manager
-        ApprovalStep::create([
-            'approval_flow_id' => $flow->id,
-            'step_order' => 1,
-            'role_id' => $manager->id,
-        ]);
+        // Step 1 → Manager (idempotent)
+        ApprovalStep::firstOrCreate(
+            [
+                'approval_flow_id' => $flow->id,
+                'step_order' => 1,
+            ],
+            [
+                'role_id' => $manager->id,
+            ]
+        );
 
-        //  step 2 → hr
-        ApprovalStep::create([
-            'approval_flow_id' => $flow->id,
-            'step_order' => 2,
-            'role_id' => $hr->id,
-        ]);
+        // Step 2 → HR (idempotent)
+        ApprovalStep::firstOrCreate(
+            [
+                'approval_flow_id' => $flow->id,
+                'step_order' => 2,
+            ],
+            [
+                'role_id' => $hr->id,
+            ]
+        );
 
-        $this->command->info('Approval Flow Leave berhasil dibuat!');
+        $this->command?->info('Approval Flow for Leave seeded successfully.');
     }
 }

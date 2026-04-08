@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Helpers\ApiResponse;
 use App\Models\Permission;
 
 class PermissionController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
@@ -19,6 +20,6 @@ class PermissionController extends Controller
 
         $permissions = Permission::all();
 
-        return ApiResponse::success('List permissions', $permissions);
+        return ApiResponse::success('Permission list', $permissions);
     }
 }

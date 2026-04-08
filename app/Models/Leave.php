@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\LeaveStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Leave extends Model
 {
@@ -18,35 +20,40 @@ class Leave extends Model
 
     protected $casts = [
         'start_date' => 'date',
-        'end_date' => 'date',
+        'end_date'   => 'date',
+        'status'     => LeaveStatus::class,
     ];
 
-    public function user()
+    // =========================================================================
+    // RELATIONSHIPS
+    // =========================================================================
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    const STATUS_PENDING = 'pending';
-    const STATUS_APPROVED = 'approved';
-    const STATUS_REJECTED = 'rejected';
+    public function flow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
+    }
+
+    // =========================================================================
+    // STATUS HELPERS
+    // =========================================================================
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === LeaveStatus::Pending;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === LeaveStatus::Approved;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === self::STATUS_REJECTED;
-    }
-
-    public function flow()
-    {
-        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
+        return $this->status === LeaveStatus::Rejected;
     }
 }

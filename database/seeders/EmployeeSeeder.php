@@ -11,16 +11,23 @@ class EmployeeSeeder extends Seeder
 {
     public function run(): void
     {
-        // 🔥 ambil semua manager
-        $managers = User::where('role', User::ROLE_MANAGER)->get();
+        $managers = User::whereHas('roles', function ($q) {
+            $q->where('name', User::ROLE_MANAGER);
+        })->get();
 
-        // 🔥 ambil semua employee
-        $employees = User::where('role', User::ROLE_EMPLOYEE)->get();
+        $employees = User::whereHas('roles', function ($q) {
+            $q->where('name', User::ROLE_EMPLOYEE);
+        })->get();
 
         foreach ($employees as $index => $user) {
+            // Skip if employee record already exists (idempotent)
+            if (Employee::where('user_id', $user->id)->exists()) {
+                continue;
+            }
+
             Employee::create([
                 'user_id' => $user->id,
-                'manager_id' => $managers->random()->id, // random manager
+                'manager_id' => $managers->random()->id,
                 'employee_code' => 'EMP-' . str_pad($index + 1, 4, '0', STR_PAD_LEFT),
                 'position' => fake()->jobTitle(),
                 'department' => fake()->randomElement(['IT', 'HR', 'Finance', 'Marketing']),
