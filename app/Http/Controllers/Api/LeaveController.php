@@ -3,171 +3,82 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ApiResponse;
+use App\Http\Requests\StoreLeaveRequest;
+use App\Http\Requests\ApproveLeaveRequest;
 use App\Models\Leave;
+use App\Services\LeaveService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Carbon\Carbon;
 
+
 class LeaveController extends Controller
 {
-    // 🔥 HELPER BIAR GAK ERROR 500
-    private function getEmployeeId()
-    {
-        $user = auth()->user();
+    public function __construct(
+        protected LeaveService $leaveService
+    ) {}
 
-        if (!$user || !$user->employee) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'message' => 'User bukan employee / belum punya employee'
-            ], 400));
+    /**
+     * Create a new leave request.
+     * Authorization handled by StoreLeaveRequest.
+     */
+    public function store(StoreLeaveRequest $request): JsonResponse
+    {
+        try {
+            $leave = $this->leaveService->createLeave(
+                $request->user(),
+                $request->validated()
+            );
+
+            return ApiResponse::success('Leave request submitted', $leave, 201);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 500);
+        }
+    }
+
+    /**
+     * List leaves based on user role/permissions.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('leave.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        return $user->employee->id;
+        $leaves = $this->leaveService->getLeavesByRole($user);
+
+        return ApiResponse::success('Leave list', $leaves);
     }
 
-    // 📌 LIST + SISA CUTI
-    public function index()
+    /**
+     * Approve or reject a leave request (dynamic multi-step flow).
+     * Authorization handled by ApproveLeaveRequest.
+     */
+    public function update(ApproveLeaveRequest $request, $id): JsonResponse
     {
-        $employeeId = $this->getEmployeeId();
+        $leave = Leave::with('flow.steps.role')->findOrFail($id);
 
-        $total = 12;
-
-        $used = Leave::where('employee_id', $employeeId)
-            ->where('status', 'approved')
-            ->sum('total_days');
-
-        return response()->json([
-            'success' => true,
-            'remaining_leave' => $total - $used,
-            'used_leave' => $used,
-            'data' => Leave::where('employee_id', $employeeId)->latest()->get()
-        ]);
-    }
-
-    // 📌 MY LEAVES
-    public function myLeaves()
-    {
-        $employeeId = $this->getEmployeeId();
-
-        return Leave::where('employee_id', $employeeId)
-            ->latest()
-            ->get();
-    }
-
-    // 📌 BALANCE
-    public function balance()
-    {
-        $employeeId = $this->getEmployeeId();
-
-        $total = 12;
-
-        $used = Leave::where('employee_id', $employeeId)
-            ->where('status', 'approved')
-            ->sum('total_days');
-
-        return response()->json([
-            'total' => $total,
-            'used' => $used,
-            'remaining' => $total - $used
-        ]);
-    }
-
-    // 📌 STORE (AJUKAN CUTI)
-    public function store(Request $request)
-    {
-        $request->validate([
-            'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'type'       => 'required|string',
-            'reason'     => 'nullable|string'
-        ]);
-
-        $employeeId = $this->getEmployeeId();
-
-        // 🔥 CEK BENTROK
-        $exists = Leave::where('employee_id', $employeeId)
-            ->where(function ($q) use ($request) {
-                $q->whereBetween('start_date', [$request->start_date, $request->end_date])
-                  ->orWhereBetween('end_date', [$request->start_date, $request->end_date]);
-            })->exists();
-
-        if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tanggal cuti bentrok'
-            ], 400);
+        try {
+            $result = $this->leaveService->processApproval(
+                $leave,
+                $request->user(),
+                $request->validated()['status']
+            );
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 500);
         }
 
-        // 🔥 HITUNG HARI (AMAN)
-        $days = Carbon::parse($request->start_date)
-            ->diffInDays(Carbon::parse($request->end_date)) + 1;
+        $message = $result['final']
+            ? 'Leave ' . $result['action'] . ' (final)'
+            : 'Approved step, proceeding to next step';
 
-        $leave = Leave::create([
-            'employee_id' => $employeeId,
-            'start_date'  => $request->start_date,
-            'end_date'    => $request->end_date,
-            'total_days'  => $days,
-            'type'        => $request->type,
-            'reason'      => $request->reason,
-            'status'      => 'pending'
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pengajuan cuti berhasil',
-            'data' => $leave
-        ]);
-    }
-
-    // 📌 DETAIL
-    public function show($id)
-    {
-        return Leave::findOrFail($id);
-    }
-
-    // 📌 DELETE
-    public function destroy($id)
-    {
-        $leave = Leave::findOrFail($id);
-
-        if ($leave->status === 'approved') {
-            return response()->json([
-                'message' => 'Cuti yang sudah disetujui tidak bisa dihapus'
-            ], 400);
-        }
-
-        $leave->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cuti berhasil dihapus'
-        ]);
-    }
-
-    // 📌 PENDING (ATASAN)
-    public function pending()
-    {
-        return Leave::where('status', 'pending')
-            ->with('employee')
-            ->get();
-    }
-
-    // 📌 APPROVE
-    public function approve(Request $request, $id)
-    {
-        $leave = Leave::findOrFail($id);
-
-        $leave->update([
-            'status' => 'approved',
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-            'approval_note' => $request->note
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cuti disetujui'
-        ]);
+        return ApiResponse::success($message, $result);
     }
 
     // 📌 REJECT
@@ -200,7 +111,7 @@ class LeaveController extends Controller
                 'title' => strtoupper($leave->type),
                 'start' => $leave->start_date,
                 'end'   => $leave->end_date,
-                'status'=> $leave->status
+                'status' => $leave->status
             ];
         });
     }

@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Employee extends Model
 {
     protected $fillable = [
         'user_id',
-        'manager_id', // 🔥 TAMBAHAN
+        'manager_id',
         'employee_code',
         'position',
         'department',
@@ -18,22 +19,19 @@ class Employee extends Model
 
     protected $casts = [
         'hire_date' => 'date',
-        'salary' => 'integer',
+        'salary'    => 'decimal:2', // Matches migration decimal(12,2)
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // 🔥 TAMBAHAN RELASI KE MANAGER
-    public function manager()
+    /**
+     * The manager (User) of this employee.
+     */
+    public function manager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_id');
-    }
-
-    public function subordinates()
-    {
-        return $this->hasMany(Employee::class, 'manager_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Services\UserService;
 use App\Models\Employee;
@@ -15,7 +16,8 @@ class AuthController extends Controller
     ) {}
 
     // 📌 REGISTER + AUTO CREATE EMPLOYEE 🔥
-    public function register(Request $request)
+
+    public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -36,20 +38,18 @@ class AuthController extends Controller
         ]);
 
         // 🔑 TOKEN
+
         $user->tokens()->delete();
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return ApiResponse::success('Register berhasil', [
-            'user' => [
-                ...$user->toArray(),
-                'role' => $user->role
-            ],
+        return ApiResponse::success('Registration successful', [
+            'user' => $user->load('roles'),
             'token' => $token,
         ], 201);
     }
 
     // 📌 LOGIN
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => 'required|email',
@@ -62,20 +62,17 @@ class AuthController extends Controller
         $user->tokens()->delete();
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return ApiResponse::success('Login berhasil', [
-            'user' => [
-                ...$user->toArray(),
-                'role' => $user->role
-            ],
+        return ApiResponse::success('Login successful', [
+            'user' => $user->load('roles'),
             'token' => $token,
         ]);
     }
 
     // 📌 LOGOUT
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
-        return ApiResponse::success('Logout berhasil');
+        return ApiResponse::success('Logout successful');
     }
 }

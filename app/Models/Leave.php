@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\LeaveStatus;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Leave extends Model
 {
@@ -16,48 +17,33 @@ class Leave extends Model
         'type',             // 🔥 tambahan (annual, sick, dll)
         'reason',
         'status',
-        'approved_by',      // 🔥 tambahan
-        'approved_at',      // 🔥 tambahan
-        'approval_note',    // 🔥 tambahan
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
         'start_date' => 'date',
-        'end_date' => 'date',
-        'approved_at' => 'datetime',
+        'end_date'   => 'date',
+        'status'     => LeaveStatus::class,
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATION
-    |--------------------------------------------------------------------------
-    */
+    // =========================================================================
+    // RELATIONSHIPS
+    // =========================================================================
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // 🔥 kalau pakai employee (HRIS biasanya pakai ini)
-    public function employee()
+    public function flow(): BelongsTo
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 
-    public function approver()
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | STATUS CONSTANT
-    |--------------------------------------------------------------------------
-    */
-
-    const STATUS_PENDING = 'pending';
-    const STATUS_APPROVED = 'approved';
-    const STATUS_REJECTED = 'rejected';
+    // =========================================================================
+    // STATUS HELPERS
+    // =========================================================================
 
     /*
     |--------------------------------------------------------------------------
@@ -77,17 +63,17 @@ class Leave extends Model
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === LeaveStatus::Pending;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === LeaveStatus::Approved;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === self::STATUS_REJECTED;
+        return $this->status === LeaveStatus::Rejected;
     }
 
     /*

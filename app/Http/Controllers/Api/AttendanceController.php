@@ -3,183 +3,115 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ApiResponse;
+use App\Http\Requests\CheckInRequest;
+use App\Services\AttendanceService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Models\Attendance;
-use App\Models\Location;
-use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
-    /**
-     * 📍 HITUNG JARAK (HAVERSINE)
-     */
-    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371; // km
-
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-
-        $a = sin($dLat/2) * sin($dLat/2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon/2) * sin($dLon/2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-
-        return $earthRadius * $c * 1000; // meter
-    }
+    public function __construct(
+        protected AttendanceService $attendanceService
+    ) {}
 
     /**
-     * 📍 CARI LOKASI TERDEKAT
+     * Check-in with geofencing validation.
      */
-    private function getNearestLocation($lat, $lon)
+    public function checkIn(CheckInRequest $request): JsonResponse
     {
-        $locations = Location::all();
-
-        $nearest = null;
-        $minDistance = PHP_FLOAT_MAX;
-
-        foreach ($locations as $loc) {
-            $distance = $this->calculateDistance(
-                $loc->latitude,
-                $loc->longitude,
-                $lat,
-                $lon
+        try {
+            $result = $this->attendanceService->checkIn(
+                $request->user(),
+                $request->validated()['latitude'],
+                $request->validated()['longitude']
             );
 
-            if ($distance < $minDistance) {
-                $minDistance = $distance;
-                $nearest = $loc;
-            }
+            return ApiResponse::success('Check-in successful', [
+                'location' => $result['location'],
+                'distance' => $result['distance'] . ' meter',
+                'data'     => $result['attendance'],
+            ]);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
         }
-
-        return [
-            'location' => $nearest,
-            'distance' => $minDistance
-        ];
     }
 
     /**
-     * ✅ CHECK-IN
+     * Check-out for today's attendance.
      */
-    public function checkIn(Request $request)
+    public function checkOut(Request $request): JsonResponse
     {
-        $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-        ]);
+        try {
+            $attendance = $this->attendanceService->checkOut($request->user());
 
-        $user = Auth::user();
-
-        // 🔥 cari lokasi terdekat
-        $result = $this->getNearestLocation(
-            $request->latitude,
-            $request->longitude
-        );
-
-        $location = $result['location'];
-        $distance = $result['distance'];
-
-        if (!$location) {
-            return response()->json([
-                'message' => 'Lokasi kantor tidak tersedia'
-            ], 400);
+            return ApiResponse::success('Check-out successful', $attendance);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
         }
-
-        // 🔒 cek radius
-        if ($distance > $location->radius) {
-            return response()->json([
-                'message' => 'Di luar area absensi',
-                'distance' => round($distance) . ' meter',
-                'max_radius' => $location->radius . ' meter'
-            ], 403);
-        }
-
-        // 🔒 cek sudah absen
-        $existing = Attendance::where('user_id', $user->id)
-            ->where('date', now()->toDateString())
-            ->first();
-
-        if ($existing) {
-            return response()->json([
-                'message' => 'Sudah check-in hari ini'
-            ], 400);
-        }
-
-        $attendance = Attendance::create([
-            'user_id' => $user->id,
-            'date' => now()->toDateString(),
-            'check_in' => now(),
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-        ]);
-
-        return response()->json([
-            'message' => 'Check-in berhasil',
-            'location' => $location->name,
-            'distance' => round($distance) . ' meter',
-            'data' => $attendance
-        ]);
     }
 
     /**
-     * 🚪 CHECK-OUT
+     * Get attendance history for the current user.
      */
-    public function checkOut()
+    public function history(Request $request): JsonResponse
     {
-        $attendance = Attendance::where('user_id', Auth::id())
-            ->where('date', now()->toDateString())
-            ->first();
+        $data = $this->attendanceService->getHistory($request->user());
 
-        if (!$attendance) {
-            return response()->json([
-                'message' => 'Belum check-in'
-            ], 400);
-        }
-
-        if ($attendance->check_out) {
-            return response()->json([
-                'message' => 'Sudah check-out'
-            ], 400);
-        }
-
-        $attendance->update([
-            'check_out' => now()
-        ]);
-
-        return response()->json([
-            'message' => 'Check-out berhasil',
-            'data' => $attendance
-        ]);
+        return ApiResponse::success('Attendance history', $data);
     }
 
     /**
-     * 📊 HISTORY
+     * Get today's attendance for the current user.
      */
-    public function history()
+    public function today(Request $request): JsonResponse
     {
-        $data = Attendance::where('user_id', Auth::id())
-            ->latest('id')
-            ->get();
+        $attendance = $this->attendanceService->getToday($request->user());
 
-        return response()->json([
-            'message' => 'History absensi',
-            'data' => $data
-        ]);
+        return ApiResponse::success('Today attendance', $attendance);
     }
 
     /**
-     * 📅 TODAY
+     * Get all attendance records (admin).
      */
-    public function today()
+    public function all(Request $request): JsonResponse
     {
-        $attendance = Attendance::where('user_id', Auth::id())
-            ->where('date', now()->toDateString())
-            ->first();
+        if (!$request->user()->hasPermission('attendance.view_all')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
 
-        return response()->json([
-            'message' => 'Absensi hari ini',
-            'data' => $attendance
-        ]);
+        $data = $this->attendanceService->getAll();
+
+        return ApiResponse::success('All attendance records', $data);
+    }
+
+    /**
+     * Show a specific attendance record.
+     */
+    public function show(Request $request, $id): JsonResponse
+    {
+        $attendance = \App\Models\Attendance::with('user')->findOrFail($id);
+        $user = $request->user();
+
+        // Non-owner must have attendance.view_all permission
+        if ($attendance->user_id !== $user->id && !$user->hasPermission('attendance.view_all')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        return ApiResponse::success('Attendance detail', $attendance);
+    }
+
+    /**
+     * Delete an attendance record (admin only).
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        if (!$request->user()->hasPermission('attendance.delete')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        \App\Models\Attendance::findOrFail($id)->delete();
+
+        return ApiResponse::success('Attendance record deleted');
     }
 }

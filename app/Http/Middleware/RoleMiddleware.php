@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\ApiResponse;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -10,6 +11,7 @@ class RoleMiddleware
 {
     /**
      * Handle an incoming request.
+     * Checks roles via the pivot table (user_roles), NOT the deprecated users.role column.
      *
      * @param  Closure(Request): (Response)  $next
      */
@@ -17,18 +19,15 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        // 🔒 Belum login
         if (!$user) {
-            return response()->json([
-                'message' => 'Unauthenticated'
-            ], 401);
+            return ApiResponse::error('Unauthenticated', null, 401);
         }
 
-        // 🔒 Role tidak sesuai
-        if (!in_array($user->role, $roles)) {
-            return response()->json([
-                'message' => 'Forbidden: insufficient role'
-            ], 403);
+        // Eager-load roles once for this request
+        $user->loadMissing('roles');
+
+        if (!$user->hasAnyRole($roles)) {
+            return ApiResponse::error('Forbidden', 'Insufficient role', 403);
         }
 
         return $next($request);

@@ -16,9 +16,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            RbacSeeder::class,     // 🔥 WAJIB PERTAMA
             AdminSeeder::class,
             UserSeeder::class,
             EmployeeSeeder::class,
+            ApprovalFlowSeeder::class,
             LeaveSeeder::class,
         ]);
     }
