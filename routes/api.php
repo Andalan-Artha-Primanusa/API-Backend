@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PayrollDetailController;
+use App\Http\Controllers\Api\ReimbursementController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/my', [KpiController::class, 'myKpi']);
     Route::post('/{id}/submit', [KpiController::class, 'submit']);
+
+    /*
+     * |--------------------------------------------------------------------------
+     * | EMPLOYEE SELF-SERVICE
+     * |--------------------------------------------------------------------------
+     */
+    Route::prefix('my')->group(function () {
+        // KPI
+        Route::get('/kpi', [KpiController::class, 'myKpi']);
+        Route::post('/kpi/{id}/submit', [KpiController::class, 'submit']);
+
+        // REIMBURSEMENTS
+        Route::get('/reimbursements', [ReimbursementController::class, 'myReimbursements']);
+        Route::post('/reimbursements', [ReimbursementController::class, 'createMyReimbursement']);
+        Route::post('/reimbursements/{id}/submit', [ReimbursementController::class, 'submit']);
+    });
 
     /*
      * |--------------------------------------------------------------------------
@@ -173,5 +190,41 @@ Route::middleware(['auth:sanctum', 'role:manager,hr,super_admin'])->group(functi
 
         // ✅ APPROVAL KPI (optional, kalau ada flow approval)
         Route::put('/{id}/approve', [KpiController::class, 'approve']);
+    });
+
+    /*
+     * |--------------------------------------------------------------------------
+     * | REIMBURSEMENT MANAGEMENT
+     * |--------------------------------------------------------------------------
+     */
+    Route::prefix('reimbursements')->group(function () {
+        // ✅ LIST SEMUA REIMBURSEMENT
+        Route::get('/', [ReimbursementController::class, 'index']);
+
+        // ✅ BUAT REIMBURSEMENT
+        Route::post('/', [ReimbursementController::class, 'store']);
+
+        // ✅ DETAIL REIMBURSEMENT
+        Route::get('/{id}', [ReimbursementController::class, 'show']);
+
+        // ✅ UPDATE REIMBURSEMENT
+        Route::put('/{id}', [ReimbursementController::class, 'update']);
+
+        // ✅ DELETE REIMBURSEMENT
+        Route::delete('/{id}', [ReimbursementController::class, 'destroy']);
+
+        // ✅ REIMBURSEMENT PER EMPLOYEE
+        Route::get('/employee/{employee_id}', [ReimbursementController::class, 'byEmployee']);
+
+        // ✅ APPROVAL WORKFLOW
+        Route::put('/{id}/approve', [ReimbursementController::class, 'approve']);
+        Route::put('/{id}/reject', [ReimbursementController::class, 'reject']);
+        Route::put('/{id}/mark-paid', [ReimbursementController::class, 'markAsPaid']);
+
+        // ✅ PENDING REIMBURSEMENTS
+        Route::get('/pending', [ReimbursementController::class, 'pending']);
+
+        // ✅ STATISTICS
+        Route::get('/statistics', [ReimbursementController::class, 'statistics']);
     });
 });
