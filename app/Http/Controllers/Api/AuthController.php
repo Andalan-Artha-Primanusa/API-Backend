@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use App\Services\UserService;
+use App\Models\Employee;
 
 class AuthController extends Controller
 {
@@ -16,6 +14,7 @@ class AuthController extends Controller
         protected UserService $userService
     ) {}
 
+    // 📌 REGISTER + AUTO CREATE EMPLOYEE 🔥
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -26,6 +25,17 @@ class AuthController extends Controller
 
         $user = $this->userService->register($validated);
 
+        // 🔥 AUTO CREATE EMPLOYEE
+        Employee::create([
+            'user_id' => $user->id,
+            'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+            'position' => 'Staff',
+            'department' => 'General',
+            'hire_date' => now(),
+            'salary' => 0, // default
+        ]);
+
+        // 🔑 TOKEN
         $user->tokens()->delete();
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -38,6 +48,7 @@ class AuthController extends Controller
         ], 201);
     }
 
+    // 📌 LOGIN
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -47,6 +58,7 @@ class AuthController extends Controller
 
         $user = $this->userService->login($validated);
 
+        // 🔑 TOKEN
         $user->tokens()->delete();
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -59,6 +71,7 @@ class AuthController extends Controller
         ]);
     }
 
+    // 📌 LOGOUT
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

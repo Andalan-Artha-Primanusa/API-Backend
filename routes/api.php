@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\PayrollDetailController;
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
@@ -93,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/{id}', [AttendanceController::class, 'destroy']);
 
 });
+
+Route::middleware('auth:sanctum')->get('/my-payroll', [PayrollController::class, 'myPayroll']);
+
 });
 /*
 |--------------------------------------------------------------------------
@@ -102,3 +107,26 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
     Route::apiResource('locations', LocationController::class);
 });
+
+    Route::middleware(['auth:sanctum', 'role:admin,hr,super_admin'])->group(function () {        // PAYROLL
+        Route::prefix('payroll')->group(function () {
+            Route::get('/', [PayrollController::class, 'index']);
+            Route::post('/', [PayrollController::class, 'store']);
+            Route::get('/{id}', [PayrollController::class, 'show']); // ✅ penting
+            Route::put('/{id}', [PayrollController::class, 'update']); // ✅ penting
+            Route::delete('/{id}', [PayrollController::class, 'destroy']);
+
+            Route::post('/generate/monthly', [PayrollController::class, 'generateMonthly']);
+            Route::post('/{id}/approve', [PayrollController::class, 'approve']);
+            Route::post('/{id}/pay', [PayrollController::class, 'pay']);
+        });
+
+        // PAYROLL DETAIL (ikut protect)
+        Route::prefix('payroll-details')->group(function () {
+            Route::get('/{payroll_id}', [PayrollDetailController::class, 'index']);
+            Route::post('/', [PayrollDetailController::class, 'store']);
+            Route::put('/{id}', [PayrollDetailController::class, 'update']);
+            Route::delete('/{id}', [PayrollDetailController::class, 'destroy']);
+        });
+
+    });
