@@ -10,31 +10,44 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollController extends Controller
 {
+    // 🔥 RESPONSE HELPER
+    private function success($message, $data = null, $code = 200)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
+
+    private function error($message, $code = 400, $extra = [])
+    {
+        return response()->json(array_merge([
+            'success' => false,
+            'message' => $message
+        ], $extra), $code);
+    }
+
     // 📌 GET ALL
     public function index()
     {
         $data = Payroll::with(['employee', 'details'])->latest()->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => $data->isEmpty()
+        return $this->success(
+            $data->isEmpty()
                 ? 'Data payroll belum ada'
                 : 'Berhasil ambil data payroll',
-            'data' => $data
-        ]);
+            $data
+        );
     }
 
-    // 📌 MY PAYROLL (USER)
+    // 📌 MY PAYROLL
     public function myPayroll(Request $request)
     {
         $employee = Employee::where('user_id', $request->user()->id)->first();
 
         if (!$employee) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Employee tidak ditemukan',
-                'data' => null
-            ], 404);
+            return $this->error('Employee tidak ditemukan', 404);
         }
 
         $data = Payroll::with('details')
@@ -42,16 +55,15 @@ class PayrollController extends Controller
             ->latest()
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => $data->isEmpty()
+        return $this->success(
+            $data->isEmpty()
                 ? 'Belum ada payroll'
                 : 'Berhasil ambil payroll',
-            'data' => $data
-        ]);
+            $data
+        );
     }
 
-    // 📌 STORE (SINGLE GENERATE)
+    // 📌 STORE
     public function store(Request $request)
     {
         $request->validate([
@@ -60,13 +72,11 @@ class PayrollController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
+
             $employee = Employee::findOrFail($request->employee_id);
 
             if (!$employee->salary) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Salary employee belum di set'
-                ], 400);
+                return $this->error('Salary employee belum di set', 400);
             }
 
             $exists = Payroll::where('employee_id', $employee->id)
@@ -74,10 +84,7 @@ class PayrollController extends Controller
                 ->exists();
 
             if ($exists) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payroll sudah ada untuk bulan ini'
-                ], 400);
+                return $this->error('Payroll sudah ada untuk bulan ini', 400);
             }
 
             $payroll = $this->calculatePayroll(
@@ -87,11 +94,7 @@ class PayrollController extends Controller
                 $request->bonus ?? 0
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Payroll berhasil dibuat',
-                'data' => $payroll
-            ]);
+            return $this->success('Payroll berhasil dibuat', $payroll, 201);
         });
     }
 
@@ -103,7 +106,6 @@ class PayrollController extends Controller
         ]);
 
         $employees = Employee::whereNotNull('salary')->get();
-
         $result = [];
 
         DB::beginTransaction();
@@ -123,21 +125,18 @@ class PayrollController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Generate payroll berhasil',
+            return $this->success('Generate payroll berhasil', [
                 'total' => count($result),
                 'data' => $result
             ]);
 
         } catch (\Exception $e) {
+
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generate payroll',
+            return $this->error('Error generate payroll', 500, [
                 'error' => $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 
@@ -147,18 +146,10 @@ class PayrollController extends Controller
         $data = Payroll::with(['employee', 'details'])->find($id);
 
         if (!$data) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll tidak ditemukan',
-                'data' => null
-            ], 404);
+            return $this->error('Payroll tidak ditemukan', 404);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil ambil detail payroll',
-            'data' => $data
-        ]);
+        return $this->success('Berhasil ambil detail payroll', $data);
     }
 
     // 📌 UPDATE
@@ -167,26 +158,16 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll tidak ditemukan'
-            ], 404);
+            return $this->error('Payroll tidak ditemukan', 404);
         }
 
         if ($payroll->status !== 'draft') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak bisa edit payroll'
-            ], 400);
+            return $this->error('Tidak bisa edit payroll', 400);
         }
 
         $payroll->update($request->all());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil update payroll',
-            'data' => $payroll
-        ]);
+        return $this->success('Berhasil update payroll', $payroll);
     }
 
     // 📌 DELETE
@@ -195,18 +176,12 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll tidak ditemukan'
-            ], 404);
+            return $this->error('Payroll tidak ditemukan', 404);
         }
 
         $payroll->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Deleted'
-        ]);
+        return $this->success('Deleted');
     }
 
     // 🔥 APPROVE
@@ -215,19 +190,16 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll tidak ditemukan'
-            ], 404);
+            return $this->error('Payroll tidak ditemukan', 404);
+        }
+
+        if ($payroll->status !== 'draft') {
+            return $this->error('Payroll sudah diproses', 400);
         }
 
         $payroll->update(['status' => 'approved']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Payroll approved',
-            'data' => $payroll
-        ]);
+        return $this->success('Payroll approved', $payroll);
     }
 
     // 💸 PAY
@@ -236,19 +208,16 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll tidak ditemukan'
-            ], 404);
+            return $this->error('Payroll tidak ditemukan', 404);
+        }
+
+        if ($payroll->status !== 'approved') {
+            return $this->error('Payroll harus di-approve dulu', 400);
         }
 
         $payroll->update(['status' => 'paid']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Payroll paid',
-            'data' => $payroll
-        ]);
+        return $this->success('Payroll paid', $payroll);
     }
 
     // 🧠 CORE LOGIC

@@ -10,31 +10,44 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollDetailController extends Controller
 {
+    // 📌 RESPONSE HELPER (BIAR CONSISTENT)
+    private function success($message, $data = null, $code = 200)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
+
+    private function error($message, $code = 400, $extra = [])
+    {
+        return response()->json(array_merge([
+            'success' => false,
+            'message' => $message
+        ], $extra), $code);
+    }
+
     // 📌 GET DETAIL BY PAYROLL
     public function index($payroll_id)
     {
         $payroll = Payroll::find($payroll_id);
 
         if (!$payroll) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll tidak ditemukan',
-                'data' => null
-            ], 404);
+            return $this->error('Payroll tidak ditemukan', 404);
         }
 
         $details = PayrollDetail::where('payroll_id', $payroll_id)->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => $details->isEmpty()
+        return $this->success(
+            $details->isEmpty()
                 ? 'Belum ada detail payroll'
                 : 'Berhasil ambil data',
-            'data' => [
+            [
                 'payroll' => $payroll,
                 'details' => $details
             ]
-        ]);
+        );
     }
 
     // 📌 STORE (BULK)
@@ -51,10 +64,7 @@ class PayrollDetailController extends Controller
         $payroll = Payroll::findOrFail($request->payroll_id);
 
         if ($payroll->status !== 'draft') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payroll sudah diproses'
-            ], 400);
+            return $this->error('Payroll sudah diproses', 400);
         }
 
         $insertData = collect($request->details)->map(function ($item) use ($request) {
@@ -70,11 +80,7 @@ class PayrollDetailController extends Controller
 
         PayrollDetail::insert($insertData);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil tambah detail',
-            'data' => $insertData
-        ]);
+        return $this->success('Berhasil tambah detail', $insertData, 201);
     }
 
     // 📌 UPDATE (SINGLE)
@@ -83,17 +89,11 @@ class PayrollDetailController extends Controller
         $detail = PayrollDetail::with('payroll')->find($id);
 
         if (!$detail) {
-            return response()->json([
-                'success' => false,
-                'message' => "Detail ID $id tidak ditemukan",
-            ], 404);
+            return $this->error("Detail ID $id tidak ditemukan", 404);
         }
 
         if (!$detail->payroll || $detail->payroll->status !== 'draft') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak bisa edit detail'
-            ], 400);
+            return $this->error('Tidak bisa edit detail', 400);
         }
 
         $data = array_filter($request->only(['type', 'name', 'amount']), function ($v) {
@@ -101,22 +101,15 @@ class PayrollDetailController extends Controller
         });
 
         if (empty($data)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak ada data yang diupdate'
-            ], 400);
+            return $this->error('Tidak ada data yang diupdate', 400);
         }
 
         $detail->update($data);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil update',
-            'data' => $detail->load('payroll')
-        ]);
+        return $this->success('Berhasil update', $detail->load('payroll'));
     }
 
-    // 📌 BULK UPDATE 🔥
+    // 📌 BULK UPDATE
     public function bulkUpdate(Request $request)
     {
         $request->validate([
@@ -134,6 +127,7 @@ class PayrollDetailController extends Controller
 
         try {
             foreach ($request->details as $item) {
+
                 $detail = PayrollDetail::with('payroll')->find($item['id']);
 
                 if (!$detail) {
@@ -156,9 +150,7 @@ class PayrollDetailController extends Controller
                     'type' => $item['type'] ?? null,
                     'name' => $item['name'] ?? null,
                     'amount' => $item['amount'] ?? null,
-                ], function ($v) {
-                    return !is_null($v);
-                });
+                ], fn($v) => !is_null($v));
 
                 if (!empty($data)) {
                     $detail->update($data);
@@ -168,20 +160,18 @@ class PayrollDetailController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Bulk update selesai',
+            return $this->success('Bulk update selesai', [
                 'updated' => $updated,
                 'errors' => $errors
             ]);
+
         } catch (\Exception $e) {
+
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi error',
+            return $this->error('Terjadi error', 500, [
                 'error' => $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 
@@ -191,24 +181,15 @@ class PayrollDetailController extends Controller
         $detail = PayrollDetail::with('payroll')->find($id);
 
         if (!$detail) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Detail tidak ditemukan',
-            ], 404);
+            return $this->error('Detail tidak ditemukan', 404);
         }
 
         if (!$detail->payroll || $detail->payroll->status !== 'draft') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak bisa hapus detail'
-            ], 400);
+            return $this->error('Tidak bisa hapus detail', 400);
         }
 
         $detail->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil dihapus'
-        ]);
+        return $this->success('Berhasil dihapus');
     }
 }
