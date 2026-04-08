@@ -73,11 +73,6 @@ Route::prefix('auth')->group(function () {
 */
 Route::middleware('auth:sanctum')->group(function () {
 
- * |--------------------------------------------------------------------------
- * | PROTECTED ROUTES (SANCTUM)
- * |--------------------------------------------------------------------------
- */
-
 Route::middleware('auth:sanctum')->group(function () {
     // AUTH
 |--------------------------------------------------------------------------
