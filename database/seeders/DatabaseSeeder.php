@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             ApprovalFlowSeeder::class,
             LeaveSeeder::class,
+            ReimbursementSeeder::class,
         ]);
     }
 }
