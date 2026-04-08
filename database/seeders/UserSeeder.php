@@ -10,17 +10,6 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::factory()->count(2)->create([
-            'role' => User::ROLE_HR
-        ]);
-
-        User::factory()->count(3)->create([
-            'role' => User::ROLE_MANAGER
-        ]);
-
-        User::factory()->count(10)->create([
-            'role' => User::ROLE_EMPLOYEE
-        ]);
         $hrRole = Role::where('name', User::ROLE_HR)->first();
         $managerRole = Role::where('name', User::ROLE_MANAGER)->first();
         $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
@@ -30,22 +19,24 @@ class UserSeeder extends Seeder
             return;
         }
 
-        // HR
+        // HR users
         $hrs = User::factory()->count(2)->create();
         foreach ($hrs as $user) {
             $user->roles()->syncWithoutDetaching([$hrRole->id]);
         }
 
-        // MANAGER
+        // Manager users
         $managers = User::factory()->count(3)->create();
         foreach ($managers as $user) {
             $user->roles()->syncWithoutDetaching([$managerRole->id]);
         }
 
-        // EMPLOYEE
+        // Employee users
         $employees = User::factory()->count(10)->create();
         foreach ($employees as $user) {
             $user->roles()->syncWithoutDetaching([$employeeRole->id]);
         }
+
+        $this->command?->info('Users seeded with pivot-based roles.');
     }
 }

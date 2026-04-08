@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leaves', function (Blueprint $table) {
-            $table->foreignId('approval_flow_id')->nullable()->constrained();
-            $table->integer('current_step')->default(1);
+            if (!Schema::hasColumn('leaves', 'approval_flow_id')) {
+                $table->foreignId('approval_flow_id')->nullable()->constrained();
+            }
+            if (!Schema::hasColumn('leaves', 'current_step')) {
+                $table->integer('current_step')->default(1);
+            }
         });
     }
 
@@ -23,8 +27,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('leaves', function (Blueprint $table) {
-            $table->dropForeign(['approval_flow_id']);
-            $table->dropColumn(['approval_flow_id', 'current_step']);
+            if (Schema::hasColumn('leaves', 'approval_flow_id')) {
+                $table->dropForeign(['approval_flow_id']);
+                $table->dropColumn('approval_flow_id');
+            }
+            if (Schema::hasColumn('leaves', 'current_step')) {
+                $table->dropColumn('current_step');
+            }
         });
     }
 };

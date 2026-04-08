@@ -24,10 +24,18 @@ class LeaveService
             throw new \RuntimeException('Leave approval flow has not been configured.');
         }
 
+        $employee = $user->employee;
+        if (!$employee) {
+            throw new \RuntimeException('Employee record not found for this user.');
+        }
+
         return Leave::create([
             'user_id'          => $user->id,
+            'employee_id'      => $employee->id,
             'start_date'       => $data['start_date'],
             'end_date'         => $data['end_date'],
+            'total_days'       => Leave::calculateDays($data['start_date'], $data['end_date']),
+            'type'             => $data['type'],
             'reason'           => $data['reason'] ?? null,
             'status'           => LeaveStatus::Pending,
             'approval_flow_id' => $flow->id,

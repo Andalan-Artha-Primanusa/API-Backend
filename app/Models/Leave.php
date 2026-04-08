@@ -11,36 +11,34 @@ class Leave extends Model
 {
     protected $fillable = [
         'user_id',
-        'employee_id',      // 🔥 tambahan (kalau pakai employee)
+        'employee_id',
         'start_date',
         'end_date',
-        'total_days',       // 🔥 tambahan
-        'type',             // 🔥 tambahan (annual, sick, dll)
+        'total_days',
+        'type',
         'reason',
         'status',
-        'approved_by',      // 🔥 tambahan
-        'approved_at',      // 🔥 tambahan
-        'approval_note',    // 🔥 tambahan
+        'approved_by',
+        'approved_at',
+        'approval_note',
         'approval_flow_id',
         'current_step',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date'  => 'date',
+        'end_date'    => 'date',
         'approved_at' => 'datetime',
+        'status'      => LeaveStatus::class,
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATION
-    |--------------------------------------------------------------------------
-    */
+    // =========================================================================
+    // CONSTANTS
+    // =========================================================================
 
-    public function user()
-        'end_date'   => 'date',
-        'status'     => LeaveStatus::class,
-    ];
+    const TYPE_ANNUAL = 'annual';
+    const TYPE_SICK   = 'sick';
+    const TYPE_UNPAID = 'unpaid';
 
     // =========================================================================
     // RELATIONSHIPS
@@ -51,6 +49,16 @@ class Leave extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     public function flow(): BelongsTo
     {
         return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
@@ -59,22 +67,6 @@ class Leave extends Model
     // =========================================================================
     // STATUS HELPERS
     // =========================================================================
-
-    /*
-    |--------------------------------------------------------------------------
-    | TYPE CONSTANT
-    |--------------------------------------------------------------------------
-    */
-
-    const TYPE_ANNUAL = 'annual';
-    const TYPE_SICK = 'sick';
-    const TYPE_UNPAID = 'unpaid';
-
-    /*
-    |--------------------------------------------------------------------------
-    | HELPER STATUS
-    |--------------------------------------------------------------------------
-    */
 
     public function isPending(): bool
     {
@@ -91,39 +83,35 @@ class Leave extends Model
         return $this->status === LeaveStatus::Rejected;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | HELPER CALCULATION
-    |--------------------------------------------------------------------------
-    */
+    // =========================================================================
+    // HELPER CALCULATION
+    // =========================================================================
 
-    public static function calculateDays($start, $end): int
+    public static function calculateDays(string $start, string $end): int
     {
         return Carbon::parse($start)->diffInDays(Carbon::parse($end)) + 1;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | APPROVAL ACTION
-    |--------------------------------------------------------------------------
-    */
+    // =========================================================================
+    // APPROVAL ACTIONS
+    // =========================================================================
 
-    public function approve($userId, $note = null)
+    public function approve(int $userId, ?string $note = null): void
     {
         $this->update([
-            'status' => self::STATUS_APPROVED,
-            'approved_by' => $userId,
-            'approved_at' => now(),
+            'status'        => LeaveStatus::Approved,
+            'approved_by'   => $userId,
+            'approved_at'   => now(),
             'approval_note' => $note,
         ]);
     }
 
-    public function reject($userId, $note = null)
+    public function reject(int $userId, ?string $note = null): void
     {
         $this->update([
-            'status' => self::STATUS_REJECTED,
-            'approved_by' => $userId,
-            'approved_at' => now(),
+            'status'        => LeaveStatus::Rejected,
+            'approved_by'   => $userId,
+            'approved_at'   => now(),
             'approval_note' => $note,
         ]);
     }

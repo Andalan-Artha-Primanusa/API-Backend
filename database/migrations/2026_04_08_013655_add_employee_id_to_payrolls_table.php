@@ -6,30 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
 
-    public function up()
+    public function up(): void
     {
-        Schema::table('payrolls', function (Blueprint $table) {
-
-            // 🔥 kalau tabel sudah ada data, pakai nullable dulu
-            if (!Schema::hasColumn('payrolls', 'employee_id')) {
+        // Only add employee_id if it doesn't already exist
+        // (create_payrolls_table may have already included it)
+        if (!Schema::hasColumn('payrolls', 'employee_id')) {
+            Schema::table('payrolls', function (Blueprint $table) {
                 $table->foreignId('employee_id')
                       ->after('id')
                       ->constrained()
                       ->cascadeOnDelete();
-            }
-
-        });
+            });
+        }
     }
 
-    public function down()
+    public function down(): void
     {
-        Schema::table('payrolls', function (Blueprint $table) {
-
-            // 🔥 versi paling aman (Laravel 9+)
-            if (Schema::hasColumn('payrolls', 'employee_id')) {
+        if (Schema::hasColumn('payrolls', 'employee_id')) {
+            Schema::table('payrolls', function (Blueprint $table) {
                 $table->dropConstrainedForeignId('employee_id');
-            }
-
-        });
+            });
+        }
     }
 };

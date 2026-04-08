@@ -12,7 +12,16 @@ class ReimbursementSeeder extends Seeder
     public function run(): void
     {
         $employees = Employee::all();
-        $admin = User::where('role', 'admin')->first() ?? User::first();
+
+        // Find an admin user via pivot-based RBAC (not deprecated 'role' column)
+        $admin = User::whereHas('roles', function ($q) {
+            $q->where('name', User::ROLE_ADMIN);
+        })->first() ?? User::first();
+
+        if ($employees->isEmpty()) {
+            $this->command?->warn('No employees found. Skipping ReimbursementSeeder.');
+            return;
+        }
 
         foreach ($employees as $employee) {
             // Create 1-3 reimbursements per employee
@@ -20,26 +29,26 @@ class ReimbursementSeeder extends Seeder
                 $status = fake()->randomElement(['draft', 'submitted', 'approved', 'rejected', 'paid']);
                 $category = fake()->randomElement([
                     'travel', 'medical', 'office_supplies', 'training',
-                    'meal', 'accommodation', 'transportation', 'other'
+                    'meal', 'accommodation', 'transportation', 'other',
                 ]);
 
                 $reimbursement = Reimbursement::create([
-                    'employee_id' => $employee->id,
-                    'title' => fake()->sentence(3),
-                    'description' => fake()->paragraph(),
-                    'amount' => fake()->randomFloat(2, 10, 1000),
-                    'category' => $category,
+                    'employee_id'  => $employee->id,
+                    'title'        => fake()->sentence(3),
+                    'description'  => fake()->paragraph(),
+                    'amount'       => fake()->randomFloat(2, 10, 1000),
+                    'category'     => $category,
                     'expense_date' => fake()->dateTimeBetween('-30 days', 'now'),
-                    'status' => $status,
+                    'status'       => $status,
                     'receipt_path' => rand(0, 1) ? 'receipts/' . fake()->uuid() . '.jpg' : null,
                 ]);
 
                 // Set approval data for non-draft statuses
                 if (in_array($status, ['approved', 'rejected', 'paid'])) {
                     $reimbursement->update([
-                        'submitted_at' => fake()->dateTimeBetween('-20 days', '-5 days'),
-                        'approved_by' => $admin->id,
-                        'approved_at' => fake()->dateTimeBetween('-5 days', 'now'),
+                        'submitted_at'  => fake()->dateTimeBetween('-20 days', '-5 days'),
+                        'approved_by'   => $admin?->id,
+                        'approved_at'   => fake()->dateTimeBetween('-5 days', 'now'),
                         'approval_note' => $status === 'rejected' ? fake()->sentence() : null,
                     ]);
 
@@ -55,5 +64,7 @@ class ReimbursementSeeder extends Seeder
                 }
             }
         }
+
+        $this->command?->info('Reimbursement records seeded successfully.');
     }
 }

@@ -3,10 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PayrollDetail extends Model
 {
@@ -14,11 +11,18 @@ class PayrollDetail extends Model
         'payroll_id',
         'type',
         'name',
-        'amount'
+        'amount',
     ];
 
-    // Relasi ke Payroll
-    public function payroll()
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
+
+    // =========================================================================
+    // RELATIONSHIPS
+    // =========================================================================
+
+    public function payroll(): BelongsTo
     {
         return $this->belongsTo(Payroll::class);
     }

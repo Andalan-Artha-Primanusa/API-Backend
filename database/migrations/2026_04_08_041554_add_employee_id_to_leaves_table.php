@@ -9,27 +9,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leaves', function (Blueprint $table) {
-
-            // 🔥 1. drop foreign key dulu
-            $table->dropForeign(['user_id']);
-
-            // 🔥 2. baru drop column
-            $table->dropColumn('user_id');
-
-            // 🔥 3. tambah employee_id
-            $table->foreignId('employee_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+            // Add employee_id alongside user_id (both are needed)
+            if (!Schema::hasColumn('leaves', 'employee_id')) {
+                $table->foreignId('employee_id')
+                      ->nullable()
+                      ->after('user_id')
+                      ->constrained()
+                      ->nullOnDelete();
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('leaves', function (Blueprint $table) {
-            $table->dropForeign(['employee_id']);
-            $table->dropColumn('employee_id');
-
-            $table->foreignId('user_id')->constrained();
+            if (Schema::hasColumn('leaves', 'employee_id')) {
+                $table->dropForeign(['employee_id']);
+                $table->dropColumn('employee_id');
+            }
         });
     }
 };

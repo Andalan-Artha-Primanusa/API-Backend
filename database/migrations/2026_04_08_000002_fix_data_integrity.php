@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -19,14 +20,18 @@ return new class extends Migration
         }
 
         // 2. Add unique constraint on user_profiles.user_id
-        Schema::table('user_profiles', function (Blueprint $table) {
-            $table->unique('user_id');
-        });
+        if (!$this->indexExists('user_profiles', 'user_profiles_user_id_unique')) {
+            Schema::table('user_profiles', function (Blueprint $table) {
+                $table->unique('user_id');
+            });
+        }
 
         // 3. Add unique constraint on approval_flows.module
-        Schema::table('approval_flows', function (Blueprint $table) {
-            $table->unique('module');
-        });
+        if (!$this->indexExists('approval_flows', 'approval_flows_module_unique')) {
+            Schema::table('approval_flows', function (Blueprint $table) {
+                $table->unique('module');
+            });
+        }
 
         // 4. Fix attendances check_in/check_out column types
         Schema::table('attendances', function (Blueprint $table) {
@@ -35,19 +40,28 @@ return new class extends Migration
         });
 
         // 5. Upgrade attendances [user_id, date] from index to unique
-        // Dropping foreign key first to safely drop the indexed dependency
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-        });
+        if (!$this->indexExists('attendances', 'attendances_user_id_date_unique')) {
+            // Drop the regular index if it exists
+            if ($this->indexExists('attendances', 'attendances_user_id_date_index')) {
+                Schema::table('attendances', function (Blueprint $table) {
+                    $table->dropForeign(['user_id']);
+                });
 
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->dropIndex(['user_id', 'date']);
-            $table->unique(['user_id', 'date'], 'attendances_user_id_date_unique');
-        });
+                Schema::table('attendances', function (Blueprint $table) {
+                    $table->dropIndex(['user_id', 'date']);
+                    $table->unique(['user_id', 'date'], 'attendances_user_id_date_unique');
+                });
 
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-        });
+                Schema::table('attendances', function (Blueprint $table) {
+                    $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+                });
+            } else {
+                // Just add the unique constraint directly
+                Schema::table('attendances', function (Blueprint $table) {
+                    $table->unique(['user_id', 'date'], 'attendances_user_id_date_unique');
+                });
+            }
+        }
     }
 
     /**
@@ -61,30 +75,45 @@ return new class extends Migration
             });
         }
 
-        Schema::table('user_profiles', function (Blueprint $table) {
-            $table->dropUnique(['user_id']);
-        });
+        if ($this->indexExists('user_profiles', 'user_profiles_user_id_unique')) {
+            Schema::table('user_profiles', function (Blueprint $table) {
+                $table->dropUnique(['user_id']);
+            });
+        }
 
-        Schema::table('approval_flows', function (Blueprint $table) {
-            $table->dropUnique(['module']);
-        });
+        if ($this->indexExists('approval_flows', 'approval_flows_module_unique')) {
+            Schema::table('approval_flows', function (Blueprint $table) {
+                $table->dropUnique(['module']);
+            });
+        }
 
         Schema::table('attendances', function (Blueprint $table) {
             $table->time('check_in')->nullable()->change();
             $table->time('check_out')->nullable()->change();
         });
 
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-        });
+        if ($this->indexExists('attendances', 'attendances_user_id_date_unique')) {
+            Schema::table('attendances', function (Blueprint $table) {
+                $table->dropForeign(['user_id']);
+            });
 
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->dropUnique('attendances_user_id_date_unique');
-            $table->index(['user_id', 'date']);
-        });
+            Schema::table('attendances', function (Blueprint $table) {
+                $table->dropUnique('attendances_user_id_date_unique');
+                $table->index(['user_id', 'date']);
+            });
 
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-        });
+            Schema::table('attendances', function (Blueprint $table) {
+                $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            });
+        }
+    }
+
+    /**
+     * Check if an index exists on a table.
+     */
+    private function indexExists(string $table, string $indexName): bool
+    {
+        $indexes = DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$indexName]);
+        return count($indexes) > 0;
     }
 };

@@ -5,98 +5,78 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reimbursement;
-use App\Models\Employee;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Helpers\ApiResponse;
+use App\Http\Requests\StoreReimbursementRequest;
+use App\Traits\HasEmployee;
+use Illuminate\Http\JsonResponse;
 
 class ReimbursementController extends Controller
 {
+    use HasEmployee;
+
     /*
     |--------------------------------------------------------------------------
-    | 🔥 HR / MANAGER / FINANCE
+    | 🔥 HR / MANAGER / FINANCE (Admin Level)
     |--------------------------------------------------------------------------
     */
 
-    // ✅ GET ALL REIMBURSEMENTS
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
         $query = Reimbursement::with('employee', 'approver');
 
-        // Filter by status
+        // Scope by manager subordinates if not admin/hr
+        if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
+            $subordinateIds = $user->teamMembers()->pluck('employee_id');
+            $query->whereIn('employee_id', $subordinateIds);
+        }
+
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
 
-        // Filter by category
         if ($request->has('category') && $request->category) {
             $query->where('category', $request->category);
         }
 
-        // Filter by employee
         if ($request->has('employee_id') && $request->employee_id) {
+            // Further verify they can see this employee if they are a manager
+            if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
+                if (!in_array($request->employee_id, $subordinateIds->toArray())) {
+                    return ApiResponse::error('Forbidden', 'Cannot access this employee data', 403);
+                }
+            }
             $query->where('employee_id', $request->employee_id);
         }
 
         $reimbursements = $query->latest()->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $reimbursements
-        ]);
+        return ApiResponse::success('Reimbursements retrieved successfully', $reimbursements);
     }
 
-    // ✅ CREATE REIMBURSEMENT
-    public function store(Request $request)
+    public function store(StoreReimbursementRequest $request): JsonResponse
     {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'amount' => 'required|numeric|min:0',
-            'category' => 'required|string|in:travel,medical,office_supplies,training,meal,accommodation,transportation,other',
-            'expense_date' => 'required|date|before_or_equal:today',
-            'receipt_path' => 'nullable|string'
-        ]);
+        $reimbursement = Reimbursement::create(array_merge(
+            $request->validated(),
+            ['status' => 'draft']
+        ));
 
-        $reimbursement = Reimbursement::create([
-            'employee_id' => $request->employee_id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'amount' => $request->amount,
-            'category' => $request->category,
-            'expense_date' => $request->expense_date,
-            'receipt_path' => $request->receipt_path,
-            'status' => 'draft',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil dibuat',
-            'data' => $reimbursement->load('employee')
-        ]);
+        return ApiResponse::success('Reimbursement created successfully', $reimbursement->load('employee'));
     }
 
-    // ✅ DETAIL REIMBURSEMENT
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $reimbursement = Reimbursement::with('employee', 'approver')->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $reimbursement
-        ]);
+        return ApiResponse::success('Reimbursement details', $reimbursement);
     }
 
-    // ✅ UPDATE REIMBURSEMENT
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $reimbursement = Reimbursement::findOrFail($id);
 
-        // Only allow updates for draft status
         if (!$reimbursement->isDraft()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reimbursement yang sudah disubmit tidak bisa diupdate'
-            ], 400);
+            return ApiResponse::error('Reimbursement already submitted cannot be updated', null, 400);
         }
 
         $request->validate([
@@ -109,73 +89,54 @@ class ReimbursementController extends Controller
         ]);
 
         $reimbursement->update($request->only([
-            'title',
-            'description',
-            'amount',
-            'category',
-            'expense_date',
-            'receipt_path'
+            'title', 'description', 'amount', 'category', 'expense_date', 'receipt_path'
         ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil diupdate',
-            'data' => $reimbursement->load('employee')
-        ]);
+        return ApiResponse::success('Reimbursement updated successfully', $reimbursement->load('employee'));
     }
 
-    // ✅ DELETE REIMBURSEMENT
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $reimbursement = Reimbursement::findOrFail($id);
 
-        // Only allow deletion for draft status
         if (!$reimbursement->isDraft()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reimbursement yang sudah disubmit tidak bisa dihapus'
-            ], 400);
+            return ApiResponse::error('Submitted reimbursement cannot be deleted', null, 400);
         }
 
         $reimbursement->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil dihapus'
-        ]);
+        return ApiResponse::success('Reimbursement deleted successfully');
     }
 
-    // ✅ APPROVE REIMBURSEMENT
-    public function approve(Request $request, $id)
+    public function approve(Request $request, $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
         $reimbursement = Reimbursement::findOrFail($id);
 
         if (!$reimbursement->isSubmitted()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya reimbursement yang sudah disubmit yang bisa disetujui'
-            ], 400);
+            return ApiResponse::error('Only submitted reimbursements can be approved', null, 400);
         }
 
         $reimbursement->approve(auth()->id(), $request->note);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil disetujui',
-            'data' => $reimbursement->load('employee', 'approver')
-        ]);
+        return ApiResponse::success('Reimbursement approved', $reimbursement->load('employee', 'approver'));
     }
 
-    // ✅ REJECT REIMBURSEMENT
-    public function reject(Request $request, $id)
+    public function reject(Request $request, $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
         $reimbursement = Reimbursement::findOrFail($id);
 
         if (!$reimbursement->isSubmitted()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya reimbursement yang sudah disubmit yang bisa ditolak'
-            ], 400);
+            return ApiResponse::error('Only submitted reimbursements can be rejected', null, 400);
         }
 
         $request->validate([
@@ -184,64 +145,48 @@ class ReimbursementController extends Controller
 
         $reimbursement->reject(auth()->id(), $request->note);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil ditolak',
-            'data' => $reimbursement->load('employee', 'approver')
-        ]);
+        return ApiResponse::success('Reimbursement rejected', $reimbursement->load('employee', 'approver'));
     }
 
-    // ✅ MARK AS PAID
-    public function markAsPaid($id)
+    public function markAsPaid($id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR()))  {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
         $reimbursement = Reimbursement::findOrFail($id);
 
         if (!$reimbursement->isApproved()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya reimbursement yang sudah disetujui yang bisa ditandai sebagai dibayar'
-            ], 400);
+            return ApiResponse::error('Only approved reimbursements can be marked as paid', null, 400);
         }
 
         $reimbursement->markAsPaid();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil ditandai sebagai dibayar',
-            'data' => $reimbursement->load('employee', 'approver')
-        ]);
+        return ApiResponse::success('Reimbursement marked as paid', $reimbursement->load('employee', 'approver'));
     }
 
-    // ✅ GET PENDING REIMBURSEMENTS
-    public function pending()
+    public function pending(): JsonResponse
     {
         $reimbursements = Reimbursement::with('employee')
             ->where('status', 'submitted')
             ->latest()
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $reimbursements
-        ]);
+        return ApiResponse::success('Pending reimbursements', $reimbursements);
     }
 
-    // ✅ GET REIMBURSEMENTS BY EMPLOYEE
-    public function byEmployee($employee_id)
+    public function byEmployee($employee_id): JsonResponse
     {
         $reimbursements = Reimbursement::where('employee_id', $employee_id)
             ->with('approver')
             ->latest()
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $reimbursements
-        ]);
+        return ApiResponse::success('Employee reimbursements', $reimbursements);
     }
 
-    // ✅ GET STATISTICS
-    public function statistics(Request $request)
+    public function statistics(Request $request): JsonResponse
     {
         $employeeId = $request->employee_id;
 
@@ -258,123 +203,60 @@ class ReimbursementController extends Controller
             'paid_amount' => Reimbursement::getTotalByStatus($employeeId, 'paid'),
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats
-        ]);
+        return ApiResponse::success('Reimbursement statistics', $stats);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | 👤 EMPLOYEE (USER)
+    | 👤 EMPLOYEE SELF-SERVICE (ESS)
     |--------------------------------------------------------------------------
     */
 
-    // ✅ MY REIMBURSEMENTS
-    public function myReimbursements(Request $request)
+    public function myReimbursements(Request $request): JsonResponse
     {
-        $user = auth()->user();
-        $employee = Employee::where('user_id', $user->id)->first();
-
-        if (!$employee) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'message' => 'User bukan employee'
-            ], 403));
-        }
+        $employee = $this->getAuthenticatedEmployee();
 
         $query = Reimbursement::where('employee_id', $employee->id)->with('approver');
 
-        // Filter by status
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
 
         $reimbursements = $query->latest()->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $reimbursements
-        ]);
+        return ApiResponse::success('My Reimbursements', $reimbursements);
     }
 
-    // ✅ SUBMIT REIMBURSEMENT
-    public function submit(Request $request, $id)
+    public function submit(Request $request, $id): JsonResponse
     {
-        $user = auth()->user();
-        $employee = Employee::where('user_id', $user->id)->first();
-
-        if (!$employee) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'message' => 'User bukan employee'
-            ], 403));
-        }
-
+        $employee = $this->getAuthenticatedEmployee();
         $reimbursement = Reimbursement::findOrFail($id);
 
-        // Check ownership
         if ($reimbursement->employee_id !== $employee->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak punya akses ke reimbursement ini'
-            ], 403);
+            return ApiResponse::error('Access denied to this reimbursement', null, 403);
         }
 
-        // Only draft can be submitted
         if (!$reimbursement->isDraft()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reimbursement sudah disubmit / diproses'
-            ], 400);
+            return ApiResponse::error('Reimbursement is already submitted or processed', null, 400);
         }
 
         $reimbursement->submit();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil disubmit',
-            'data' => $reimbursement->load('employee', 'approver')
-        ]);
+        return ApiResponse::success('Reimbursement submitted', $reimbursement->load('employee', 'approver'));
     }
 
-    // ✅ CREATE MY REIMBURSEMENT
-    public function createMyReimbursement(Request $request)
+    public function createMyReimbursement(StoreReimbursementRequest $request): JsonResponse
     {
-        $user = auth()->user();
-        $employee = Employee::where('user_id', $user->id)->first();
+        $employee = $this->getAuthenticatedEmployee();
 
-        if (!$employee) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'message' => 'User bukan employee'
-            ], 403));
-        }
+        $reimbursement = Reimbursement::create(array_merge(
+            $request->validated(),
+            [
+                'employee_id' => $employee->id,
+                'status' => 'draft'
+            ]
+        ));
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'amount' => 'required|numeric|min:0',
-            'category' => 'required|string|in:travel,medical,office_supplies,training,meal,accommodation,transportation,other',
-            'expense_date' => 'required|date|before_or_equal:today',
-            'receipt_path' => 'nullable|string'
-        ]);
-
-        $reimbursement = Reimbursement::create([
-            'employee_id' => $employee->id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'amount' => $request->amount,
-            'category' => $request->category,
-            'expense_date' => $request->expense_date,
-            'receipt_path' => $request->receipt_path,
-            'status' => 'draft',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reimbursement berhasil dibuat',
-            'data' => $reimbursement->load('employee')
-        ]);
+        return ApiResponse::success('My Reimbursement created successfully', $reimbursement->load('employee'));
     }
 }

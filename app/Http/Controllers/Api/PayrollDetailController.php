@@ -5,44 +5,26 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payroll;
 use App\Models\PayrollDetail;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class PayrollDetailController extends Controller
 {
-    // 📌 RESPONSE HELPER (BIAR CONSISTENT)
-    private function success($message, $data = null, $code = 200)
-    {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $data
-        ], $code);
-    }
-
-    private function error($message, $code = 400, $extra = [])
-    {
-        return response()->json(array_merge([
-            'success' => false,
-            'message' => $message
-        ], $extra), $code);
-    }
-
     // 📌 GET DETAIL BY PAYROLL
-    public function index($payroll_id)
+    public function index($payroll_id): JsonResponse
     {
         $payroll = Payroll::find($payroll_id);
 
         if (!$payroll) {
-            return $this->error('Payroll tidak ditemukan', 404);
+            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
         }
 
         $details = PayrollDetail::where('payroll_id', $payroll_id)->get();
 
-        return $this->success(
-            $details->isEmpty()
-                ? 'Belum ada detail payroll'
-                : 'Berhasil ambil data',
+        return ApiResponse::success(
+            $details->isEmpty() ? 'Belum ada detail payroll' : 'Berhasil ambil data',
             [
                 'payroll' => $payroll,
                 'details' => $details
@@ -51,7 +33,7 @@ class PayrollDetailController extends Controller
     }
 
     // 📌 STORE (BULK)
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
             'payroll_id' => 'required|exists:payrolls,id',
@@ -64,7 +46,7 @@ class PayrollDetailController extends Controller
         $payroll = Payroll::findOrFail($request->payroll_id);
 
         if ($payroll->status !== 'draft') {
-            return $this->error('Payroll sudah diproses', 400);
+            return ApiResponse::error('Payroll sudah diproses', null, 400);
         }
 
         $insertData = collect($request->details)->map(function ($item) use ($request) {
@@ -80,20 +62,20 @@ class PayrollDetailController extends Controller
 
         PayrollDetail::insert($insertData);
 
-        return $this->success('Berhasil tambah detail', $insertData, 201);
+        return ApiResponse::success('Berhasil tambah detail', $insertData, 201);
     }
 
     // 📌 UPDATE (SINGLE)
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $detail = PayrollDetail::with('payroll')->find($id);
 
         if (!$detail) {
-            return $this->error("Detail ID $id tidak ditemukan", 404);
+            return ApiResponse::error("Detail ID $id tidak ditemukan", null, 404);
         }
 
         if (!$detail->payroll || $detail->payroll->status !== 'draft') {
-            return $this->error('Tidak bisa edit detail', 400);
+            return ApiResponse::error('Tidak bisa edit detail', null, 400);
         }
 
         $data = array_filter($request->only(['type', 'name', 'amount']), function ($v) {
@@ -101,16 +83,16 @@ class PayrollDetailController extends Controller
         });
 
         if (empty($data)) {
-            return $this->error('Tidak ada data yang diupdate', 400);
+            return ApiResponse::error('Tidak ada data yang diupdate', null, 400);
         }
 
         $detail->update($data);
 
-        return $this->success('Berhasil update', $detail->load('payroll'));
+        return ApiResponse::success('Berhasil update', $detail->load('payroll'));
     }
 
     // 📌 BULK UPDATE
-    public function bulkUpdate(Request $request)
+    public function bulkUpdate(Request $request): JsonResponse
     {
         $request->validate([
             'details' => 'required|array|min:1',
@@ -127,7 +109,6 @@ class PayrollDetailController extends Controller
 
         try {
             foreach ($request->details as $item) {
-
                 $detail = PayrollDetail::with('payroll')->find($item['id']);
 
                 if (!$detail) {
@@ -160,36 +141,35 @@ class PayrollDetailController extends Controller
 
             DB::commit();
 
-            return $this->success('Bulk update selesai', [
+            return ApiResponse::success('Bulk update selesai', [
                 'updated' => $updated,
                 'errors' => $errors
             ]);
 
         } catch (\Exception $e) {
-
             DB::rollBack();
 
-            return $this->error('Terjadi error', 500, [
+            return ApiResponse::error('Terjadi error', [
                 'error' => $e->getMessage()
-            ]);
+            ], 500);
         }
     }
 
     // 📌 DELETE
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $detail = PayrollDetail::with('payroll')->find($id);
 
         if (!$detail) {
-            return $this->error('Detail tidak ditemukan', 404);
+            return ApiResponse::error('Detail tidak ditemukan', null, 404);
         }
 
         if (!$detail->payroll || $detail->payroll->status !== 'draft') {
-            return $this->error('Tidak bisa hapus detail', 400);
+            return ApiResponse::error('Tidak bisa hapus detail', null, 400);
         }
 
         $detail->delete();
 
-        return $this->success('Berhasil dihapus');
+        return ApiResponse::success('Berhasil dihapus');
     }
 }
