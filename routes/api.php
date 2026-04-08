@@ -59,15 +59,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | LEAVE
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/leaves', [LeaveController::class, 'index']);
-    Route::post('/leaves', [LeaveController::class, 'store']);
-    Route::put('/leaves/{id}', [LeaveController::class, 'update']);
-
-    /*
-    |--------------------------------------------------------------------------
     | USER MANAGEMENT
     |--------------------------------------------------------------------------
     */
@@ -98,6 +89,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware('auth:sanctum')->get('/my-payroll', [PayrollController::class, 'myPayroll']);
 
+
+/*
+|--------------------------------------------------------------------------
+| LEAVE MANAGEMENT (CUTI)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('leaves')->group(function () {
+
+    // ✅ USER
+    Route::get('/', [LeaveController::class, 'index']);
+    Route::post('/', [LeaveController::class, 'store']);
+    Route::get('/my', [LeaveController::class, 'myLeaves']);
+    Route::get('/balance', [LeaveController::class, 'balance']);
+    Route::get('/calendar', [LeaveController::class, 'calendar']);
+
+    // ✅ DETAIL
+    Route::get('/{id}', [LeaveController::class, 'show']);
+    Route::delete('/{id}', [LeaveController::class, 'destroy']);
+});
 });
 /*
 |--------------------------------------------------------------------------
@@ -130,3 +140,15 @@ Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function ()
         });
 
     });
+
+    Route::middleware(['auth:sanctum', 'role:manager,hr,super_admin'])->group(function () {
+
+    Route::prefix('leaves')->group(function () {
+
+        Route::get('/pending', [LeaveController::class, 'pending']);
+        Route::put('/{id}/approve', [LeaveController::class, 'approve']);
+        Route::put('/{id}/reject', [LeaveController::class, 'reject']);
+
+    });
+
+});
