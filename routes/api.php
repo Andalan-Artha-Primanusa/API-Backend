@@ -7,12 +7,29 @@ use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\KpiController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PayrollDetailController;
 use App\Http\Controllers\Api\ReimbursementController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES
+|--------------------------------------------------------------------------
+*/
+
+// AUTH — rate-limited to prevent brute-force
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1');
+
+Route::post('/register', [AuthController::class, 'register'])
+    ->middleware('throttle:3,1');
+
 
 /*
  * |--------------------------------------------------------------------------
@@ -28,8 +45,7 @@ Route::get('/', function () {
 // AUTH
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\PermissionController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +67,12 @@ Route::prefix('auth')->group(function () {
 });
 
 /*
+|--------------------------------------------------------------------------
+| PROTECTED ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+
  * |--------------------------------------------------------------------------
  * | PROTECTED ROUTES (SANCTUM)
  * |--------------------------------------------------------------------------
@@ -68,6 +90,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my', [KpiController::class, 'myKpi']);
     Route::post('/{id}/submit', [KpiController::class, 'submit']);
 
+    // PROFILE
+    Route::apiResource('profiles', UserProfileController::class);
+
+    // EMPLOYEE
+    Route::apiResource('employees', EmployeeController::class);
+
+    // LEAVE
+    Route::prefix('leaves')->group(function () {
+        Route::get('/', [LeaveController::class, 'index']);
+        Route::post('/', [LeaveController::class, 'store']);
+        Route::get('/my', [LeaveController::class, 'myLeaves']);
+        Route::get('/balance', [LeaveController::class, 'balance']);
+        Route::get('/calendar', [LeaveController::class, 'calendar']);
+        Route::get('/{id}', [LeaveController::class, 'show']);
+        Route::put('/{id}', [LeaveController::class, 'update']);
+        Route::delete('/{id}', [LeaveController::class, 'destroy']);
+    });
+
+    // ATTENDANCE
     /*
      * |--------------------------------------------------------------------------
      * | EMPLOYEE SELF-SERVICE
@@ -127,6 +168,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/check-out', [AttendanceController::class, 'checkOut']);
         Route::get('/history', [AttendanceController::class, 'history']);
         Route::get('/today', [AttendanceController::class, 'today']);
+        Route::get('/all', [AttendanceController::class, 'all']);
+        Route::get('/{id}', [AttendanceController::class, 'show']);
+        Route::delete('/{id}', [AttendanceController::class, 'destroy']);
+    });
+
+    Route::get('/my-payroll', [PayrollController::class, 'myPayroll']);
 
         // 🔥 ADMIN (SEMUA DATA ABSENSI)
         Route::get('/all', [AttendanceController::class, 'all']);
@@ -160,6 +207,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 /*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES
+|--------------------------------------------------------------------------
+*/
  * |--------------------------------------------------------------------------
  * | LOCATION (MASTER DATA LOKASI)
  * |--------------------------------------------------------------------------
@@ -168,6 +219,13 @@ Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function ()
     Route::apiResource('locations', LocationController::class);
 });
 
+Route::middleware(['auth:sanctum', 'role:admin,hr,super_admin'])->group(function () {
+    Route::prefix('payroll')->group(function () {
+        Route::get('/', [PayrollController::class, 'index']);
+        Route::post('/', [PayrollController::class, 'store']);
+        Route::get('/{id}', [PayrollController::class, 'show']);
+        Route::put('/{id}', [PayrollController::class, 'update']);
+        Route::delete('/{id}', [PayrollController::class, 'destroy']);
 Route::middleware(['auth:sanctum', 'role:admin,hr,super_admin'])->group(function () {  // PAYROLL
     Route::prefix('payroll')->group(function () {
         Route::get('/', [PayrollController::class, 'index']);
@@ -196,7 +254,17 @@ Route::middleware(['auth:sanctum', 'role:manager,hr,super_admin'])->group(functi
         Route::put('/{id}/approve', [LeaveController::class, 'approve']);
         Route::put('/{id}/reject', [LeaveController::class, 'reject']);
     });
+});
 
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->group(function () {
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
+        Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+    });
     /*
      * |--------------------------------------------------------------------------
      * | KPI MANAGEMENT

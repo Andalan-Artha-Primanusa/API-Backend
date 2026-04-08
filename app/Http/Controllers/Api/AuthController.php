@@ -16,6 +16,7 @@ class AuthController extends Controller
     ) {}
 
     // 📌 REGISTER + AUTO CREATE EMPLOYEE 🔥
+
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -26,6 +27,21 @@ class AuthController extends Controller
 
         $user = $this->userService->register($validated);
 
+<<<<<<< HEAD
+=======
+        // 🔥 AUTO CREATE EMPLOYEE
+        Employee::create([
+            'user_id' => $user->id,
+            'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+            'position' => 'Staff',
+            'department' => 'General',
+            'hire_date' => now(),
+            'salary' => 0, // default
+        ]);
+
+        // 🔑 TOKEN
+
+>>>>>>> 00291747f9f9ea27e31930f137014d77d4b4870f
         $user->tokens()->delete();
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -35,6 +51,10 @@ class AuthController extends Controller
         ], 201);
     }
 
+<<<<<<< HEAD
+=======
+    // 📌 LOGIN
+>>>>>>> 00291747f9f9ea27e31930f137014d77d4b4870f
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([

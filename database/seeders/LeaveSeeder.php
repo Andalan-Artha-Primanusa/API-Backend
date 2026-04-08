@@ -13,8 +13,11 @@ class LeaveSeeder extends Seeder
 {
     public function run(): void
     {
+<<<<<<< HEAD
         $employees = Employee::all();
 
+=======
+>>>>>>> 00291747f9f9ea27e31930f137014d77d4b4870f
         $employees = User::whereHas('roles', function ($q) {
             $q->where('name', User::ROLE_EMPLOYEE);
 
@@ -34,9 +37,12 @@ class LeaveSeeder extends Seeder
                     'type' => 'annual',
                     'reason' => fake()->sentence(),
                     'status' => fake()->randomElement([
+<<<<<<< HEAD
                         'pending',
                         'approved',
                         'rejected',
+=======
+>>>>>>> 00291747f9f9ea27e31930f137014d77d4b4870f
                         LeaveStatus::Pending,
                         LeaveStatus::Approved,
                         LeaveStatus::Rejected,

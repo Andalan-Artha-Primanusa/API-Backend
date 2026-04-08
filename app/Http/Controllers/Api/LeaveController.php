@@ -108,7 +108,7 @@ class LeaveController extends Controller
                 'title' => strtoupper($leave->type),
                 'start' => $leave->start_date,
                 'end'   => $leave->end_date,
-                'status'=> $leave->status
+                'status' => $leave->status
             ];
         });
     }
