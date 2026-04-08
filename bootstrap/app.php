@@ -15,9 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function ($middleware) {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
 
-        // ✅ API STATELESS + CORS
+        // API STATELESS + CORS
         $middleware->api([
             HandleCors::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -25,6 +26,24 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function ($exceptions) {
 
+        // 401 — Unauthenticated (expired/missing token)
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        });
+
+        // 403 — Authorization failures from FormRequest::authorize() or Gate
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden',
+                'errors'  => $e->getMessage(),
+            ], 403);
+        });
+
+        // 422 — Validation errors
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -33,17 +52,28 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
+        // 404 — Model not found
         $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data not found',
             ], 404);
         });
 
+        // 429 — Too Many Requests
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many requests. Please try again later.',
+            ], 429);
+        });
+
+        // 500 — Catch-all (only show details in local)
         $exceptions->render(function (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Internal server error',
+                'error' => app()->isLocal() ? $e->getMessage() : null,
             ], 500);
         });
     })

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -11,13 +12,22 @@ use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
 {
+    /**
+     * Return the Google OAuth redirect URL for the SPA frontend.
+     */
     public function redirect()
     {
-        return Socialite::driver('google')
+        $url = Socialite::driver('google')
             ->stateless()
-            ->redirect();
+            ->redirect()
+            ->getTargetUrl();
+
+        return ApiResponse::success('Google OAuth redirect URL', ['url' => $url]);
     }
 
+    /**
+     * Handle the Google OAuth callback.
+     */
     public function callback()
     {
         try {
@@ -25,30 +35,34 @@ class GoogleAuthController extends Controller
                 ->stateless()
                 ->user();
 
-            $user = User::updateOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
-                    'name' => $googleUser->getName(),
-                    'password' => Hash::make(Str::random(16)),
-                    'role' => User::ROLE_EMPLOYEE
-                ]
-            );
+            $user = User::where('email', $googleUser->getEmail())->first();
 
-            // 🔥 SINGLE LOGIN
-            $user->tokens()->delete();
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'password' => Hash::make(Str::random(32)),
+                ]);
+
+                // Assign default employee role via RBAC pivot table
+                $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
+                if ($employeeRole) {
+                    $user->roles()->attach($employeeRole->id);
+                }
+            }
 
             $token = $user->createToken('google-auth')->plainTextToken;
 
             return ApiResponse::success(
-                'Login Google berhasil',
+                'Google login successful',
                 [
-                    'user' => $user,
+                    'user' => $user->load('roles'),
                     'token' => $token,
                 ]
             );
         } catch (\Throwable $e) {
             return ApiResponse::error(
-                'Google authentication gagal',
+                'Google authentication failed',
                 'Invalid OAuth response',
                 401
             );

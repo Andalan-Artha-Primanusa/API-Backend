@@ -13,6 +13,9 @@ class Location extends Model
         'radius'
     ];
 
-    // ✅ aktifkan timestamps (default sebenarnya true)
-    public $timestamps = true;
+    protected $casts = [
+        'latitude'  => 'decimal:7',
+        'longitude' => 'decimal:7',
+        'radius'    => 'integer',
+    ];
 }

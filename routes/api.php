@@ -28,6 +28,21 @@ Route::get('/', function () {
 // AUTH
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES
+|--------------------------------------------------------------------------
+*/
+
+// AUTH — rate-limited to prevent brute-force
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1');
+
+Route::post('/register', [AuthController::class, 'register'])
+    ->middleware('throttle:3,1');
 
 // GOOGLE SSO
 Route::prefix('auth')->group(function () {
@@ -43,6 +58,12 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     // AUTH
+|--------------------------------------------------------------------------
+| PROTECTED ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/my', [KpiController::class, 'myKpi']);
     Route::post('/{id}/submit', [KpiController::class, 'submit']);
@@ -89,6 +110,18 @@ Route::middleware('auth:sanctum')->group(function () {
      * | ATTENDANCE (ABSENSI)
      * |--------------------------------------------------------------------------
      */
+    // PROFILE
+    Route::apiResource('profiles', UserProfileController::class);
+
+    // EMPLOYEE
+    Route::apiResource('employees', EmployeeController::class);
+
+    // LEAVE
+    Route::get('/leaves', [LeaveController::class, 'index']);
+    Route::post('/leaves', [LeaveController::class, 'store']);
+    Route::put('/leaves/{id}', [LeaveController::class, 'update']);
+
+    // ATTENDANCE
     Route::prefix('attendance')->group(function () {
         Route::post('/check-in', [AttendanceController::class, 'checkIn']);
         Route::post('/check-out', [AttendanceController::class, 'checkOut']);
@@ -228,3 +261,29 @@ Route::middleware(['auth:sanctum', 'role:manager,hr,super_admin'])->group(functi
         Route::get('/statistics', [ReimbursementController::class, 'statistics']);
     });
 });
+        Route::get('/all', [AttendanceController::class, 'all']);
+        Route::get('/{id}', [AttendanceController::class, 'show']);
+        Route::delete('/{id}', [AttendanceController::class, 'destroy']);
+    });
+
+    // LOCATION
+    Route::apiResource('locations', LocationController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN CONTROL (RBAC)
+    |--------------------------------------------------------------------------
+    */
+});
+
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->group(function () {
+
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index']);
+
+        Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
+        Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+    });

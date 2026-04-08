@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Role;
 use App\Repositories\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -13,23 +14,30 @@ class UserService
         protected UserRepositoryInterface $userRepo
     ) {}
 
-    public function register(array $data)
+    public function register(array $data): User
     {
-        return $this->userRepo->create([
+        $user = $this->userRepo->create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role' => User::ROLE_EMPLOYEE
         ]);
+
+        // Assign default employee role via RBAC pivot table
+        $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
+        if ($employeeRole) {
+            $user->roles()->attach($employeeRole->id);
+        }
+
+        return $user;
     }
 
-    public function login(array $data)
+    public function login(array $data): User
     {
         $user = $this->userRepo->findByEmail($data['email']);
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Email atau password salah'],
+                'email' => ['Invalid email or password'],
             ]);
         }
 

@@ -4,116 +4,113 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\UserProfile;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Models\User;
 
 class UserProfileController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * List profiles.
+     * Users with profile.view_all see all profiles; others see only their own.
+     */
+    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        if ($user->isEmployee()) {
+        if ($user->hasPermission('profile.view_all')) {
             return ApiResponse::success(
-                'Data profile sendiri',
-                UserProfile::where('user_id', $user->id)->with('user')->get()
+                'All user profiles',
+                UserProfile::with('user')->paginate(15)
             );
         }
 
-        if ($user->isHR() || $user->isAdmin()) {
-            return ApiResponse::success(
-                'Semua data profile',
-                UserProfile::with('user')->get()
-            );
-        }
+        // Default: own profile only
+        $profile = UserProfile::where('user_id', $user->id)->with('user')->first();
 
-        return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        return ApiResponse::success('Own profile', $profile);
     }
 
-    public function store(Request $request)
+    /**
+     * Create a new profile for the authenticated user.
+     */
+    public function store(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // 🔥 CEK SUDAH ADA PROFILE ATAU BELUM
         if ($user->profile) {
             return ApiResponse::error(
-                'Profile sudah ada',
-                'User sudah memiliki profile',
+                'Profile already exists',
+                'User already has a profile',
                 400
             );
         }
 
         $data = $request->validate([
-            'phone' => 'nullable|string',
-            'address' => 'nullable|string',
-            'birth_date' => 'nullable|date',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+            'birth_date' => 'nullable|date|before:today',
         ]);
 
         $data['user_id'] = $user->id;
 
         $profile = UserProfile::create($data);
 
-        return ApiResponse::success(
-            'User profile berhasil dibuat',
-            $profile,
-            201
-        );
+        return ApiResponse::success('Profile created successfully', $profile, 201);
     }
 
-    public function show($id, Request $request)
+    /**
+     * Show a specific profile.
+     */
+    public function show(Request $request, $id): JsonResponse
+    {
+        $profile = UserProfile::with('user')->findOrFail($id);
+        $user = $request->user();
+
+        // Non-owner must have profile.view_all permission
+        if ($profile->user_id !== $user->id && !$user->hasPermission('profile.view_all')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        return ApiResponse::success('Profile detail', $profile);
+    }
+
+    /**
+     * Update a profile.
+     * Authorization handled by UpdateProfileRequest.
+     */
+    public function update(UpdateProfileRequest $request, $id): JsonResponse
     {
         $profile = UserProfile::findOrFail($id);
         $user = $request->user();
 
-        if ($user->isEmployee() && $profile->user_id !== $user->id) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        // Non-owner must have profile.update permission
+        if ($profile->user_id !== $user->id && !$user->hasPermission('profile.update')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        return ApiResponse::success(
-            'Detail user profile',
-            $profile
-        );
+        $profile->update($request->validated());
+
+        return ApiResponse::success('Profile updated successfully', $profile->fresh());
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Delete a profile.
+     */
+    public function destroy(Request $request, $id): JsonResponse
     {
         $profile = UserProfile::findOrFail($id);
         $user = $request->user();
 
-        if ($user->isEmployee() && $profile->user_id !== $user->id) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
-        }
+        $isOwner = $profile->user_id === $user->id;
 
-        $profile->update($request->only([
-            'phone',
-            'address',
-            'birth_date'
-        ]));
-
-        return ApiResponse::success(
-            'User profile berhasil diupdate',
-            $profile
-        );
-    }
-
-    public function destroy($id, Request $request)
-    {
-        $profile = UserProfile::findOrFail($id);
-        $user = $request->user();
-
-        // employee hanya bisa delete sendiri
-        if ($user->isEmployee() && $profile->user_id !== $user->id) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
-        }
-
-        //  hanya admin/hr boleh delete semua
-        if (!($user->isHR() || $user->isAdmin()) && $profile->user_id !== $user->id) {
-            return ApiResponse::error('Forbidden', 'Unauthorized', 403);
+        if (!$isOwner && !$user->hasPermission('profile.delete')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
         $profile->delete();
 
-        return ApiResponse::success('User profile berhasil dihapus');
+        return ApiResponse::success('Profile deleted successfully');
     }
 }
