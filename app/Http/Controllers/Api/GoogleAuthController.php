@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
-use App\Models\Role;
-use App\Models\User;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
+use App\Services\UserService;
 
 class GoogleAuthController extends Controller
 {
+    public function __construct(
+        protected UserService $userService
+    ) {}
     /**
      * Return the Google OAuth redirect URL for the SPA frontend.
      */
@@ -35,23 +35,16 @@ class GoogleAuthController extends Controller
                 ->stateless()
                 ->user();
 
-            $user = User::where('email', $googleUser->getEmail())->first();
-
-            if (!$user) {
-                $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'password' => Hash::make(Str::random(32)),
-                ]);
-
-                // Assign default employee role via RBAC pivot table
-                $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
-                if ($employeeRole) {
-                    $user->roles()->attach($employeeRole->id);
-                }
+            // ✅ VALIDASI EMAIL (SETELAH ambil user)
+            if (!$googleUser->getEmail()) {
+                return ApiResponse::error('Email not provided by Google', null, 400);
             }
 
-            $token = $user->createToken('google-auth')->plainTextToken;
+            $user = $this->userService->findOrCreateFromGoogle($googleUser);
+
+            // 🔥 samakan dengan login biasa
+            $user->tokens()->delete();
+            $token = $user->createToken('api-token')->plainTextToken;
 
             return ApiResponse::success(
                 'Google login successful',
@@ -60,11 +53,16 @@ class GoogleAuthController extends Controller
                     'token' => $token,
                 ]
             );
+
         } catch (\Throwable $e) {
+            \Log::error('Google SSO Error', [
+                'message' => $e->getMessage(),
+            ]);
+
             return ApiResponse::error(
                 'Google authentication failed',
-                'Invalid OAuth response',
-                401
+                'Internal server error',
+                500
             );
         }
     }
