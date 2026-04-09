@@ -18,13 +18,13 @@ class PayrollDetailController extends Controller
         $payroll = Payroll::find($payroll_id);
 
         if (!$payroll) {
-            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
+            return ApiResponse::error('Payroll not found', null, 404);
         }
 
         $details = PayrollDetail::where('payroll_id', $payroll_id)->get();
 
         return ApiResponse::success(
-            $details->isEmpty() ? 'Belum ada detail payroll' : 'Berhasil ambil data',
+            $details->isEmpty() ? 'No payroll details available' : 'Data retrieved successfully',
             [
                 'payroll' => $payroll,
                 'details' => $details
@@ -46,7 +46,7 @@ class PayrollDetailController extends Controller
         $payroll = Payroll::findOrFail($request->payroll_id);
 
         if ($payroll->status !== 'draft') {
-            return ApiResponse::error('Payroll sudah diproses', null, 400);
+            return ApiResponse::error('Payroll has already been processed', null, 400);
         }
 
         $insertData = collect($request->details)->map(function ($item) use ($request) {
@@ -62,7 +62,7 @@ class PayrollDetailController extends Controller
 
         PayrollDetail::insert($insertData);
 
-        return ApiResponse::success('Berhasil tambah detail', $insertData, 201);
+        return ApiResponse::success('Payroll detail created successfully', $insertData, 201);
     }
 
     // 📌 UPDATE (SINGLE)
@@ -71,11 +71,11 @@ class PayrollDetailController extends Controller
         $detail = PayrollDetail::with('payroll')->find($id);
 
         if (!$detail) {
-            return ApiResponse::error("Detail ID $id tidak ditemukan", null, 404);
+            return ApiResponse::error("Detail ID $id not found", null, 404);
         }
 
         if (!$detail->payroll || $detail->payroll->status !== 'draft') {
-            return ApiResponse::error('Tidak bisa edit detail', null, 400);
+            return ApiResponse::error('Cannot edit payroll detail', null, 400);
         }
 
         $data = array_filter($request->only(['type', 'name', 'amount']), function ($v) {
@@ -83,12 +83,12 @@ class PayrollDetailController extends Controller
         });
 
         if (empty($data)) {
-            return ApiResponse::error('Tidak ada data yang diupdate', null, 400);
+            return ApiResponse::error('No data to update', null, 400);
         }
 
         $detail->update($data);
 
-        return ApiResponse::success('Berhasil update', $detail->load('payroll'));
+        return ApiResponse::success('Detail updated successfully', $detail->load('payroll'));
     }
 
     // 📌 BULK UPDATE
@@ -114,7 +114,7 @@ class PayrollDetailController extends Controller
                 if (!$detail) {
                     $errors[] = [
                         'id' => $item['id'],
-                        'message' => 'Detail tidak ditemukan'
+                        'message' => 'Detail not found'
                     ];
                     continue;
                 }
@@ -122,7 +122,7 @@ class PayrollDetailController extends Controller
                 if (!$detail->payroll || $detail->payroll->status !== 'draft') {
                     $errors[] = [
                         'id' => $item['id'],
-                        'message' => 'Tidak bisa edit (bukan draft)'
+                        'message' => 'Cannot edit (not in draft status)'
                     ];
                     continue;
                 }
@@ -141,7 +141,7 @@ class PayrollDetailController extends Controller
 
             DB::commit();
 
-            return ApiResponse::success('Bulk update selesai', [
+            return ApiResponse::success('Bulk update completed successfully', [
                 'updated' => $updated,
                 'errors' => $errors
             ]);
@@ -149,7 +149,7 @@ class PayrollDetailController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return ApiResponse::error('Terjadi error', [
+            return ApiResponse::error('An error occurred', [
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -161,15 +161,15 @@ class PayrollDetailController extends Controller
         $detail = PayrollDetail::with('payroll')->find($id);
 
         if (!$detail) {
-            return ApiResponse::error('Detail tidak ditemukan', null, 404);
+            return ApiResponse::error('Detail not found', null, 404);
         }
 
         if (!$detail->payroll || $detail->payroll->status !== 'draft') {
-            return ApiResponse::error('Tidak bisa hapus detail', null, 400);
+            return ApiResponse::error('Cannot delete payroll detail', null, 400);
         }
 
         $detail->delete();
 
-        return ApiResponse::success('Berhasil dihapus');
+        return ApiResponse::success('Detail deleted successfully');
     }
 }
