@@ -1,6 +1,6 @@
 # POSTMAN CURL COMMANDS - HRIS API Testing
 
-**Base URL:** `https://moccasin-crab-693879.hostingersite.com/`
+**Base URL:** `https://moccasin-crab-693879.hostingersite.com/api`
 
 > Replace `{TOKEN}` with your actual Bearer token from login response
 > Replace `{id}`, `{employee_id}`, `{payroll_id}` with actual IDs from your database
@@ -11,13 +11,13 @@
 
 ### 1. Health Check
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api" \
   -H "Accept: application/json"
 ```
 
 ### 2. Register
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/register" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiregister" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -30,7 +30,7 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/register" \
 
 ### 3. Login
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/login" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apilogin" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -41,13 +41,13 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/login" \
 
 ### 4. Google Auth Redirect
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/auth/google" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiauth/google" \
   -H "Accept: application/json"
 ```
 
 ### 5. Google Auth Callback
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/auth/google/callback?code=CODE&state=STATE" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiauth/google/callback?code=CODE&state=STATE" \
   -H "Accept: application/json"
 ```
 
@@ -66,14 +66,14 @@ Authorization: Bearer {TOKEN}
 
 ### Get All Profiles
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/profiles" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiprofiles" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create Profile
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/profiles" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiprofiles" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -88,14 +88,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/profiles" \
 
 ### Get Profile Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/profiles/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiprofiles/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update Profile
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/profiles/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apiprofiles/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -110,7 +110,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/profiles/{id}" \
 
 ### Delete Profile
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/profiles/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apiprofiles/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -121,35 +121,35 @@ curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/profiles/{id}" \
 
 ### Get My KPI
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/my/kpi" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apimy/kpi" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Submit My KPI
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/my/kpi/{id}/submit" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apimy/kpi/{id}/submit" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get My Reimbursements
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/my/reimbursements" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apimy/reimbursements" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Filter My Reimbursements by Status
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/my/reimbursements?status=draft" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apimy/reimbursements?status=draft" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create My Reimbursement
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/my/reimbursements" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apimy/reimbursements" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -165,35 +165,35 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/my/reimbursements" 
 
 ### Submit My Reimbursement
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/my/reimbursements/{id}/submit" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apimy/reimbursements/{id}/submit" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get My Payroll
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/my/payroll" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apimy/payroll" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get My Leaves
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/leaves/my" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apileaves/my" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get My Leave Balance
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/leaves/balance" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apileaves/balance" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Check-in Attendance
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/attendance/check-in" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiattendance/check-in" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -205,21 +205,21 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/attendance/check-in
 
 ### Check-out Attendance
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/attendance/check-out" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiattendance/check-out" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Attendance History
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/attendance/history" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiattendance/history" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Today's Attendance
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/attendance/today" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiattendance/today" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -230,14 +230,14 @@ curl -X GET "https://moccasin-crab-693879.hostingersite.com/attendance/today" \
 
 ### Get All Leaves
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/leaves" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apileaves" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create Leave Request
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/leaves" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apileaves" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -252,21 +252,21 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/leaves" \
 
 ### Get Leave Calendar
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/leaves/calendar" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apileaves/calendar" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Leave Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/leaves/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apileaves/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update Leave Request
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/leaves/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apileaves/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -280,21 +280,21 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/leaves/{id}" \
 
 ### Delete Leave Request
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/leaves/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apileaves/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Pending Leaves (Manager/HR/Admin)
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/leaves/pending" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apileaves/pending" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Approve Leave (Manager/HR/Admin)
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/leaves/{id}/approve" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apileaves/{id}/approve" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -305,7 +305,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/leaves/{id}/approve"
 
 ### Reject Leave (Manager/HR/Admin)
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/leaves/{id}/reject" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apileaves/{id}/reject" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -320,14 +320,14 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/leaves/{id}/reject" 
 
 ### Get All Employees
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/employees" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiemployees" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create Employee
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/employees" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiemployees" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -343,14 +343,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/employees" \
 
 ### Get Employee Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/employees/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiemployees/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update Employee
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/employees/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apiemployees/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -363,7 +363,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/employees/{id}" \
 
 ### Delete Employee
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/employees/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apiemployees/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -374,21 +374,21 @@ curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/employees/{id}" \
 
 ### Get All Attendance Records (Admin)
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/attendance/all" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiattendance/all" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Attendance Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/attendance/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiattendance/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Delete Attendance Record
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/attendance/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apiattendance/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -399,14 +399,14 @@ curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/attendance/{id}" 
 
 ### Get All Payroll
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/payroll" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apipayroll" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create Payroll
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apipayroll" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -420,7 +420,7 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll" \
 
 ### Generate Monthly Payroll (Bulk)
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll/generate/monthly" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apipayroll/generate/monthly" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -431,14 +431,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll/generate/mo
 
 ### Get Payroll Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/payroll/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apipayroll/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update Payroll
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/payroll/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apipayroll/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -450,21 +450,21 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/payroll/{id}" \
 
 ### Delete Payroll
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/payroll/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apipayroll/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Approve Payroll
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll/{id}/approve" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apipayroll/{id}/approve" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Mark Payroll as Paid
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll/{id}/pay" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apipayroll/{id}/pay" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -475,14 +475,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll/{id}/pay" \
 
 ### Get Payroll Details
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/payroll-details/{payroll_id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apipayroll-details/{payroll_id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Add Payroll Details (Bulk)
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll-details" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apipayroll-details" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -505,7 +505,7 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll-details" \
 
 ### Update Payroll Detail (Single)
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/payroll-details/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apipayroll-details/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -518,7 +518,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/payroll-details/{id}
 
 ### Bulk Update Payroll Details
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll-details/bulk-update" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apipayroll-details/bulk-update" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -538,7 +538,7 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/payroll-details/bul
 
 ### Delete Payroll Detail
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/payroll-details/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apipayroll-details/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -549,14 +549,14 @@ curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/payroll-details/{
 
 ### Get All KPIs
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/kpis" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apikpis" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create KPI
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/kpis" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apikpis" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -570,14 +570,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/kpis" \
 
 ### Get KPI Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/kpis/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apikpis/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update KPI
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/kpis/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apikpis/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -590,35 +590,35 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/kpis/{id}" \
 
 ### Delete KPI
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/kpis/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apikpis/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get KPIs by Employee
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/kpis/employee/{employee_id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apikpis/employee/{employee_id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Approve KPI
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/kpis/{id}/approve" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apikpis/{id}/approve" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get My KPIs
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/my/kpi" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apimy/kpi" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Submit KPI for Review
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/my/kpi/{id}/submit" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apimy/kpi/{id}/submit" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -629,35 +629,35 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/my/kpi/{id}/submit"
 
 ### Get All Reimbursements (with filters)
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Filter by Status
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements?status=draft" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements?status=draft" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Filter by Category
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements?category=travel" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements?category=travel" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Filter by Employee
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements?employee_id=1" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements?employee_id=1" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create Reimbursement (by Manager/HR)
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/reimbursements" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apireimbursements" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -674,14 +674,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/reimbursements" \
 
 ### Get Reimbursement Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update Reimbursement
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apireimbursements/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -694,14 +694,14 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}"
 
 ### Delete Reimbursement
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apireimbursements/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Approve Reimbursement
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}/approve" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apireimbursements/{id}/approve" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -712,7 +712,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}/
 
 ### Reject Reimbursement
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}/reject" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apireimbursements/{id}/reject" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -723,28 +723,28 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}/
 
 ### Mark Reimbursement as Paid
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/reimbursements/{id}/mark-paid" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apireimbursements/{id}/mark-paid" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Pending Reimbursements
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements/pending" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements/pending" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Reimbursements by Employee
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements/employee/{employee_id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements/employee/{employee_id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Get Reimbursement Statistics
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements/statistics?employee_id=1" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apireimbursements/statistics?employee_id=1" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -755,14 +755,14 @@ curl -X GET "https://moccasin-crab-693879.hostingersite.com/reimbursements/stati
 
 ### Get All Locations
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/locations" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apilocations" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Create Location
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/locations" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apilocations" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -776,14 +776,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/locations" \
 
 ### Get Location Detail
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/locations/{id}" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apilocations/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Update Location
 ```bash
-curl -X PUT "https://moccasin-crab-693879.hostingersite.com/locations/{id}" \
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/apilocations/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -795,7 +795,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/locations/{id}" \
 
 ### Delete Location
 ```bash
-curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/locations/{id}" \
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/apilocations/{id}" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -806,14 +806,14 @@ curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/locations/{id}" \
 
 ### Get All Users
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/admin/users" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiadmin/users" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Assign Roles to User
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/admin/users/{id}/assign-role" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiadmin/users/{id}/assign-role" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -828,14 +828,14 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/admin/users/{id}/as
 
 ### Get All Roles
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/admin/roles" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiadmin/roles" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
 
 ### Assign Permissions to Role
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/admin/roles/{id}/assign-permission" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apiadmin/roles/{id}/assign-permission" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -846,7 +846,7 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/admin/roles/{id}/as
 
 ### Get All Permissions
 ```bash
-curl -X GET "https://moccasin-crab-693879.hostingersite.com/admin/permissions" \
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/apiadmin/permissions" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -857,7 +857,7 @@ curl -X GET "https://moccasin-crab-693879.hostingersite.com/admin/permissions" \
 
 ### Logout
 ```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/logout" \
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/apilogout" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
@@ -900,11 +900,11 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/logout" \
 
 1. Open Postman
 2. Create new Environment with variables:
-   - `base_url`: `https://moccasin-crab-693879.hostingersite.com/`
+   - `base_url`: `https://moccasin-crab-693879.hostingersite.com/api`
    - `token`: (will be filled after login)
 
 3. Update curl commands to use:
-   - `{{base_url}}` instead of `https://moccasin-crab-693879.hostingersite.com/`
+   - `{{base_url}}` instead of `https://moccasin-crab-693879.hostingersite.com/api`
    - `{{token}}` instead of `{TOKEN}`
 
 4. After login, set token in environment variable for reuse
