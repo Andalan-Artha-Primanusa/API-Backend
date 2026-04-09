@@ -121,7 +121,7 @@ class ReimbursementController extends Controller
             return ApiResponse::error('Only submitted reimbursements can be approved', null, 400);
         }
 
-        $reimbursement->approve(auth()->id(), $request->note);
+        $reimbursement->approve($user->id, $request->note);
 
         return ApiResponse::success('Reimbursement approved', $reimbursement->load('employee', 'approver'));
     }
@@ -143,12 +143,12 @@ class ReimbursementController extends Controller
             'note' => 'required|string|max:500'
         ]);
 
-        $reimbursement->reject(auth()->id(), $request->note);
+        $reimbursement->reject($user->id, $request->note);
 
         return ApiResponse::success('Reimbursement rejected', $reimbursement->load('employee', 'approver'));
     }
 
-    public function markAsPaid($id): JsonResponse
+    public function markAsPaid(Request $request, $id): JsonResponse
     {
         $user = $request->user();
 

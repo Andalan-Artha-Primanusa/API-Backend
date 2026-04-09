@@ -32,7 +32,7 @@ class PayrollController extends Controller
         $data = Payroll::with(['employee', 'details'])->latest()->get();
 
         return ApiResponse::success(
-            $data->isEmpty() ? 'Data payroll belum ada' : 'Berhasil ambil data payroll',
+            $data->isEmpty() ? 'No payroll data available' : 'Payroll data retrieved successfully',
             $data
         );
     }
@@ -48,7 +48,7 @@ class PayrollController extends Controller
             ->get();
 
         return ApiResponse::success(
-            $data->isEmpty() ? 'Belum ada payroll' : 'Berhasil ambil payroll',
+            $data->isEmpty() ? 'No payroll data found' : 'Payroll retrieved successfully',
             $data
         );
     }
@@ -75,7 +75,7 @@ class PayrollController extends Controller
                 ->exists();
 
             if ($exists) {
-                return ApiResponse::error('Payroll sudah ada untuk bulan ini', null, 400);
+                return ApiResponse::error('Payroll for this period already exists', null, 400);
             }
 
             try {
@@ -86,7 +86,7 @@ class PayrollController extends Controller
                     $request->bonus ?? 0
                 );
 
-                return ApiResponse::success('Payroll berhasil dibuat', $payroll, 201);
+                return ApiResponse::success('Payroll created successfully', $payroll, 201);
             } catch (\DomainException $e) {
                 return ApiResponse::error($e->getMessage(), null, 400);
             }
@@ -109,13 +109,13 @@ class PayrollController extends Controller
         try {
             $result = $this->payrollService->generateMonthlyBulk($request->period);
             
-            return ApiResponse::success('Generate payroll berhasil', [
+            return ApiResponse::success('Payroll generation completed successfully', [
                 'total' => count($result),
                 'data' => $result
             ]);
 
         } catch (\Exception $e) {
-            return ApiResponse::error('Error generate payroll', [
+            return ApiResponse::error('Error generating payroll', [
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -127,10 +127,10 @@ class PayrollController extends Controller
         $data = Payroll::with(['employee', 'details'])->find($id);
 
         if (!$data) {
-            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
+            return ApiResponse::error('Payroll not found', null, 404);
         }
 
-        return ApiResponse::success('Berhasil ambil detail payroll', $data);
+        return ApiResponse::success('Payroll details retrieved successfully', $data);
     }
 
     // 📌 UPDATE
@@ -139,11 +139,11 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
+            return ApiResponse::error('Payroll not found', null, 404);
         }
 
         if ($payroll->status !== 'draft') {
-            return ApiResponse::error('Tidak bisa edit payroll yang sudah diproses', null, 400);
+            return ApiResponse::error('Cannot edit payroll that has been processed', null, 400);
         }
 
         $validated = $request->validate([
@@ -153,7 +153,7 @@ class PayrollController extends Controller
 
         $payroll->update($validated);
 
-        return ApiResponse::success('Berhasil update payroll', $payroll->fresh());
+        return ApiResponse::success('Payroll updated successfully', $payroll->fresh());
     }
 
     // 📌 DELETE
@@ -162,12 +162,12 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
+            return ApiResponse::error('Payroll not found', null, 404);
         }
 
         $payroll->delete();
 
-        return ApiResponse::success('Deleted');
+        return ApiResponse::success('Payroll deleted successfully');
     }
 
     // 🔥 APPROVE
@@ -182,11 +182,11 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
+            return ApiResponse::error('Payroll not found', null, 404);
         }
 
         if ($payroll->status !== 'draft') {
-            return ApiResponse::error('Payroll sudah diproses', null, 400);
+            return ApiResponse::error('Payroll has already been processed', null, 400);
         }
 
         $payroll->update(['status' => 'approved']);
@@ -206,11 +206,11 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
-            return ApiResponse::error('Payroll tidak ditemukan', null, 404);
+            return ApiResponse::error('Payroll not found', null, 404);
         }
 
         if ($payroll->status !== 'approved') {
-            return ApiResponse::error('Payroll harus di-approve dulu', null, 400);
+            return ApiResponse::error('Payroll must be approved first', null, 400);
         }
 
         $payroll->update(['status' => 'paid']);
