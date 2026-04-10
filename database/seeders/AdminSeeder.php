@@ -89,8 +89,8 @@ class AdminSeeder extends Seeder
             $config['default_pass']
         );
 
-        // Create or update user
-        $user = User::firstOrCreate(
+        // Create or UPDATE user (ensures password & role are always current)
+        $user = User::updateOrCreate(
             ['email' => $config['email']],
             [
                 'name'     => $config['name'],
@@ -100,7 +100,7 @@ class AdminSeeder extends Seeder
 
         // Assign role (sync to avoid duplicates)
         if (isset($roles[$config['role']])) {
-            $user->roles()->syncWithoutDetaching([$roles[$config['role']]->id]);
+            $user->roles()->sync([$roles[$config['role']]->id]);
         }
 
         // Create employee record if not exists
