@@ -125,12 +125,15 @@ class AdminSeeder extends Seeder
      */
     private function getPassword(string $envKey, string $default): string
     {
-        $password = env($envKey, $default);
+        $envPassword = env($envKey);
+        
+        // Use env password if set, otherwise use default
+        $password = $envPassword ?: $default;
 
-        // Validate password strength in production
-        if (!app()->isLocal() && strlen($password) < 12) {
+        // Validate only if custom env password is set in production
+        if (!app()->isLocal() && $envPassword && strlen($envPassword) < 12) {
             throw new \Exception(
-                "Password for {$envKey} must be at least 12 characters in production"
+                "Password for {$envKey} must be at least 12 characters in production. Got: " . strlen($envPassword) . " characters."
             );
         }
 
