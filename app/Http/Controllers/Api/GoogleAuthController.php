@@ -32,7 +32,6 @@ class GoogleAuthController extends Controller
             return ApiResponse::success('Google OAuth redirect URL', ['url' => $url]);
 
         } catch (\Exception $e) {
-            \Log::error('Google Redirect Error', ['error' => $e->getMessage()]);
             return ApiResponse::error('Failed to get redirect URL', null, 500);
         }
     }
@@ -85,14 +84,9 @@ class GoogleAuthController extends Controller
             ]);
 
         } catch (InvalidStateException $e) {
-            \Log::warning('Google OAuth State Mismatch', ['error' => $e->getMessage()]);
             return ApiResponse::error('Invalid OAuth state', null, 401);
 
         } catch (\Throwable $e) {
-            \Log::error('Google SSO Error', [
-                'error'   => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
-            ]);
             return ApiResponse::error('Google authentication failed', null, 500);
         }
     }

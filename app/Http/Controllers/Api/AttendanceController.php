@@ -66,7 +66,6 @@ class AttendanceController extends Controller
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 400);
         } catch (\Exception $e) {
-            \Log::error('CheckIn Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Check-in failed', null, 500);
         }
     }
@@ -86,7 +85,6 @@ class AttendanceController extends Controller
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 400);
         } catch (\Exception $e) {
-            \Log::error('CheckOut Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Check-out failed', null, 500);
         }
     }
@@ -104,7 +102,6 @@ class AttendanceController extends Controller
 
             return ApiResponse::success('Attendance history', $data);
         } catch (\Exception $e) {
-            \Log::error('History Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch history', null, 500);
         }
     }
@@ -122,7 +119,6 @@ class AttendanceController extends Controller
 
             return ApiResponse::success('Today attendance', $attendance);
         } catch (\Exception $e) {
-            \Log::error('Today Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch today attendance', null, 500);
         }
     }
@@ -182,7 +178,6 @@ class AttendanceController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid query parameters', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('All Attendance Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch records', null, 500);
         }
     }
@@ -225,7 +220,6 @@ class AttendanceController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Show Attendance Error', ['id' => $id, 'user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch record', null, 500);
         }
     }
@@ -254,19 +248,12 @@ class AttendanceController extends Controller
 
             $attendance->delete();
 
-            \Log::info('Attendance Deleted', [
-                'deleted_id' => $id,
-                'deleted_by' => $request->user()->id,
-                'data' => $deleted
-            ]);
-
             return ApiResponse::success('Attendance record deleted', $deleted);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return ApiResponse::error('Not found', 'Attendance record not found', 404);
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Delete Attendance Error', ['id' => $id, 'user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to delete record', null, 500);
         }
     }

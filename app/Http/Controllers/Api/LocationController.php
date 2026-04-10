@@ -66,7 +66,6 @@ class LocationController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid query parameters', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Location Index Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch locations', null, 500);
         }
     }
@@ -86,14 +85,11 @@ class LocationController extends Controller
 
             $location = Location::create($validated);
 
-            \Log::info('Location Created', ['location_id' => $location->id, 'created_by' => $request->user()->id]);
-
             return ApiResponse::success('Location created successfully', $location, 201);
 
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Location Store Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to create location', null, 500);
         }
     }
@@ -118,7 +114,6 @@ class LocationController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Location Show Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch location', null, 500);
         }
     }
@@ -144,8 +139,6 @@ class LocationController extends Controller
 
             $location->update($validated);
 
-            \Log::info('Location Updated', ['location_id' => $id, 'updated_by' => $request->user()->id]);
-
             return ApiResponse::success('Location updated successfully', $location->fresh());
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -153,7 +146,6 @@ class LocationController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Location Update Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to update location', null, 500);
         }
     }
@@ -174,8 +166,6 @@ class LocationController extends Controller
             $deleted = $location->toArray();
             $location->delete();
 
-            \Log::info('Location Deleted', ['deleted_id' => $id, 'deleted_by' => $request->user()->id]);
-
             return ApiResponse::success('Location deleted successfully', $deleted);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -183,7 +173,6 @@ class LocationController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Location Delete Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to delete location', null, 500);
         }
     }

@@ -64,7 +64,6 @@ class KpiController extends Controller
             return ApiResponse::success('KPIs retrieved successfully', $kpis);
 
         } catch (\Exception $e) {
-            \Log::error('KPI Index Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch KPIs', null, 500);
         }
     }
@@ -91,7 +90,6 @@ class KpiController extends Controller
             );
 
         } catch (\Exception $e) {
-            \Log::error('KPI Store Error', ['error' => $e->getMessage()]);
             return ApiResponse::error('Failed to create KPI', null, 500);
         }
     }
@@ -117,7 +115,6 @@ class KpiController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('KPI Show Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch KPI', null, 500);
         }
     }
@@ -159,7 +156,6 @@ class KpiController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('KPI Update Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to update KPI', null, 500);
         }
     }
@@ -178,8 +174,6 @@ class KpiController extends Controller
             $deleted = $kpi->toArray();
             $kpi->delete();
 
-            \Log::info('KPI Deleted', ['deleted_id' => $id, 'deleted_by' => $request->user()->id]);
-
             return ApiResponse::success('KPI deleted successfully', $deleted);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -187,7 +181,6 @@ class KpiController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('KPI Delete Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to delete KPI', null, 500);
         }
     }
@@ -213,7 +206,6 @@ class KpiController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('KPI By Employee Error', ['employee_id' => $employee_id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch KPIs', null, 500);
         }
     }
@@ -236,8 +228,6 @@ class KpiController extends Controller
 
             $kpi->update(['status' => 'approved']);
 
-            \Log::info('KPI Approved', ['kpi_id' => $id, 'approved_by' => $request->user()->id]);
-
             return ApiResponse::success('KPI approved successfully', $kpi->fresh(self::KPI_RELATIONS));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -245,7 +235,6 @@ class KpiController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('KPI Approve Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to approve KPI', null, 500);
         }
     }
@@ -273,7 +262,6 @@ class KpiController extends Controller
             return ApiResponse::success('My KPIs', $kpis);
 
         } catch (\Exception $e) {
-            \Log::error('My KPI Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch your KPIs', null, 500);
         }
     }
@@ -303,8 +291,6 @@ class KpiController extends Controller
 
             $kpi->update(['status' => 'submitted']);
 
-            \Log::info('KPI Submitted', ['kpi_id' => $id, 'submitted_by' => $request->user()->id]);
-
             return ApiResponse::success('KPI submitted successfully', $kpi->fresh(self::KPI_RELATIONS));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -312,7 +298,6 @@ class KpiController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('KPI Submit Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to submit KPI', null, 500);
         }
     }

@@ -67,7 +67,6 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Registration Error', ['email' => $request->email ?? 'unknown', 'error' => $e->getMessage()]);
             return ApiResponse::error('Registration failed', null, 500);
         }
     }
@@ -115,7 +114,6 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Login Error', ['email' => $request->email ?? 'unknown', 'error' => $e->getMessage()]);
             return ApiResponse::error('Login failed', null, 500);
         }
     }
@@ -138,7 +136,6 @@ class AuthController extends Controller
             return ApiResponse::success('Logout successful');
 
         } catch (\Exception $e) {
-            \Log::error('Logout Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Logout failed', null, 500);
         }
     }

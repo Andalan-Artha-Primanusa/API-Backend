@@ -56,7 +56,6 @@ class UserProfileController extends Controller
             return ApiResponse::success('Own profile', $profile);
 
         } catch (\Exception $e) {
-            \Log::error('Profile Index Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch profiles', null, 500);
         }
     }
@@ -104,8 +103,6 @@ class UserProfileController extends Controller
             $validated['user_id'] = $user->id;
             $profile = UserProfile::create($validated);
 
-            \Log::info('Profile Created', ['user_id' => $user->id, 'profile_id' => $profile->id]);
-
             return ApiResponse::success(
                 'Profile created successfully',
                 $profile->load(self::PROFILE_RELATIONS),
@@ -115,7 +112,6 @@ class UserProfileController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Profile Store Error', ['user_id' => $request->user()->id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to create profile', null, 500);
         }
     }
@@ -155,7 +151,6 @@ class UserProfileController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Profile Show Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to fetch profile', null, 500);
         }
     }
@@ -180,8 +175,6 @@ class UserProfileController extends Controller
 
             $profile->update($request->validated());
 
-            \Log::info('Profile Updated', ['profile_id' => $id, 'updated_by' => $user->id]);
-
             return ApiResponse::success(
                 'Profile updated successfully',
                 $profile->fresh()->load(self::PROFILE_RELATIONS)
@@ -192,7 +185,6 @@ class UserProfileController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Profile Update Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to update profile', null, 500);
         }
     }
@@ -222,8 +214,6 @@ class UserProfileController extends Controller
             $deleted = $profile->toArray();
             $profile->delete();
 
-            \Log::info('Profile Deleted', ['deleted_id' => $id, 'deleted_by' => $user->id]);
-
             return ApiResponse::success('Profile deleted successfully', $deleted);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -231,7 +221,6 @@ class UserProfileController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
-            \Log::error('Profile Delete Error', ['id' => $id, 'error' => $e->getMessage()]);
             return ApiResponse::error('Failed to delete profile', null, 500);
         }
     }
