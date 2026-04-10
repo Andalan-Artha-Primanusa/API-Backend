@@ -24,7 +24,7 @@ class AdminSeeder extends Seeder
             'department'    => 'Management',
             'salary'        => 20000000,
             'env_password'  => 'SUPER_ADMIN_PASSWORD',
-            'default_pass'  => 'superadmin123',
+            'default_pass'  => 'SuperAdmin@123',
         ],
         [
             'email'         => 'admin@gmail.com',
@@ -35,7 +35,7 @@ class AdminSeeder extends Seeder
             'department'    => 'Management',
             'salary'        => 15000000,
             'env_password'  => 'ADMIN_PASSWORD',
-            'default_pass'  => 'admin123',
+            'default_pass'  => 'Admin@123456',
         ],
         [
             'email'         => 'employee@gmail.com',
@@ -46,7 +46,7 @@ class AdminSeeder extends Seeder
             'department'    => 'General',
             'salary'        => 5000000,
             'env_password'  => 'EMPLOYEE_PASSWORD',
-            'default_pass'  => 'employee123',
+            'default_pass'  => 'Employee@1234',
         ],
     ];
 
