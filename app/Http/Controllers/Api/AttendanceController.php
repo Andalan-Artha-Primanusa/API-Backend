@@ -13,34 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
-    /**
-     * Define permission requirements per action
-     */
-    private const PERMISSION_MAP = [
-        'checkIn'  => 'attendance.check_in',
-        'checkOut' => 'attendance.check_out',
-        'history'  => 'attendance.view_own',
-        'today'    => 'attendance.view_own',
-        'all'      => 'attendance.view_all',
-        'show'     => 'attendance.view_all',
-        'destroy'  => 'attendance.delete',
-    ];
-
     public function __construct(
         protected AttendanceService $attendanceService
-    ) {
-        // Apply permission middleware to all methods
-        $this->middleware(function ($request, $next) {
-            $action = $request->route()->getActionMethod();
-            $permission = self::PERMISSION_MAP[$action] ?? null;
-
-            if ($permission && !$request->user()->hasPermission($permission)) {
-                return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
-            }
-
-            return $next($request);
-        });
-    }
+    ) {}
 
     /**
      * Check-in with geofencing validation.
@@ -50,6 +25,10 @@ class AttendanceController extends Controller
      */
     public function checkIn(CheckInRequest $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.check_in')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             $result = $this->attendanceService->checkIn(
                 $request->user(),
@@ -78,6 +57,10 @@ class AttendanceController extends Controller
      */
     public function checkOut(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.check_out')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             $attendance = $this->attendanceService->checkOut($request->user());
 
@@ -97,6 +80,10 @@ class AttendanceController extends Controller
      */
     public function history(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.view_own')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             $data = $this->attendanceService->getHistory($request->user());
 
@@ -114,6 +101,10 @@ class AttendanceController extends Controller
      */
     public function today(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.view_own')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             $attendance = $this->attendanceService->getToday($request->user());
 
@@ -139,6 +130,10 @@ class AttendanceController extends Controller
      */
     public function all(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.view_all')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             // Validate query parameters
             $validated = $request->validate([
@@ -233,6 +228,10 @@ class AttendanceController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.delete')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             // Validate ID
             if ($id <= 0) {

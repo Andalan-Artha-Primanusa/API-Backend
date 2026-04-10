@@ -12,35 +12,14 @@ use Illuminate\Validation\ValidationException;
 class LocationController extends Controller
 {
     /**
-     * Permission names for location operations
-     */
-    private const PERMISSION_MAP = [
-        'index'   => 'location.view',
-        'show'    => 'location.view',
-        'store'   => 'location.create',
-        'update'  => 'location.update',
-        'destroy' => 'location.delete',
-    ];
-
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            $action = $request->route()->getActionMethod();
-            $permission = self::PERMISSION_MAP[$action] ?? null;
-
-            if ($permission && !$request->user()->hasPermission($permission)) {
-                return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
-            }
-
-            return $next($request);
-        });
-    }
-
-    /**
      * GET /locations - List all locations with pagination
      */
     public function index(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('location.view')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
         try {
             $validated = $request->validate([
                 'per_page' => 'sometimes|integer|min:1|max:100',
@@ -75,6 +54,10 @@ class LocationController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('location.create')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
         try {
             $validated = $request->validate([
                 'name'      => 'required|string|max:255|unique:locations,name',
@@ -99,6 +82,10 @@ class LocationController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
+        if (!$request->user()->hasPermission('location.view')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
         try {
             if ($id <= 0) {
                 throw ValidationException::withMessages(['id' => 'Invalid location ID']);
@@ -123,6 +110,10 @@ class LocationController extends Controller
      */
     public function update(Request $request, int $id): JsonResponse
     {
+        if (!$request->user()->hasPermission('location.update')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
         try {
             if ($id <= 0) {
                 throw ValidationException::withMessages(['id' => 'Invalid location ID']);
@@ -155,6 +146,10 @@ class LocationController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
+        if (!$request->user()->hasPermission('location.delete')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
         try {
             if ($id <= 0) {
                 throw ValidationException::withMessages(['id' => 'Invalid location ID']);
