@@ -12,6 +12,23 @@ use Illuminate\Http\Request;
 class UserProfileController extends Controller
 {
     /**
+     * Relation graph to return a complete profile context.
+     */
+    private function profileRelations(): array
+    {
+        return [
+            'user.roles.permissions',
+            'employee.manager',
+            'roles.permissions',
+            'attendances',
+            'leaves.approver',
+            'kpis.employee',
+            'reimbursements.approver',
+            'payrolls.details',
+        ];
+    }
+
+    /**
      * List profiles.
      * Users with profile.view_all see all profiles; others see only their own.
      */
@@ -22,12 +39,14 @@ class UserProfileController extends Controller
         if ($user->hasPermission('profile.view_all')) {
             return ApiResponse::success(
                 'All user profiles',
-                UserProfile::with('user')->paginate(15)
+                UserProfile::with($this->profileRelations())->paginate(15)
             );
         }
 
         // Default: own profile only
-        $profile = UserProfile::where('user_id', $user->id)->with('user')->first();
+        $profile = UserProfile::where('user_id', $user->id)
+            ->with($this->profileRelations())
+            ->first();
 
         return ApiResponse::success('Own profile', $profile);
     }
@@ -51,13 +70,31 @@ class UserProfileController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'birth_date' => 'nullable|date|before:today',
+            'gender' => 'nullable|string|in:male,female,other',
+            'marital_status' => 'nullable|string|in:single,married,divorced,widowed',
+            'religion' => 'nullable|string|max:50',
+            'nationality' => 'nullable|string|max:100',
+            'id_number' => 'nullable|string|max:100|unique:user_profiles,id_number',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'emergency_contact_relation' => 'nullable|string|max:100',
+            'current_address' => 'nullable|string|max:1000',
+            'permanent_address' => 'nullable|string|max:1000',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:100',
+            'bank_account_name' => 'nullable|string|max:255',
+            'tax_number' => 'nullable|string|max:100',
+            'last_education' => 'nullable|string|max:100',
+            'institution_name' => 'nullable|string|max:255',
+            'graduation_year' => 'nullable|integer|digits:4|min:1950|max:' . date('Y'),
+            'profile_photo_path' => 'nullable|string|max:255',
         ]);
 
         $data['user_id'] = $user->id;
 
         $profile = UserProfile::create($data);
 
-        return ApiResponse::success('Profile created successfully', $profile, 201);
+        return ApiResponse::success('Profile created successfully', $profile->load($this->profileRelations()), 201);
     }
 
     /**
@@ -65,7 +102,7 @@ class UserProfileController extends Controller
      */
     public function show(Request $request, $id): JsonResponse
     {
-        $profile = UserProfile::with('user')->findOrFail($id);
+        $profile = UserProfile::with($this->profileRelations())->findOrFail($id);
         $user = $request->user();
 
         // Non-owner must have profile.view_all permission
@@ -92,7 +129,7 @@ class UserProfileController extends Controller
 
         $profile->update($request->validated());
 
-        return ApiResponse::success('Profile updated successfully', $profile->fresh());
+        return ApiResponse::success('Profile updated successfully', $profile->fresh()->load($this->profileRelations()));
     }
 
     /**
@@ -100,7 +137,7 @@ class UserProfileController extends Controller
      */
     public function destroy(Request $request, $id): JsonResponse
     {
-        $profile = UserProfile::findOrFail($id);
+        $profile = UserProfile::with($this->profileRelations())->findOrFail($id);
         $user = $request->user();
 
         $isOwner = $profile->user_id === $user->id;
@@ -109,8 +146,9 @@ class UserProfileController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
+        $deleted = $profile->toArray();
         $profile->delete();
 
-        return ApiResponse::success('Profile deleted successfully');
+        return ApiResponse::success('Profile deleted successfully', $deleted);
     }
 }

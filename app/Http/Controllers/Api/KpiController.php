@@ -23,14 +23,14 @@ class KpiController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Kpi::with('employee')->latest();
+        $query = Kpi::with(['employee.user.profile', 'employee.manager.profile'])->latest();
 
         if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
             $subordinateIds = $user->teamMembers()
-            ->pluck('employee.id')
-            ->filter();
+                ->pluck('id')
+                ->filter();
 
-        $query->whereIn('employee_id', $subordinateIds);
+            $query->whereIn('employee_id', $subordinateIds);
         }
 
         $kpis = $query->get();
@@ -49,12 +49,12 @@ class KpiController extends Controller
             ]
         ));
 
-        return ApiResponse::success('KPI created successfully', $kpi);
+        return ApiResponse::success('KPI created successfully', $kpi->load(['employee.user.profile', 'employee.manager.profile']));
     }
 
     public function show($id): JsonResponse
     {
-        $kpi = Kpi::with('employee')->findOrFail($id);
+        $kpi = Kpi::with(['employee.user.profile', 'employee.manager.profile'])->findOrFail($id);
 
         return ApiResponse::success('KPI details', $kpi);
     }
@@ -82,20 +82,23 @@ class KpiController extends Controller
             $kpi->save();
         }
 
-        return ApiResponse::success('KPI updated successfully', $kpi);
+        return ApiResponse::success('KPI updated successfully', $kpi->fresh(['employee.user.profile', 'employee.manager.profile']));
     }
 
     public function destroy($id): JsonResponse
     {
-        $kpi = Kpi::findOrFail($id);
+        $kpi = Kpi::with(['employee.user.profile', 'employee.manager.profile'])->findOrFail($id);
+        $deleted = $kpi->toArray();
         $kpi->delete();
 
-        return ApiResponse::success('KPI deleted successfully');
+        return ApiResponse::success('KPI deleted successfully', $deleted);
     }
 
     public function byEmployee($employee_id): JsonResponse
     {
-        $kpis = Kpi::where('employee_id', $employee_id)->get();
+        $kpis = Kpi::with(['employee.user.profile', 'employee.manager.profile'])
+            ->where('employee_id', $employee_id)
+            ->get();
 
         return ApiResponse::success('Employee KPIs', $kpis);
     }
@@ -108,7 +111,7 @@ class KpiController extends Controller
             'status' => 'approved'
         ]);
 
-        return ApiResponse::success('KPI approved successfully');
+        return ApiResponse::success('KPI approved successfully', $kpi->fresh(['employee.user.profile', 'employee.manager.profile']));
     }
 
     /*
@@ -121,7 +124,10 @@ class KpiController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $kpis = Kpi::where('employee_id', $employee->id)->latest()->get();
+        $kpis = Kpi::with(['employee.user.profile', 'employee.manager.profile'])
+            ->where('employee_id', $employee->id)
+            ->latest()
+            ->get();
 
         return ApiResponse::success('My KPIs', $kpis);
     }
@@ -143,6 +149,6 @@ class KpiController extends Controller
             'status' => 'submitted'
         ]);
 
-        return ApiResponse::success('KPI submitted successfully');
+        return ApiResponse::success('KPI submitted successfully', $kpi->fresh(['employee.user.profile', 'employee.manager.profile']));
     }
 }

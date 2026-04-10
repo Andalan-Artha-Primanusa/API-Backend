@@ -39,7 +39,7 @@ class EmployeeController extends Controller
             );
         }
 
-        return ApiResponse::success('Own employee data', $user->employee->load('user'));
+        return ApiResponse::success('Own employee data', $user->employee->load(['user.profile', 'manager.profile']));
     }
 
     /**
@@ -89,8 +89,11 @@ class EmployeeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
+        $employee = $this->employeeService->findWithUser($id);
+        $deleted = $employee->toArray();
+
         $this->employeeService->delete($id);
 
-        return ApiResponse::success('Employee deleted successfully');
+        return ApiResponse::success('Employee deleted successfully', $deleted);
     }
 }

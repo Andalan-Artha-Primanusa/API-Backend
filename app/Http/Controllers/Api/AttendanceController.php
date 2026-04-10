@@ -90,7 +90,7 @@ class AttendanceController extends Controller
      */
     public function show(Request $request, $id): JsonResponse
     {
-        $attendance = \App\Models\Attendance::with('user')->findOrFail($id);
+        $attendance = \App\Models\Attendance::with('user.profile')->findOrFail($id);
         $user = $request->user();
 
         // Non-owner must have attendance.view_all permission
@@ -110,8 +110,11 @@ class AttendanceController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        \App\Models\Attendance::findOrFail($id)->delete();
+        $attendance = \App\Models\Attendance::with('user.profile')->findOrFail($id);
+        $deleted = $attendance->toArray();
 
-        return ApiResponse::success('Attendance record deleted');
+        $attendance->delete();
+
+        return ApiResponse::success('Attendance record deleted', $deleted);
     }
 }

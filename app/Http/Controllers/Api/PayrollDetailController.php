@@ -15,7 +15,11 @@ class PayrollDetailController extends Controller
     // 📌 GET DETAIL BY PAYROLL
     public function index($payroll_id): JsonResponse
     {
-        $payroll = Payroll::find($payroll_id);
+        $payroll = Payroll::with([
+            'employee.user.profile',
+            'employee.manager.profile',
+            'details'
+        ])->find($payroll_id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -68,7 +72,7 @@ class PayrollDetailController extends Controller
     // 📌 UPDATE (SINGLE)
     public function update(Request $request, $id): JsonResponse
     {
-        $detail = PayrollDetail::with('payroll')->find($id);
+        $detail = PayrollDetail::with('payroll.employee.user.profile')->find($id);
 
         if (!$detail) {
             return ApiResponse::error("Detail ID $id not found", null, 404);
@@ -88,7 +92,7 @@ class PayrollDetailController extends Controller
 
         $detail->update($data);
 
-        return ApiResponse::success('Detail updated successfully', $detail->load('payroll'));
+        return ApiResponse::success('Detail updated successfully', $detail->fresh('payroll.employee.user.profile'));
     }
 
     // 📌 BULK UPDATE
@@ -109,7 +113,7 @@ class PayrollDetailController extends Controller
 
         try {
             foreach ($request->details as $item) {
-                $detail = PayrollDetail::with('payroll')->find($item['id']);
+                $detail = PayrollDetail::with('payroll.employee.user.profile')->find($item['id']);
 
                 if (!$detail) {
                     $errors[] = [
@@ -135,7 +139,7 @@ class PayrollDetailController extends Controller
 
                 if (!empty($data)) {
                     $detail->update($data);
-                    $updated[] = $detail->load('payroll');
+                    $updated[] = $detail->fresh('payroll.employee.user.profile');
                 }
             }
 
@@ -158,7 +162,7 @@ class PayrollDetailController extends Controller
     // 📌 DELETE
     public function destroy($id): JsonResponse
     {
-        $detail = PayrollDetail::with('payroll')->find($id);
+        $detail = PayrollDetail::with('payroll.employee.user.profile')->find($id);
 
         if (!$detail) {
             return ApiResponse::error('Detail not found', null, 404);
@@ -168,8 +172,9 @@ class PayrollDetailController extends Controller
             return ApiResponse::error('Cannot delete payroll detail', null, 400);
         }
 
+        $deleted = $detail->toArray();
         $detail->delete();
 
-        return ApiResponse::success('Detail deleted successfully');
+        return ApiResponse::success('Detail deleted successfully', $deleted);
     }
 }

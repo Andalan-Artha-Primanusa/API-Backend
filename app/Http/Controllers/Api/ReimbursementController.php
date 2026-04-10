@@ -23,11 +23,11 @@ class ReimbursementController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Reimbursement::with('employee', 'approver');
+        $query = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile']);
 
         // Scope by manager subordinates if not admin/hr
         if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
-            $subordinateIds = $user->teamMembers()->pluck('employee_id');
+            $subordinateIds = $user->teamMembers()->pluck('id');
             $query->whereIn('employee_id', $subordinateIds);
         }
 
@@ -61,12 +61,12 @@ class ReimbursementController extends Controller
             ['status' => 'draft']
         ));
 
-        return ApiResponse::success('Reimbursement created successfully', $reimbursement->load('employee'));
+        return ApiResponse::success('Reimbursement created successfully', $reimbursement->load(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
     public function show($id): JsonResponse
     {
-        $reimbursement = Reimbursement::with('employee', 'approver')->findOrFail($id);
+        $reimbursement = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])->findOrFail($id);
 
         return ApiResponse::success('Reimbursement details', $reimbursement);
     }
@@ -92,20 +92,21 @@ class ReimbursementController extends Controller
             'title', 'description', 'amount', 'category', 'expense_date', 'receipt_path'
         ]));
 
-        return ApiResponse::success('Reimbursement updated successfully', $reimbursement->load('employee'));
+        return ApiResponse::success('Reimbursement updated successfully', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
     public function destroy($id): JsonResponse
     {
-        $reimbursement = Reimbursement::findOrFail($id);
+        $reimbursement = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])->findOrFail($id);
 
         if (!$reimbursement->isDraft()) {
             return ApiResponse::error('Submitted reimbursement cannot be deleted', null, 400);
         }
 
+        $deleted = $reimbursement->toArray();
         $reimbursement->delete();
 
-        return ApiResponse::success('Reimbursement deleted successfully');
+        return ApiResponse::success('Reimbursement deleted successfully', $deleted);
     }
 
     public function approve(Request $request, $id): JsonResponse
@@ -123,7 +124,7 @@ class ReimbursementController extends Controller
 
         $reimbursement->approve($user->id, $request->note);
 
-        return ApiResponse::success('Reimbursement approved', $reimbursement->load('employee', 'approver'));
+        return ApiResponse::success('Reimbursement approved', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
     public function reject(Request $request, $id): JsonResponse
@@ -145,7 +146,7 @@ class ReimbursementController extends Controller
 
         $reimbursement->reject($user->id, $request->note);
 
-        return ApiResponse::success('Reimbursement rejected', $reimbursement->load('employee', 'approver'));
+        return ApiResponse::success('Reimbursement rejected', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
     public function markAsPaid(Request $request, $id): JsonResponse
@@ -163,12 +164,12 @@ class ReimbursementController extends Controller
 
         $reimbursement->markAsPaid();
 
-        return ApiResponse::success('Reimbursement marked as paid', $reimbursement->load('employee', 'approver'));
+        return ApiResponse::success('Reimbursement marked as paid', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
     public function pending(): JsonResponse
     {
-        $reimbursements = Reimbursement::with('employee')
+        $reimbursements = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])
             ->where('status', 'submitted')
             ->latest()
             ->get();
@@ -179,7 +180,7 @@ class ReimbursementController extends Controller
     public function byEmployee($employee_id): JsonResponse
     {
         $reimbursements = Reimbursement::where('employee_id', $employee_id)
-            ->with('approver')
+            ->with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])
             ->latest()
             ->get();
 
@@ -216,7 +217,8 @@ class ReimbursementController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $query = Reimbursement::where('employee_id', $employee->id)->with('approver');
+        $query = Reimbursement::where('employee_id', $employee->id)
+            ->with(['employee.user.profile', 'employee.manager.profile', 'approver.profile']);
 
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
@@ -242,7 +244,7 @@ class ReimbursementController extends Controller
 
         $reimbursement->submit();
 
-        return ApiResponse::success('Reimbursement submitted', $reimbursement->load('employee', 'approver'));
+        return ApiResponse::success('Reimbursement submitted', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
     public function createMyReimbursement(StoreReimbursementRequest $request): JsonResponse
@@ -257,6 +259,6 @@ class ReimbursementController extends Controller
             ]
         ));
 
-        return ApiResponse::success('My Reimbursement created successfully', $reimbursement->load('employee'));
+        return ApiResponse::success('My Reimbursement created successfully', $reimbursement->load(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 }

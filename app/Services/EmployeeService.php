@@ -13,7 +13,7 @@ class EmployeeService
      */
     public function getFilteredList(Request $request): LengthAwarePaginator
     {
-        $query = Employee::with('user', 'manager');
+        $query = Employee::with(['user.profile', 'manager.profile']);
 
         // Filter by department
         if ($request->filled('department')) {
@@ -45,7 +45,7 @@ class EmployeeService
      */
     public function findWithUser(int|string $id): Employee
     {
-        return Employee::with('user', 'manager')->findOrFail($id);
+        return Employee::with(['user.profile', 'manager.profile'])->findOrFail($id);
     }
 
     /**
@@ -53,7 +53,7 @@ class EmployeeService
      */
     public function create(array $data): Employee
     {
-        return Employee::create($data);
+        return Employee::create($data)->load(['user.profile', 'manager.profile']);
     }
 
     /**
@@ -64,7 +64,7 @@ class EmployeeService
         $employee = Employee::findOrFail($id);
         $employee->update($data);
 
-        return $employee->fresh(['user', 'manager']);
+        return $employee->fresh(['user.profile', 'manager.profile']);
     }
 
     /**

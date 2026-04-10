@@ -40,7 +40,7 @@ class LeaveService
             'status'           => LeaveStatus::Pending,
             'approval_flow_id' => $flow->id,
             'current_step'     => 1,
-        ]);
+        ])->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']);
     }
 
     /**
@@ -53,7 +53,7 @@ class LeaveService
      */
     public function getLeavesByRole(User $user): LengthAwarePaginator
     {
-        $query = Leave::with('user');
+        $query = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']);
 
         // Admin/HR/SuperAdmin — see all (no filter)
         if ($user->isAdmin() || $user->isHR()) {
@@ -123,7 +123,7 @@ class LeaveService
             $leave->refresh(); // Fix: refresh to get the updated current_step
 
             return [
-                'leave'        => $leave,
+                'leave'        => $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
                 'final'        => false,
                 'action'       => 'approved',
                 'current_step' => $leave->current_step,
@@ -135,7 +135,7 @@ class LeaveService
         $leave->update(['status' => LeaveStatus::Approved]);
 
         return [
-            'leave'  => $leave->fresh(),
+            'leave'  => $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
             'final'  => true,
             'action' => 'approved',
         ];

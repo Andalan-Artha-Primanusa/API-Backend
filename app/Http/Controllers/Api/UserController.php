@@ -60,7 +60,7 @@ class UserController extends Controller
     }
 
     /**
-     * List all users with their roles (paginated).
+     * List all users with their roles and profiles (paginated).
      */
     public function index(Request $request): JsonResponse
     {
@@ -70,7 +70,11 @@ class UserController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $users = User::with('roles')->paginate(15);
+        $users = User::with([
+            'roles.permissions',
+            'profile',
+            'employee.manager.profile',
+        ])->paginate(15);
 
         return ApiResponse::success('User list', $users);
     }

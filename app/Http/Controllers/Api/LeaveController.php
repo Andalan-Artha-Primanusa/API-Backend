@@ -33,6 +33,7 @@ class LeaveController extends Controller
         $employee = $this->getAuthenticatedEmployee();
 
         $leaves = Leave::where('employee_id', $employee->id)
+            ->with(['user.profile', 'employee.user.profile', 'approver.profile'])
             ->latest()
             ->get();
 
@@ -86,7 +87,7 @@ class LeaveController extends Controller
 
     public function show(Request $request, $id): JsonResponse
     {
-        $leave = Leave::with(['user', 'employee', 'approver', 'flow.steps.role'])->findOrFail($id);
+        $leave = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role'])->findOrFail($id);
 
         $user = $request->user();
 
@@ -100,7 +101,7 @@ class LeaveController extends Controller
     public function calendar(Request $request): JsonResponse
     {
         // Viewable based on filters
-        $query = Leave::with('employee.user');
+        $query = Leave::with('employee.user.profile');
 
         if ($request->has('employee_id')) {
             $query->where('employee_id', $request->employee_id);
@@ -145,7 +146,7 @@ class LeaveController extends Controller
 
         $leave->update($request->only(['reason', 'start_date', 'end_date']));
 
-        return ApiResponse::success('Leave updated successfully', $leave);
+        return ApiResponse::success('Leave updated successfully', $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
     }
 
     public function destroy(Request $request, $id): JsonResponse
@@ -160,9 +161,10 @@ class LeaveController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
+        $deleted = $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role'])->toArray();
         $leave->delete();
 
-        return ApiResponse::success('Leave deleted successfully');
+        return ApiResponse::success('Leave deleted successfully', $deleted);
     }
 
     /*
@@ -175,7 +177,7 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        $query = Leave::with('user', 'employee')
+        $query = Leave::with(['user.profile', 'employee.user.profile'])
             ->where('status', LeaveStatus::Pending);
 
         // Scope by role: managers see only subordinates' pending leaves
@@ -238,6 +240,6 @@ class LeaveController extends Controller
 
         $leave->reject(auth()->id(), $request->note);
 
-        return ApiResponse::success('Leave rejected successfully', $leave);
+        return ApiResponse::success('Leave rejected successfully', $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
     }
 }

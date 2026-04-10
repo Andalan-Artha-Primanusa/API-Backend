@@ -29,7 +29,7 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
     
-        $data = Payroll::with(['employee', 'details'])->latest()->get();
+        $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details'])->latest()->get();
 
         return ApiResponse::success(
             $data->isEmpty() ? 'No payroll data available' : 'Payroll data retrieved successfully',
@@ -42,7 +42,7 @@ class PayrollController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $data = Payroll::with('details')
+        $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details'])
             ->where('employee_id', $employee->id)
             ->latest()
             ->get();
@@ -86,7 +86,7 @@ class PayrollController extends Controller
                     $request->bonus ?? 0
                 );
 
-                return ApiResponse::success('Payroll created successfully', $payroll, 201);
+                return ApiResponse::success('Payroll created successfully', $payroll->load(['employee.user.profile', 'employee.manager.profile', 'details']), 201);
             } catch (\DomainException $e) {
                 return ApiResponse::error($e->getMessage(), null, 400);
             }
@@ -124,7 +124,7 @@ class PayrollController extends Controller
     // 📌 DETAIL
     public function show($id): JsonResponse
     {
-        $data = Payroll::with(['employee', 'details'])->find($id);
+        $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details'])->find($id);
 
         if (!$data) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -153,21 +153,22 @@ class PayrollController extends Controller
 
         $payroll->update($validated);
 
-        return ApiResponse::success('Payroll updated successfully', $payroll->fresh());
+        return ApiResponse::success('Payroll updated successfully', $payroll->fresh(['employee.user.profile', 'employee.manager.profile', 'details']));
     }
 
     // 📌 DELETE
     public function destroy($id): JsonResponse
     {
-        $payroll = Payroll::find($id);
+        $payroll = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details'])->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
         }
 
+        $deleted = $payroll->toArray();
         $payroll->delete();
 
-        return ApiResponse::success('Payroll deleted successfully');
+        return ApiResponse::success('Payroll deleted successfully', $deleted);
     }
 
     // 🔥 APPROVE
@@ -191,7 +192,7 @@ class PayrollController extends Controller
 
         $payroll->update(['status' => 'approved']);
 
-        return ApiResponse::success('Payroll approved', $payroll);
+        return ApiResponse::success('Payroll approved', $payroll->fresh(['employee.user.profile', 'employee.manager.profile', 'details']));
     }
 
     // 💸 PAY
@@ -215,7 +216,7 @@ class PayrollController extends Controller
 
         $payroll->update(['status' => 'paid']);
 
-        return ApiResponse::success('Payroll paid', $payroll);
+        return ApiResponse::success('Payroll paid', $payroll->fresh(['employee.user.profile', 'employee.manager.profile', 'details']));
     }
 
 

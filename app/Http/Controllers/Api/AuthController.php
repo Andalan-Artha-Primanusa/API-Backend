@@ -41,7 +41,11 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return ApiResponse::success('Registration successful', [
-            'user' => $user->load('roles'),
+            'user' => $user->fresh([
+                'roles.permissions',
+                'profile',
+                'employee.manager.profile',
+            ]),
             'token' => $token,
         ], 201);
     }
@@ -61,7 +65,11 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return ApiResponse::success('Login successful', [
-            'user' => $user->load('roles'),
+            'user' => $user->fresh([
+                'roles.permissions',
+                'profile',
+                'employee.manager.profile',
+            ]),
             'token' => $token,
         ]);
     }

@@ -52,7 +52,7 @@ class AttendanceService
         }
 
         return [
-            'attendance' => $attendance,
+            'attendance' => $attendance->load('user.profile'),
             'location'   => $result['location']->name,
             'distance'   => round($result['distance']),
         ];
@@ -79,7 +79,7 @@ class AttendanceService
 
         $attendance->update(['check_out' => now()]);
 
-        return $attendance->fresh();
+        return $attendance->fresh(['user.profile']);
     }
 
     /**
@@ -87,7 +87,8 @@ class AttendanceService
      */
     public function getHistory(User $user): LengthAwarePaginator
     {
-        return Attendance::where('user_id', $user->id)
+        return Attendance::with('user.profile')
+            ->where('user_id', $user->id)
             ->latest('date')
             ->paginate(15);
     }
@@ -97,7 +98,8 @@ class AttendanceService
      */
     public function getToday(User $user): ?Attendance
     {
-        return Attendance::where('user_id', $user->id)
+        return Attendance::with('user.profile')
+            ->where('user_id', $user->id)
             ->where('date', now()->toDateString())
             ->first();
     }
@@ -107,7 +109,7 @@ class AttendanceService
      */
     public function getAll(): LengthAwarePaginator
     {
-        return Attendance::with('user')
+        return Attendance::with('user.profile')
             ->latest('date')
             ->paginate(15);
     }

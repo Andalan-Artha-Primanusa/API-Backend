@@ -28,7 +28,11 @@ class UserService
             $user->roles()->attach($employeeRole->id);
         }
 
-        return $user;
+        return $user->load([
+            'roles.permissions',
+            'profile',
+            'employee.manager.profile',
+        ]);
     }
 
     public function login(array $data): User
@@ -41,6 +45,10 @@ class UserService
             ]);
         }
 
-        return $user;
+        return $user->load([
+            'roles.permissions',
+            'profile',
+            'employee.manager.profile',
+        ]);
     }
 }
