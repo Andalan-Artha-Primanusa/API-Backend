@@ -63,8 +63,33 @@ class AdminSeeder extends Seeder
             ]
         );
 
+        // Employee
+        $employee = User::firstOrCreate(
+            ['email' => 'employee@gmail.com'],
+            [
+                'name'     => 'Employee',
+                'password' => Hash::make(env('EMPLOYEE_PASSWORD', 'employee123')),
+            ]
+        );
+
+        $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
+        if ($employeeRole) {
+            $employee->roles()->syncWithoutDetaching([$employeeRole->id]);
+        }
+
+        Employee::firstOrCreate(
+            ['user_id' => $employee->id],
+            [
+                'employee_code' => 'EMP-001',
+                'position'      => 'Employee',
+                'department'    => 'General',
+                'hire_date'     => now(),
+                'salary'        => 5000000,
+            ]
+        );
+
         if (app()->isLocal()) {
-            $this->command?->info('Admin accounts seeded. Set SUPER_ADMIN_PASSWORD and ADMIN_PASSWORD in .env for custom passwords.');
+            $this->command?->info('Admin and Employee accounts seeded. Set SUPER_ADMIN_PASSWORD, ADMIN_PASSWORD, and EMPLOYEE_PASSWORD in .env for custom passwords.');
         }
     }
 }
