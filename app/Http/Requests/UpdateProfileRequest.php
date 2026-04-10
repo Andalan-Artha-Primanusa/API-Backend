@@ -14,7 +14,13 @@ class UpdateProfileRequest extends FormRequest
 
     public function rules(): array
     {
-        $profileId = $this->route('profile') ?? $this->route('id');
+        // Get profile ID from route parameter (apiResource uses 'profile' as parameter name)
+        $profileId = $this->route('profile');
+        
+        // If not found, try common alternatives
+        if (!$profileId) {
+            $profileId = $this->route('id');
+        }
 
         return [
             'phone'      => ['sometimes', 'nullable', 'string', 'max:20'],
@@ -24,7 +30,7 @@ class UpdateProfileRequest extends FormRequest
             'marital_status' => ['sometimes', 'nullable', 'string', 'in:single,married,divorced,widowed'],
             'religion' => ['sometimes', 'nullable', 'string', 'max:50'],
             'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'id_number' => ['sometimes', 'nullable', 'string', 'max:100', 'unique:user_profiles,id_number,' . $profileId],
+            'id_number' => ['sometimes', 'nullable', 'string', 'max:100', 'unique:user_profiles,id_number,' . ($profileId ?? 'NULL')],
             'emergency_contact_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'emergency_contact_relation' => ['sometimes', 'nullable', 'string', 'max:100'],
