@@ -24,8 +24,9 @@ class GoogleAuthController extends Controller
     public function redirect(): JsonResponse
     {
         try {
-            $url = Socialite::driver('google')
-                ->stateless()
+            /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+            $driver = Socialite::driver('google');
+            $url = $driver->stateless()
                 ->redirect()
                 ->getTargetUrl();
 
@@ -47,8 +48,9 @@ class GoogleAuthController extends Controller
     {
         try {
             // Fetch Google user
-            $googleUser = Socialite::driver('google')
-                ->stateless()
+            /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+            $driver = Socialite::driver('google');
+            $googleUser = $driver->stateless()
                 ->user();
 
             // Validate email exists and is verified
