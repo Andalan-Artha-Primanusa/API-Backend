@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WorkScheduleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,11 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reimbursements', [ReimbursementController::class, 'myReimbursements']);
         Route::post('/reimbursements', [ReimbursementController::class, 'createMyReimbursement']);
         Route::post('/reimbursements/{id}/submit', [ReimbursementController::class, 'submit']);
-        
+
         // Payroll
         Route::get('/payroll', [PayrollController::class, 'myPayroll']);
     });
-    
+
     Route::prefix('leaves')->group(function () {
         // ESS Leave Management
         Route::get('/my', [LeaveController::class, 'myLeaves']);
@@ -93,7 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // MANAGER / HR / ADMIN (Role based grouped endpoints)
     Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
-        
+
         // APPROVALS FOR MANAGERS / HR (LEAVES)
         Route::prefix('leaves')->group(function () {
             Route::get('/pending', [LeaveController::class, 'pending']);
@@ -126,7 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{id}/reject', [ReimbursementController::class, 'reject']);
             Route::put('/{id}/mark-paid', [ReimbursementController::class, 'markAsPaid']);
         });
-        
+
     });
 
     // We keep these base leaves endpoints for standard access
@@ -144,7 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | HR / MANAGER / ADMIN ROUTES
     |--------------------------------------------------------------------------
     */
-    
+
     // ATTENDANCE (Admin)
     Route::prefix('attendance')->group(function () {
         Route::get('/all', [AttendanceController::class, 'all']);
@@ -179,6 +180,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // MASTER DATA & SYSTEM SETTINGS (Admin ONLY)
     Route::middleware('role:admin,super_admin')->group(function () {
         Route::apiResource('locations', LocationController::class);
+
+        Route::apiResource('work-schedules', WorkScheduleController::class);
 
         Route::prefix('admin')->group(function () {
             Route::get('/roles', [RoleController::class, 'index']);

@@ -20,6 +20,11 @@ class AttendanceController extends Controller
      */
     public function checkIn(CheckInRequest $request): JsonResponse
     {
+
+        if (!$request->user()->hasPermission('attendance.check_in')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             $result = $this->attendanceService->checkIn(
                 $request->user(),
@@ -31,6 +36,7 @@ class AttendanceController extends Controller
                 'location' => $result['location'],
                 'distance' => $result['distance'] . ' meter',
                 'data'     => $result['attendance'],
+                'status' => $result['attendance']->status,
             ]);
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 400);
@@ -42,6 +48,10 @@ class AttendanceController extends Controller
      */
     public function checkOut(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.check_out')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         try {
             $attendance = $this->attendanceService->checkOut($request->user());
 
@@ -56,6 +66,11 @@ class AttendanceController extends Controller
      */
     public function history(Request $request): JsonResponse
     {
+
+        if (!$request->user()->hasPermission('attendance.view_own')) {
+        return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $data = $this->attendanceService->getHistory($request->user());
 
         return ApiResponse::success('Attendance history', $data);
@@ -66,6 +81,10 @@ class AttendanceController extends Controller
      */
     public function today(Request $request): JsonResponse
     {
+        if (!$request->user()->hasPermission('attendance.view_own')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $attendance = $this->attendanceService->getToday($request->user());
 
         return ApiResponse::success('Today attendance', $attendance);

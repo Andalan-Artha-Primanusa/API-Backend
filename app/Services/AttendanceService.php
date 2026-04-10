@@ -3,11 +3,9 @@
 namespace App\Services;
 
 use App\Models\Attendance;
-use App\Models\Location;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Cache;
 
 class AttendanceService
 {
@@ -21,20 +19,74 @@ class AttendanceService
      */
     public function checkIn(User $user, float $latitude, float $longitude): array
     {
-        $result = $this->getNearestLocation($latitude, $longitude);
 
-        if (!$result['location']) {
-            throw new \DomainException('No office location configured.');
+        $existing = Attendance::where('user_id', $user->id)
+        ->where('date', now()->toDateString())
+        ->first();
+
+        if ($existing) {
+            throw new \DomainException('Already checked in today.');
+        }
+        // 🔥 LOAD RELATION (ANTI N+1)
+        $user->loadMissing('employee.location', 'employee.workSchedule');
+
+        $employee = $user->employee;
+
+        if (!$employee) {
+            throw new \DomainException('Employee data not found.');
         }
 
-        if ($result['distance'] > $result['location']->radius) {
+        // =========================
+        // 🔥 VALIDASI LOCATION
+        // =========================
+        if (!$employee->location) {
+            throw new \DomainException('No assigned location for this employee.');
+        }
+
+        $location = $employee->location;
+
+        $distance = $this->haversineDistance(
+            $location->latitude,
+            $location->longitude,
+            $latitude,
+            $longitude
+        );
+
+        if ($distance > $location->radius) {
             throw new \DomainException(
-                'Outside attendance area. Distance: ' . round($result['distance']) . ' m, '
-                    . 'max: ' . $result['location']->radius . ' m.'
+                'Outside your assigned location area. Distance: ' . round($distance) . ' m'
             );
         }
 
-        // Use try-catch with unique constraint to prevent race condition duplicates
+        // =========================
+        // 🔥 VALIDASI SCHEDULE
+        // =========================
+        if (!$employee->workSchedule) {
+            throw new \DomainException('No work schedule assigned.');
+        }
+
+        $schedule = $employee->workSchedule;
+
+        $now = now();
+        $checkInTime = now()->setTimeFromTimeString($schedule->check_in_time);
+        $graceLimit = $checkInTime->copy()->addMinutes($schedule->grace_period);
+
+        // =========================
+        // 🔥 STATUS LOGIC (INI YANG BARU)
+        // =========================
+        $status = 'on_time';
+
+        if ($now->gt($checkInTime) && $now->lte($graceLimit)) {
+            $status = 'late';
+        }
+
+        if ($now->gt($graceLimit)) {
+            $status = 'absent';
+        }
+
+        // =========================
+        // CREATE ATTENDANCE
+        // =========================
         try {
             $attendance = Attendance::create([
                 'user_id'   => $user->id,
@@ -42,9 +94,9 @@ class AttendanceService
                 'check_in'  => now(),
                 'latitude'  => $latitude,
                 'longitude' => $longitude,
+                'status'    => $status, // 🔥 TAMBAHAN PENTING
             ]);
         } catch (\Illuminate\Database\QueryException $e) {
-            // MySQL error 1062 = duplicate entry (unique constraint violation)
             if (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1062) {
                 throw new \DomainException('Already checked in today.');
             }
@@ -53,8 +105,8 @@ class AttendanceService
 
         return [
             'attendance' => $attendance->load('user.profile'),
-            'location'   => $result['location']->name,
-            'distance'   => round($result['distance']),
+            'location'   => $location->name,
+            'distance'   => round($distance),
         ];
     }
 
@@ -65,6 +117,9 @@ class AttendanceService
      */
     public function checkOut(User $user): Attendance
     {
+
+        $user->loadMissing('employee.workSchedule'); // 🔥 TAMBAH INI
+
         $attendance = Attendance::where('user_id', $user->id)
             ->where('date', now()->toDateString())
             ->first();
@@ -75,6 +130,21 @@ class AttendanceService
 
         if ($attendance->check_out) {
             throw new \DomainException('Already checked out.');
+        }
+
+        $employee = $user->employee;
+
+        if (!$employee || !$employee->workSchedule) {
+            throw new \DomainException('No work schedule assigned.');
+        }
+
+        $schedule = $employee->workSchedule;
+
+        $now = now();
+        $checkOutTime = now()->setTimeFromTimeString($schedule->check_out_time);
+
+        if ($now->lt($checkOutTime)) {
+            throw new \DomainException('Cannot check out before minimum time.');
         }
 
         $attendance->update(['check_out' => now()]);
@@ -112,38 +182,6 @@ class AttendanceService
         return Attendance::with('user.profile')
             ->latest('date')
             ->paginate(15);
-    }
-
-    /**
-     * Find the nearest office location to the given coordinates.
-     * Locations are cached for 1 hour since they rarely change.
-     *
-     * @return array{location: ?Location, distance: float}
-     */
-    private function getNearestLocation(float $lat, float $lon): array
-    {
-        $locations = Cache::remember('office_locations', 3600, function () {
-            return Location::select('id', 'name', 'latitude', 'longitude', 'radius')->get();
-        });
-
-        $nearest = null;
-        $minDistance = PHP_FLOAT_MAX;
-
-        foreach ($locations as $location) {
-            $distance = $this->haversineDistance(
-                $location->latitude,
-                $location->longitude,
-                $lat,
-                $lon
-            );
-
-            if ($distance < $minDistance) {
-                $minDistance = $distance;
-                $nearest = $location;
-            }
-        }
-
-        return ['location' => $nearest, 'distance' => $minDistance];
     }
 
     /**

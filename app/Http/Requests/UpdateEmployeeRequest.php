@@ -26,6 +26,8 @@ class UpdateEmployeeRequest extends FormRequest
             'department'    => ['sometimes', 'string', 'max:255'],
             'hire_date'     => ['sometimes', 'date'],
             'salary'        => ['sometimes', 'numeric', 'min:0'],
+            'location_id' => ['sometimes', 'exists:locations,id'],
+            'work_schedule_id' => ['sometimes', 'exists:work_schedules,id'],
         ];
     }
 }

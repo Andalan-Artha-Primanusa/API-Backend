@@ -14,6 +14,7 @@ class Attendance extends Model
         'check_out',
         'latitude',
         'longitude',
+        'status',
     ];
 
     protected $casts = [
@@ -22,6 +23,7 @@ class Attendance extends Model
         'check_out' => 'datetime',
         'latitude'  => 'decimal:7',
         'longitude' => 'decimal:7',
+        'status'    => 'string',
     ];
 
     public function user(): BelongsTo

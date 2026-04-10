@@ -21,6 +21,8 @@ class StoreEmployeeRequest extends FormRequest
             'department'    => ['required', 'string', 'max:255'],
             'hire_date'     => ['nullable', 'date'],
             'salary'        => ['nullable', 'numeric', 'min:0'],
+            'location_id' => ['required', 'exists:locations,id'],
+            'work_schedule_id' => ['required', 'exists:work_schedules,id'],
         ];
     }
 }

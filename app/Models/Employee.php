@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Location;
+use App\Models\WorkSchedule;
 
 class Employee extends Model
 {
@@ -15,6 +17,8 @@ class Employee extends Model
         'department',
         'hire_date',
         'salary',
+        'location_id',
+        'work_schedule_id',
     ];
 
     protected $casts = [
@@ -33,5 +37,15 @@ class Employee extends Model
     public function manager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function workSchedule(): BelongsTo
+    {
+        return $this->belongsTo(WorkSchedule::class);
     }
 }

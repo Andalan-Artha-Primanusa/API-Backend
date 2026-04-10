@@ -2,108 +2,143 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Role;
 use App\Models\Permission;
 
 class RbacSeeder extends Seeder
 {
-    /**
-     * Seed roles and permissions. Fully idempotent (safe to run multiple times).
-     */
     public function run(): void
     {
-        // Roles
+        // ======================
+        // ROLES
+        // ======================
         $roles = ['super_admin', 'admin', 'hr', 'manager', 'employee'];
 
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role]);
         }
 
-        // Permissions
+        // ======================
+        // PERMISSIONS
+        // ======================
         $permissions = [
-            // Employee module
+            // Employee
             'employee.view',
             'employee.create',
             'employee.update',
             'employee.delete',
 
-            // Leave module
+            // Leave
             'leave.view',
             'leave.create',
             'leave.approve',
 
-            // Attendance module
+            // Attendance
             'attendance.view_all',
             'attendance.delete',
+            'attendance.check_in',
+            'attendance.check_out',
+            'attendance.view_own',
 
-            // Location module
+            // Location
             'location.view',
             'location.create',
             'location.update',
             'location.delete',
 
-            // Profile module
+            // Profile
             'profile.view_all',
             'profile.update',
             'profile.delete',
 
-            // RBAC admin
-            'user.assign_role',
-            'role.assign_permission',
-            'role.view',
-            'permission.view',
+            // RBAC
             'user.view',
+            'user.assign_role',
+            'role.view',
+            'role.assign_permission',
+            'permission.view',
         ];
 
         foreach ($permissions as $perm) {
             Permission::firstOrCreate(['name' => $perm]);
         }
 
-        // ASSIGN PERMISSIONS TO ROLES
-        $allPermissions = Permission::all();
+        $allPermissions = Permission::pluck('id');
 
+        // ======================
+        // ROLE PERMISSION MAP
+        // ======================
         $map = [
-            'super_admin' => $allPermissions->pluck('id'),
 
+            // 🔥 FULL CONTROL (LOCKED)
+            'super_admin' => $allPermissions,
+
+            // 🔥 SYSTEM OPERATOR (CUSTOMIZABLE)
             'admin' => Permission::whereIn('name', [
                 'employee.view',
                 'employee.create',
                 'employee.update',
                 'employee.delete',
+
                 'leave.view',
                 'leave.approve',
+
                 'attendance.view_all',
                 'attendance.delete',
+
                 'location.view',
                 'location.create',
                 'location.update',
                 'location.delete',
+
                 'profile.view_all',
                 'profile.update',
                 'profile.delete',
+
+                // 🔥 RBAC CONTROL (PENTING)
                 'user.view',
+                'user.assign_role',
+                'role.view',
+                'role.assign_permission',
+                'permission.view',
             ])->pluck('id'),
 
+            // 👨‍💼 HR
             'hr' => Permission::whereIn('name', [
                 'employee.view',
                 'employee.create',
                 'employee.update',
+
                 'leave.view',
                 'leave.approve',
+
+                'attendance.view_all',
+                'attendance.delete',
+
                 'profile.view_all',
                 'profile.update',
             ])->pluck('id'),
 
+            // 👨‍💼 MANAGER
             'manager' => Permission::whereIn('name', [
+                'employee.view',
+                'profile.view_all',
+
                 'leave.view',
                 'leave.approve',
             ])->pluck('id'),
 
+            // 👨‍💻 EMPLOYEE
             'employee' => Permission::whereIn('name', [
                 'leave.view',
                 'leave.create',
+
+                'attendance.check_in',
+                'attendance.check_out',
+                'attendance.view_own',
+
+                'profile.update',
             ])->pluck('id'),
         ];
 
