@@ -238,7 +238,7 @@ class LeaveController extends Controller
             return ApiResponse::error('Leave is not pending', null, 400);
         }
 
-        $leave->reject(auth()->id(), $request->note);
+        $leave->reject($request->user()->id, $request->note);
 
         return ApiResponse::success('Leave rejected successfully', $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
     }
