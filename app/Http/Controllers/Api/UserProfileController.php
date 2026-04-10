@@ -236,7 +236,3 @@ class UserProfileController extends Controller
         }
     }
 }
-
-        return ApiResponse::success('Profile deleted successfully', $deleted);
-    }
-}
