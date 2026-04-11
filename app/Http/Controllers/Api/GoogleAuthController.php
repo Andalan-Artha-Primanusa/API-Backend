@@ -40,30 +40,32 @@ class GoogleAuthController extends Controller
     /**
      * Handle the Google OAuth callback.
      * 
-     * Validates email, creates/updates user, and returns API token.
+     * Validates email, creates/updates user, and returns API token via Redirect.
      * 
-     * @return JsonResponse
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function callback(): JsonResponse
+    public function callback()
     {
+        // 1. Definisikan URL Frontend Anda (Tarik dari .env atau fallback default)
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+
         try {
             // Fetch Google user
             /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
             $driver = Socialite::driver('google');
-            $googleUser = $driver->stateless()
-                ->user();
+            $googleUser = $driver->stateless()->user();
 
             // Validate email exists and is verified
             $email = $googleUser->getEmail();
             if (!$email) {
-                return ApiResponse::error('Email not provided by Google', null, 400);
+                return redirect()->to($frontendUrl . '/login?error=' . urlencode('Email not provided by Google'));
             }
 
             // Find or create user via service
             $user = $this->userService->findOrCreateFromGoogle($googleUser);
 
             if (!$user) {
-                return ApiResponse::error('Failed to create user account', null, 500);
+                return redirect()->to($frontendUrl . '/login?error=' . urlencode('Failed to create user account'));
             }
 
             // Revoke old tokens and create new one
@@ -80,16 +82,17 @@ class GoogleAuthController extends Controller
                 'employee.manager.profile:id,user_id,phone',
             ]);
 
-            return ApiResponse::success('Google login successful', [
-                'user'  => $user,
-                'token' => $token,
-            ]);
+            // 2. Bungkus profil user agar dikirim via URL ke Frontend React
+            $userData = urlencode(json_encode($user));
+
+            // 3. 🎯 Lakukan Eksekusi REDIRECT kembali ke UI Front-End (Tidak lagi me-return JSON)
+            return redirect()->to($frontendUrl . '/auth/google/callback?token=' . $token . '&user=' . $userData);
 
         } catch (InvalidStateException $e) {
-            return ApiResponse::error('Invalid OAuth state', null, 401);
-
+            return redirect()->to($frontendUrl . '/login?error=' . urlencode('Invalid OAuth state'));
         } catch (\Throwable $e) {
-            return ApiResponse::error('Google authentication failed', null, 500);
+            error_log('Google Auth Error: ' . $e->getMessage()); // Catat log untuk internal
+            return redirect()->to($frontendUrl . '/login?error=' . urlencode('Google authentication failed'));
         }
     }
 }
