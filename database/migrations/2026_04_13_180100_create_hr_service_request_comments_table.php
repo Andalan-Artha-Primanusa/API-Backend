@@ -16,7 +16,7 @@ return new class extends Migration
             $table->boolean('is_internal')->default(false);
             $table->timestamps();
 
-            $table->index(['hr_service_request_id', 'created_at']);
+            $table->index(['hr_service_request_id', 'created_at'], 'hsrc_req_created_idx');
         });
     }
 
