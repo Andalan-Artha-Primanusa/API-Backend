@@ -115,6 +115,54 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Attendance intelligence summary for the current user.
+     */
+    public function intelligence(Request $request): JsonResponse
+    {
+        if (!$request->user()->hasPermission('attendance.view_own')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'days' => 'sometimes|integer|min:1|max:365',
+        ]);
+
+        try {
+            $data = $this->attendanceService->getMyIntelligence($request->user(), $validated['days'] ?? 30);
+
+            return ApiResponse::success('Attendance intelligence', $data);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch attendance intelligence', null, 500);
+        }
+    }
+
+    /**
+     * Overtime summary for the current user.
+     */
+    public function overtime(Request $request): JsonResponse
+    {
+        if (!$request->user()->hasPermission('attendance.view_own')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'days' => 'sometimes|integer|min:1|max:365',
+        ]);
+
+        try {
+            $data = $this->attendanceService->getMyOvertime($request->user(), $validated['days'] ?? 30);
+
+            return ApiResponse::success('Overtime summary', $data);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch overtime summary', null, 500);
+        }
+    }
+
+    /**
      * Get all attendance records with pagination and filtering (admin only).
      * 
      * Query params:
@@ -123,7 +171,7 @@ class AttendanceController extends Controller
      * - sort_order: string (default: 'desc', options: 'asc', 'desc')
      * - date_from: string (Y-m-d)
      * - date_to: string (Y-m-d)
-     * - status: string (present, late, absent)
+    * - status: string (on_time, late, absent)
      * 
      * @param Request $request
      * @return JsonResponse
@@ -142,7 +190,7 @@ class AttendanceController extends Controller
                 'sort_order'=> 'sometimes|in:asc,desc',
                 'date_from' => 'sometimes|date_format:Y-m-d',
                 'date_to'   => 'sometimes|date_format:Y-m-d|after_or_equal:date_from',
-                'status'    => 'sometimes|in:present,late,absent',
+                'status'    => 'sometimes|in:on_time,late,absent',
             ]);
 
             $perPage = $validated['per_page'] ?? 15;
@@ -151,7 +199,7 @@ class AttendanceController extends Controller
 
             // Optimized query with eager loading
             $query = Attendance::with(['user:id,name,email', 'user.profile:user_id,phone,address'])
-                ->select(['id', 'user_id', 'date', 'check_in_time', 'check_out_time', 'status', 'created_at']);
+                ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at']);
 
             // Apply filters
             if (!empty($validated['date_from'])) {
@@ -199,7 +247,7 @@ class AttendanceController extends Controller
                 'user:id,name,email',
                 'user.profile:user_id,phone,address,department'
             ])
-            ->select(['id', 'user_id', 'date', 'check_in_time', 'check_out_time', 'status', 'notes', 'created_at'])
+            ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at'])
             ->findOrFail($id);
 
             $user = $request->user();
@@ -239,7 +287,7 @@ class AttendanceController extends Controller
             }
 
             // Find and soft-delete record (if using soft deletes) or hard delete
-            $attendance = Attendance::select(['id', 'user_id', 'date', 'check_in_time', 'check_out_time', 'status'])
+            $attendance = Attendance::select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status'])
                 ->findOrFail($id);
 
             // Convert to array BEFORE deleting to ensure we have the data
@@ -254,6 +302,32 @@ class AttendanceController extends Controller
             return ApiResponse::error('Invalid request', $e->errors(), 422);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to delete record', null, 500);
+        }
+    }
+
+    /**
+     * Attendance intelligence for admin/manager by employee user ID.
+     */
+    public function employeeIntelligence(Request $request, int $userId): JsonResponse
+    {
+        if (!$request->user()->hasPermission('attendance.view_all')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'days' => 'sometimes|integer|min:1|max:365',
+        ]);
+
+        try {
+            $data = $this->attendanceService->getEmployeeIntelligence($userId, $validated['days'] ?? 30);
+
+            return ApiResponse::success('Employee attendance intelligence', $data);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return ApiResponse::error('Not found', 'Employee not found', 404);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch employee attendance intelligence', null, 500);
         }
     }
 }

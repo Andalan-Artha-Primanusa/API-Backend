@@ -7,6 +7,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Requests\StoreLeaveRequest;
 use App\Http\Requests\ApproveLeaveRequest;
 use App\Models\Leave;
+use App\Models\LeavePolicy;
 use App\Services\LeaveService;
 use App\Traits\HasEmployee;
 use App\Enums\LeaveStatus;
@@ -42,12 +43,13 @@ class LeaveController extends Controller
 
     public function balance(Request $request): JsonResponse
     {
-        $employee = $this->getAuthenticatedEmployee();
+        $user = $request->user();
 
-        $balance = [
-            'annual_leave_balance' => 12, // TODO: Pull from settings or Employee model
-            'used_annual_leaves' => Leave::where('employee_id', $employee->id)->where('status', LeaveStatus::Approved)->sum('total_days'),
-        ];
+        try {
+            $balance = $this->leaveService->getLeaveBalance($user);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 500);
+        }
 
         return ApiResponse::success('Leave balance', $balance);
     }
@@ -144,9 +146,13 @@ class LeaveController extends Controller
             'end_date' => 'sometimes|date|after_or_equal:start_date'
         ]);
 
-        $leave->update($request->only(['reason', 'start_date', 'end_date']));
+        try {
+            $leave = $this->leaveService->updatePendingLeave($leave, $request->only(['reason', 'start_date', 'end_date']));
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
 
-        return ApiResponse::success('Leave updated successfully', $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
+        return ApiResponse::success('Leave updated successfully', $leave);
     }
 
     public function destroy(Request $request, $id): JsonResponse
@@ -162,7 +168,12 @@ class LeaveController extends Controller
         }
 
         $deleted = $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role'])->toArray();
-        $leave->delete();
+
+        try {
+            $this->leaveService->deletePendingLeave($leave);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
 
         return ApiResponse::success('Leave deleted successfully', $deleted);
     }

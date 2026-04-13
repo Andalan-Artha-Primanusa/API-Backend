@@ -81,6 +81,16 @@ class User extends Authenticatable
         return $this->hasMany(Employee::class, 'manager_id');
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(UserNotification::class);
+    }
+
+    public function sentNotifications(): HasMany
+    {
+        return $this->hasMany(UserNotification::class, 'sender_user_id');
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');

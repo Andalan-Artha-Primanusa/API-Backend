@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -185,6 +186,81 @@ class AttendanceService
     }
 
     /**
+     * Get attendance intelligence summary for the authenticated user's employee record.
+     */
+    public function getMyIntelligence(User $user, int $days = 30): array
+    {
+        $user->loadMissing('employee.workSchedule');
+
+        if (!$user->employee) {
+            throw new \RuntimeException('Employee data not found.');
+        }
+
+        $schedule = $user->employee->workSchedule;
+        if (!$schedule) {
+            throw new \RuntimeException('No work schedule assigned.');
+        }
+
+        $fromDate = now()->subDays(max(1, $days - 1))->startOfDay();
+        $records = Attendance::where('user_id', $user->id)
+            ->where('date', '>=', $fromDate->toDateString())
+            ->orderBy('date')
+            ->get();
+
+        return $this->buildAttendanceInsight($records, $schedule->check_out_time);
+    }
+
+    /**
+     * Get overtime report for the authenticated user's employee record.
+     */
+    public function getMyOvertime(User $user, int $days = 30): array
+    {
+        $summary = $this->getMyIntelligence($user, $days);
+
+        return [
+            'window_days' => $days,
+            'overtime_hours' => $summary['overtime_hours'],
+            'overtime_minutes' => $summary['overtime_minutes'],
+            'early_checkout_count' => $summary['early_checkout_count'],
+            'late_count' => $summary['late_count'],
+            'records' => $summary['records'],
+        ];
+    }
+
+    /**
+     * Get attendance intelligence for admin/manager use by user id.
+     */
+    public function getEmployeeIntelligence(int $userId, int $days = 30): array
+    {
+        $user = User::with('employee.workSchedule')->findOrFail($userId);
+
+        if (!$user->employee || !$user->employee->workSchedule) {
+            throw new \RuntimeException('No employee or work schedule found for this user.');
+        }
+
+        $fromDate = now()->subDays(max(1, $days - 1))->startOfDay();
+        $records = Attendance::where('user_id', $userId)
+            ->where('date', '>=', $fromDate->toDateString())
+            ->orderBy('date')
+            ->get();
+
+        $summary = $this->buildAttendanceInsight($records, $user->employee->workSchedule->check_out_time);
+
+        return [
+            'employee' => [
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'employee_code' => $user->employee->employee_code,
+                'department' => $user->employee->department,
+                'position' => $user->employee->position,
+            ],
+            'window_days' => $days,
+            'summary' => $summary,
+        ];
+    }
+
+    /**
      * Calculate the distance between two GPS coordinates using the Haversine formula.
      *
      * @return float Distance in meters
@@ -200,5 +276,70 @@ class AttendanceService
             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
 
         return 2 * $earthRadius * atan2(sqrt($a), sqrt(1 - $a));
+    }
+
+    /**
+     * Build attendance insight metrics from a collection of records.
+     */
+    private function buildAttendanceInsight($records, string $scheduledCheckOutTime): array
+    {
+        $scheduleCheckOut = Carbon::today()->setTimeFromTimeString($scheduledCheckOutTime);
+
+        $overtimeMinutes = 0;
+        $earlyCheckoutCount = 0;
+        $lateCount = 0;
+        $absentCount = 0;
+        $onTimeCount = 0;
+
+        $resultRows = $records->map(function (Attendance $attendance) use ($scheduleCheckOut, &$overtimeMinutes, &$earlyCheckoutCount, &$lateCount, &$absentCount, &$onTimeCount) {
+            $checkIn = $attendance->check_in ? Carbon::parse($attendance->check_in) : null;
+            $checkOut = $attendance->check_out ? Carbon::parse($attendance->check_out) : null;
+
+            if ($attendance->status === 'late') {
+                $lateCount++;
+            } elseif ($attendance->status === 'absent') {
+                $absentCount++;
+            } else {
+                $onTimeCount++;
+            }
+
+            $rowOvertimeMinutes = 0;
+            $earlyCheckout = false;
+
+            if ($checkOut) {
+                $rowOvertimeMinutes = max(0, $checkOut->diffInMinutes($scheduleCheckOut, false) * -1);
+
+                if ($checkOut->lt($scheduleCheckOut)) {
+                    $earlyCheckout = true;
+                    $earlyCheckoutCount++;
+                }
+
+                if ($checkOut->gt($scheduleCheckOut)) {
+                    $overtimeMinutes += $checkOut->diffInMinutes($scheduleCheckOut);
+                }
+            }
+
+            return [
+                'id' => $attendance->id,
+                'date' => $attendance->date,
+                'status' => $attendance->status,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'scheduled_check_out' => $scheduleCheckOut,
+                'overtime_minutes' => max(0, $rowOvertimeMinutes),
+                'early_checkout' => $earlyCheckout,
+            ];
+        });
+
+        return [
+            'total_days' => $records->count(),
+            'on_time_count' => $onTimeCount,
+            'late_count' => $lateCount,
+            'absent_count' => $absentCount,
+            'early_checkout_count' => $earlyCheckoutCount,
+            'overtime_minutes' => $overtimeMinutes,
+            'overtime_hours' => round($overtimeMinutes / 60, 2),
+            'records' => $resultRows,
+        ];
     }
 }

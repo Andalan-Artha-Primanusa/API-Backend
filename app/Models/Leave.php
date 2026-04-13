@@ -39,6 +39,11 @@ class Leave extends Model
     const TYPE_ANNUAL = 'annual';
     const TYPE_SICK   = 'sick';
     const TYPE_UNPAID = 'unpaid';
+    const TYPE_MARRIAGE = 'marriage';
+    const TYPE_MATERNITY = 'maternity';
+    const TYPE_PATERNITY = 'paternity';
+    const TYPE_COMPASSIONATE = 'compassionate';
+    const TYPE_SPECIAL = 'special';
 
     // =========================================================================
     // RELATIONSHIPS
@@ -62,6 +67,11 @@ class Leave extends Model
     public function flow(): BelongsTo
     {
         return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
+    }
+
+    public function balance(): BelongsTo
+    {
+        return $this->belongsTo(EmployeeLeaveBalance::class, 'employee_id', 'employee_id');
     }
 
     // =========================================================================
