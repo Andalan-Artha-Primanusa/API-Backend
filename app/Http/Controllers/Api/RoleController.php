@@ -58,7 +58,10 @@ class RoleController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $roles = Role::with('permissions')->get();
+        // Keep super_admin role hidden from role table/list responses.
+        $roles = Role::with('permissions')
+            ->where('name', '!=', User::ROLE_SUPER_ADMIN)
+            ->get();
 
         return ApiResponse::success('Role list', $roles);
     }

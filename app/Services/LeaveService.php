@@ -105,6 +105,25 @@ class LeaveService
             throw new \DomainException('Leave request has already been processed.');
         }
 
+        // Super admin can approve directly without waiting for step turn.
+        // This does not alter approval flow steps, so super_admin remains invisible in flow tables.
+        if ($action === 'approved' && $approver->isSuperAdmin()) {
+            $leave->update([
+                'status' => LeaveStatus::Approved,
+                'approved_by' => $approver->id,
+                'approved_at' => now(),
+            ]);
+            $this->finalizeAnnualLeave($leave);
+
+            return [
+                'leave' => $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
+                'final' => true,
+                'action' => 'approved',
+                'override' => true,
+                'approved_by_role' => User::ROLE_SUPER_ADMIN,
+            ];
+        }
+
         if (!$leave->flow) {
             throw new \RuntimeException('Approval flow not found.');
         }
@@ -152,7 +171,11 @@ class LeaveService
         }
 
         // Final approval
-        $leave->update(['status' => LeaveStatus::Approved]);
+        $leave->update([
+            'status' => LeaveStatus::Approved,
+            'approved_by' => $approver->id,
+            'approved_at' => now(),
+        ]);
         $this->finalizeAnnualLeave($leave);
 
         return [
