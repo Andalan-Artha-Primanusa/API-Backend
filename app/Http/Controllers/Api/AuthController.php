@@ -139,4 +139,36 @@ class AuthController extends Controller
             return ApiResponse::error('Logout failed', null, 500);
         }
     }
+
+    /**
+     * Get authenticated user profile for current token.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function me(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return ApiResponse::error('Unauthenticated', null, 401);
+            }
+
+            $user->load([
+                'roles:id,name',
+                'roles.permissions:id,name',
+                'profile:id,user_id,phone,address,gender',
+                'employee:id,user_id,position,department,employee_code',
+                'employee.manager:id,user_id,position',
+                'employee.manager.profile:id,user_id,phone',
+            ]);
+
+            return ApiResponse::success('Authenticated user', [
+                'user' => $user,
+            ]);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch authenticated user', null, 500);
+        }
+    }
 }
