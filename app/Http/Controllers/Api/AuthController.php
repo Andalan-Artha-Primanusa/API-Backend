@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Services\UserService;
 use App\Models\Employee;
+use App\Models\Permission;
 
 class AuthController extends Controller
 {
@@ -59,8 +60,11 @@ class AuthController extends Controller
                 'employee.manager.profile:id,user_id,phone',
             ]);
 
+            $effectivePermissions = $this->resolveEffectivePermissions($user);
+
             return ApiResponse::success('Registration successful', [
-                'user'  => $user,
+                'user' => $user,
+                'effective_permissions' => $effectivePermissions,
                 'token' => $token,
             ], 201);
 
@@ -106,8 +110,11 @@ class AuthController extends Controller
                 'employee.manager.profile:id,user_id,phone',
             ]);
 
+            $effectivePermissions = $this->resolveEffectivePermissions($user);
+
             return ApiResponse::success('Login successful', [
-                'user'  => $user,
+                'user' => $user,
+                'effective_permissions' => $effectivePermissions,
                 'token' => $token,
             ]);
 
@@ -164,11 +171,35 @@ class AuthController extends Controller
                 'employee.manager.profile:id,user_id,phone',
             ]);
 
+            $effectivePermissions = $this->resolveEffectivePermissions($user);
+
             return ApiResponse::success('Authenticated user', [
                 'user' => $user,
+                'effective_permissions' => $effectivePermissions,
             ]);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch authenticated user', null, 500);
         }
+    }
+
+    /**
+     * Resolve permission names used by frontend menu rendering.
+     * Super admin always receives all permissions.
+     */
+    private function resolveEffectivePermissions($user): array
+    {
+        if ($user->isSuperAdmin()) {
+            return Permission::query()
+                ->orderBy('name')
+                ->pluck('name')
+                ->values()
+                ->all();
+        }
+
+        return $user->roles
+            ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+            ->unique()
+            ->values()
+            ->all();
     }
 }
