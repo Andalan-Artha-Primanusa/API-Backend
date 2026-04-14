@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('feeders_received')->default(0)->comment('Number of feeders responded');
             $table->text('self_assessment')->nullable();
             $table->text('manager_notes')->nullable();
-            $table->array('manager_competency_ratings')->nullable(); // JSON: {competency_id: score}
+            $table->json('manager_competency_ratings')->nullable(); // JSON: {competency_id: score}
             $table->decimal('overall_score', 5, 2)->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('reviewed_at')->nullable();
@@ -39,7 +39,7 @@ return new class extends Migration
             $table->enum('feeder_type', ['peer', 'subordinate', 'manager', 'cross_functional'])->default('peer');
             $table->enum('status', ['pending', 'submitted', 'read'])->default('pending');
             $table->text('feedback')->nullable();
-            $table->array('competency_ratings')->nullable(); // JSON
+            $table->json('competency_ratings')->nullable(); // JSON
             $table->integer('rating')->nullable()->comment('Overall rating 1-5');
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('read_at')->nullable();
