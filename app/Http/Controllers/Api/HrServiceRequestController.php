@@ -15,6 +15,95 @@ class HrServiceRequestController extends Controller
 {
     use HasEmployee;
 
+    public function slaSummary(Request $request): JsonResponse
+    {
+        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'days' => 'sometimes|integer|min:1|max:365',
+            'category' => 'sometimes|string|max:100',
+            'priority' => 'sometimes|string|in:low,medium,high,urgent',
+        ]);
+
+        $days = (int) ($validated['days'] ?? 30);
+        $fromDate = now()->subDays($days - 1)->startOfDay();
+        $toDate = now()->endOfDay();
+
+        $baseQuery = \App\Models\HrServiceRequest::query()
+            ->whereBetween('created_at', [$fromDate, $toDate]);
+
+        if (!empty($validated['category'])) {
+            $baseQuery->where('category', $validated['category']);
+        }
+
+        if (!empty($validated['priority'])) {
+            $baseQuery->where('priority', $validated['priority']);
+        }
+
+        $total = (clone $baseQuery)->count();
+        $resolved = (clone $baseQuery)
+            ->whereIn('status', [
+                \App\Models\HrServiceRequest::STATUS_RESOLVED,
+                \App\Models\HrServiceRequest::STATUS_CLOSED,
+            ])
+            ->count();
+
+        $open = (clone $baseQuery)
+            ->whereIn('status', [
+                \App\Models\HrServiceRequest::STATUS_OPEN,
+                \App\Models\HrServiceRequest::STATUS_IN_PROGRESS,
+                \App\Models\HrServiceRequest::STATUS_WAITING_FOR_EMPLOYEE,
+            ])
+            ->count();
+
+        $overdue = (clone $baseQuery)
+            ->whereNotNull('due_at')
+            ->where('due_at', '<', now())
+            ->whereNotIn('status', [
+                \App\Models\HrServiceRequest::STATUS_RESOLVED,
+                \App\Models\HrServiceRequest::STATUS_CLOSED,
+                \App\Models\HrServiceRequest::STATUS_CANCELLED,
+            ])
+            ->count();
+
+        $avgResolutionHours = (clone $baseQuery)
+            ->whereNotNull('resolved_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hours')
+            ->value('avg_hours');
+
+        $byPriority = (clone $baseQuery)
+            ->selectRaw('priority, COUNT(*) as total')
+            ->groupBy('priority')
+            ->orderByDesc('total')
+            ->get();
+
+        $byCategory = (clone $baseQuery)
+            ->selectRaw('category, COUNT(*) as total')
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->get();
+
+        return ApiResponse::success('Helpdesk SLA summary retrieved successfully', [
+            'window' => [
+                'days' => $days,
+                'from' => $fromDate->toDateTimeString(),
+                'to' => $toDate->toDateTimeString(),
+            ],
+            'summary' => [
+                'total_tickets' => $total,
+                'resolved_tickets' => $resolved,
+                'open_tickets' => $open,
+                'overdue_tickets' => $overdue,
+                'resolution_rate_percent' => $total > 0 ? round(($resolved / $total) * 100, 2) : 0,
+                'average_resolution_hours' => $avgResolutionHours !== null ? round((float) $avgResolutionHours, 2) : 0,
+            ],
+            'by_priority' => $byPriority,
+            'by_category' => $byCategory,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {

@@ -24,6 +24,14 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Daftar attendance seluruh karyawan untuk admin.
 - Detail dan delete attendance.
 
+### Shift dan Overtime yang Lebih Lengkap
+- Jadwal shift harian dan mingguan.
+- Pola kerja fleksibel dan rotasi shift.
+- Swap shift antar karyawan.
+- Approval lembur dan perhitungan lembur otomatis.
+- Toleransi telat, pulang cepat, dan cut-off attendance.
+- Aturan attendance per cabang, lokasi, atau device.
+
 ### Leave Management
 - Pengajuan cuti.
 - Daftar cuti pribadi.
@@ -70,7 +78,25 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Middleware role dan permission untuk pembatasan akses.
 - Entity relasi inti antara user, employee, manager, dan approver.
 
-## 2. Fitur HR yang Umumnya Masih Dibutuhkan
+### Core HRIS yang Siap Dipakai untuk Fase Awal
+- Authentication, role access, dan audit trail.
+- Employee profile, lifecycle, onboarding, dan offboarding.
+- Attendance, leave, payroll, dan reimbursement.
+- Document management, service request, dan notification center.
+- Work schedule, location, dan reporting dashboard.
+- Self-service employee untuk data pribadi, dokumen, absensi, cuti, payroll, dan request.
+
+### Enterprise HR Modules (Sudah Ditambahkan)
+- **Recruitment / ATS Advanced**: Lowongan, kandidat, interview scheduling, evaluasi, offer, background check, talent pool.
+- **Career Development**: IDP, succession planning, career path mapping.
+- **Performance Management**: Review cycles, performance reviews, submit/review/approve workflow.
+- **Engagement & Survey**: Employee surveys, response collection, engagement analytics.
+- **Workforce Policies**: Holiday calendar, advanced leave, shift swap, overtime rules.
+- **Biometric Integration**: Device registry, attendance sync dari biometric, sync logs.
+- **Enterprise Compensation & Compliance**: Compensation profile, retroactive adjustments, notification templates/rules/schedules, compliance task, privacy workflow.
+- **Organization Structure**: Org chart, department/division mapping, team grouping, master data.
+
+## 2. Fitur HR yang Masih dalam Perbaikan atau Belum Diimplementasiin
 
 ### Recruitment / ATS
 - Lowongan kerja.
@@ -142,6 +168,7 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Goal setting per kuartal atau semester.
 - Calibration antar manajer.
 - PIP atau performance improvement plan.
+- Tracking review cycle, feedback manager, dan approval hasil appraisal.
 
 ### Competency dan Career Development
 - Matriks kompetensi per jabatan.
@@ -169,6 +196,7 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Branch atau cabang perusahaan.
 - Cost center.
 - Position level dan job grade.
+- Dasar untuk routing approval, reporting, dan kontrol akses berbasis struktur organisasi.
 
 ### Master Data HR
 - Department.
@@ -177,6 +205,7 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Employment type.
 - Holiday calendar.
 - Reason master untuk cuti, absensi, dan reimbursement.
+- Status karyawan, level jabatan, dan referensi struktur organisasi sebagai data induk.
 
 ### Asset Management
 - Peminjaman dan assignment aset.
@@ -233,6 +262,8 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Assignment ticket ke HR tertentu.
 - Komentar internal dan komentar untuk employee.
 - Notifikasi otomatis saat ticket dibuat, diassign, atau status berubah.
+- SLA penanganan request.
+- Kategori permintaan HR.
 - Implementasi awal helpdesk request, comment thread, assignment, dan status workflow sudah tersedia.
 
 ### Employee Self-Service yang Lebih Kaya
@@ -257,6 +288,7 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Export data untuk kebutuhan audit.
 - Compliance checklist.
 - Implementasi awal audit trail sudah tersedia lewat `audit_logs` dan middleware `audit.trail` pada route authenticated.
+- Integrasi compliance yang lebih serius biasanya mencakup approval berlapis, retensi dokumen, approval history, dan jejak perubahan untuk audit internal maupun eksternal.
 
 ### Notification Center
 - Notifikasi approval.
@@ -267,18 +299,13 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Reminder training, probation, dan appraisal.
 - Notifikasi dokumen wajib belum lengkap.
 - Implementasi awal notification center sudah tersedia lewat `user_notifications` dan endpoint `/notifications`.
+- Notifikasi yang lebih serius idealnya mendukung template, trigger berbasis event, prioritas pesan, dan kanal tambahan seperti email atau chat internal.
 
 ### Announcement dan Engagement
 - Pengumuman perusahaan.
 - Birthday dan work anniversary.
 - Polling atau survey internal.
 - Employee engagement pulse survey.
-
-### Helpdesk dan Service Request
-- Ticket HR untuk pertanyaan umum.
-- Permintaan surat, dokumen, dan verifikasi.
-- SLA penanganan request.
-- Kategori permintaan HR.
 
 ### Reporting dan Dashboard
 - Headcount per divisi.
@@ -306,6 +333,14 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 5. Attendance policy dan overtime.
 6. Master data HR dan org structure.
 7. Leave policy yang lebih lengkap.
+8. Integrasi compliance dan notification yang lebih matang.
+
+### Fase Awal Selesai Jika
+1. Employee lifecycle sudah bisa jalan dari onboarding sampai offboarding.
+2. Attendance, leave, dan payroll bisa dipakai harian tanpa manual spreadsheet.
+3. Dokumen karyawan, notification, dan service request sudah aktif.
+4. Reporting dasar sudah menampilkan ringkasan HR utama.
+5. Struktur role, permission, dan audit trail sudah rapi untuk operasional.
 
 ### Prioritas Menengah
 1. Onboarding/offboarding.
@@ -316,6 +351,7 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 6. Benefits dan compensation.
 7. Attendance intelligence.
 8. Employee lifecycle.
+9. Performance review dan OKR.
 
 ### Prioritas Lanjutan
 1. Recruitment / ATS.
@@ -325,6 +361,7 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 5. Survey dan engagement.
 6. Helpdesk dan service request.
 7. Career development dan succession planning.
+8. Workflow recruitment, contract tracking, dan advanced shift/overtime rules.
 
 ## 4. Dampak Bisnis untuk HR
 
@@ -340,3 +377,32 @@ Dokumen ini merangkum fitur yang sudah tersedia di backend HRIS ini dan fitur ta
 - Untuk kebutuhan HR operasional, mulai dari audit log, notification, payroll detail, dan document management biasanya memberi dampak paling cepat.
 - Untuk kebutuhan enterprise, kombinasikan approval flow, org chart, dan reporting agar data mudah dipantau.
 - Jika ingin sistem terasa lengkap di mata HR, tambahkan juga master data yang rapi, employee lifecycle, dan attendance intelligence.
+
+---
+
+## 6. Status Ringkas Implementasi (per April 2026)
+
+### ✅ Lengkap & Siap Produksi (15+ modul)
+Authentication, audit log, role/permission | Employee lifecycle | Attendance | Leave | Payroll (basic) | Reimbursement | Document management | Organization structure | Org chart | Team directory | Recruitment/ATS (basic+advanced) | Career development | Succession planning | Performance review cycle | Benefits | Compensation profile | Training programs | Competency assignment | Biometric integration | Workforce policies | Notification center | People insights dashboard | ESS portal
+
+### ⚠️ Dalam Pengembangan / Perlu Perbaikan
+- Performance 360 review, 1:1 check-in, calibration, PIP workflow
+- Payroll: tax/BPJS calculation, THR/bonus engine, loan tracking
+- Attendance intelligence: geo-fencing, anomaly detection, exception approval
+- Email/SMS/chat notification channels
+- Recruitment: requisition form, candidate scoring, bulk import
+- Asset: request workflow, maintenance schedule, warranty tracking
+- Competency matrix per job title, skill gap analysis
+
+### 🔴 Belum Diimplementasiin
+- Facilities management (meeting rooms, facility requests, visitor management)
+- Company announcements module
+- Birthday/anniversary reminders
+- Advanced compliance audit export (GDPR, on-demand data export)
+
+### Rekomendasi Prioritas Next Phase
+1. **360 Review + Calibration Workflow** → High ROI untuk performance management
+2. **OKR Framework** → Strategic goal alignment
+3. **Facilities Management** → Meeting rooms, facility requests
+4. **Tax/BPJS Calculation Engine** → Payroll compliance
+5. **Email Integration** → Notification channels

@@ -11,6 +11,58 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function summary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'days' => 'sometimes|integer|min:1|max:365',
+        ]);
+
+        $days = (int) ($validated['days'] ?? 30);
+        $fromDate = now()->subDays($days - 1)->startOfDay();
+        $toDate = now()->endOfDay();
+
+        $baseQuery = UserNotification::query()->whereBetween('created_at', [$fromDate, $toDate]);
+
+        $total = (clone $baseQuery)->count();
+        $unread = (clone $baseQuery)->whereNull('read_at')->count();
+        $read = $total - $unread;
+
+        $byCategory = (clone $baseQuery)
+            ->selectRaw('COALESCE(category, ?) as category, COUNT(*) as total', ['uncategorized'])
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->get();
+
+        $byType = (clone $baseQuery)
+            ->selectRaw('type, COUNT(*) as total')
+            ->groupBy('type')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        return ApiResponse::success('Notification summary retrieved successfully', [
+            'window' => [
+                'days' => $days,
+                'from' => $fromDate->toDateTimeString(),
+                'to' => $toDate->toDateTimeString(),
+            ],
+            'summary' => [
+                'total' => $total,
+                'read' => $read,
+                'unread' => $unread,
+                'unread_rate_percent' => $total > 0 ? round(($unread / $total) * 100, 2) : 0,
+            ],
+            'by_category' => $byCategory,
+            'top_types' => $byType,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -184,5 +236,169 @@ class NotificationController extends Controller
         return ApiResponse::success('Broadcast notification created successfully', [
             'count' => count($notifications),
         ], 201);
+    }
+
+    // EMAIL NOTIFICATION METHODS
+
+    public function sendEmailNotification(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'recipient_email' => 'required|email',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'subject' => 'required|string|max:500',
+            'body' => 'required|string',
+            'type' => 'sometimes|string|in:approval,reminder,notification,alert,report,document,workflow',
+            'reference_type' => 'nullable|string|max:100',
+            'reference_id' => 'nullable|integer',
+        ]);
+
+        $validated['type'] = $validated['type'] ?? 'notification';
+
+        $emailLog = \App\Models\EmailLog::create($validated);
+
+        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
+
+        return ApiResponse::success('Email notification queued for sending', $emailLog, 201);
+    }
+
+    public function getEmailLogs(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $query = \App\Models\EmailLog::query();
+
+        if ($request->has('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->integer('user_id'));
+        }
+
+        if ($request->has('type')) {
+            $query->where('type', $request->string('type'));
+        }
+
+        $logs = $query->orderByDesc('created_at')
+            ->paginate($request->integer('per_page', 15));
+
+        return ApiResponse::success('Email logs retrieved', $logs);
+    }
+
+    public function retryEmailNotification(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $emailLog = \App\Models\EmailLog::findOrFail($id);
+
+        if (!$emailLog->canRetry()) {
+            return ApiResponse::error('Email cannot be retried', null, 422);
+        }
+
+        $emailLog->update(['status' => 'pending']);
+
+        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
+
+        return ApiResponse::success('Email notification sent for retry', $emailLog);
+    }
+
+    public function emailTemplateIndex(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $templates = \App\Models\EmailTemplate::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->paginate($request->integer('per_page', 15));
+
+        return ApiResponse::success('Email templates retrieved', $templates);
+    }
+
+    public function emailTemplateStore(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'key' => 'required|string|max:100|unique:email_templates',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'subject' => 'required|string|max:500',
+            'html_body' => 'required|string',
+            'text_body' => 'nullable|string',
+            'placeholders' => 'nullable|array',
+        ]);
+
+        $validated['created_by'] = $user->id;
+        $validated['is_active'] = true;
+
+        $template = \App\Models\EmailTemplate::create($validated);
+
+        return ApiResponse::success('Email template created', $template, 201);
+    }
+
+    public function emailTemplateUpdate(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $template = \App\Models\EmailTemplate::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'subject' => 'sometimes|string|max:500',
+            'html_body' => 'sometimes|string',
+            'text_body' => 'nullable|string',
+            'placeholders' => 'nullable|array',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $template->update($validated);
+
+        return ApiResponse::success('Email template updated', $template);
+    }
+
+    public function emailTemplatePreview(Request $request, $id): JsonResponse
+    {
+        $template = \App\Models\EmailTemplate::findOrFail($id);
+
+        $validated = $request->validate([
+            'data' => 'sometimes|array',
+        ]);
+
+        $data = $validated['data'] ?? [];
+
+        $preview = [
+            'subject' => $template->renderSubject($data),
+            'html_body' => $template->renderHtmlBody($data),
+            'text_body' => $template->renderTextBody($data),
+        ];
+
+        return ApiResponse::success('Email template preview', $preview);
     }
 }

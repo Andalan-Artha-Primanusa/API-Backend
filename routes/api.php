@@ -27,6 +27,22 @@ use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\EmployeeDocumentController;
 use App\Http\Controllers\Api\HrServiceRequestController;
 use App\Http\Controllers\Api\ReportingController;
+use App\Http\Controllers\Api\ApprovalFlowController;
+use App\Http\Controllers\Api\DataImportController;
+use App\Http\Controllers\Api\OrgStructureController;
+use App\Http\Controllers\Api\ComplianceController;
+use App\Http\Controllers\Api\RecruitmentController;
+use App\Http\Controllers\Api\BenefitController;
+use App\Http\Controllers\Api\PerformanceReviewController;
+use App\Http\Controllers\Api\EnterpriseAtsController;
+use App\Http\Controllers\Api\CareerDevelopmentController;
+use App\Http\Controllers\Api\BiometricIntegrationController;
+use App\Http\Controllers\Api\EngagementController;
+use App\Http\Controllers\Api\WorkforcePolicyController;
+use App\Http\Controllers\Api\EnterpriseOpsController;
+use App\Http\Controllers\Api\OKRController;
+use App\Http\Controllers\Api\Review360Controller;
+use App\Http\Controllers\Api\CalibrationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +111,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/trainings', [TrainingController::class, 'myTrainings']);
         Route::get('/competencies', [CompetencyController::class, 'myCompetencies']);
         Route::get('/assets', [AssetController::class, 'myAssets']);
+        Route::get('/benefits', [BenefitController::class, 'myBenefits']);
+        Route::get('/performance-reviews', [PerformanceReviewController::class, 'myReviews']);
         Route::get('/documents', [EmployeeDocumentController::class, 'myDocuments']);
         Route::post('/documents', [EmployeeDocumentController::class, 'store']);
         Route::get('/requests', [HrServiceRequestController::class, 'myRequests']);
@@ -116,6 +134,31 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/{id}', [NotificationController::class, 'show']);
         Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+        Route::prefix('organization')->group(function () {
+            Route::get('/directory', [OrgStructureController::class, 'directory']);
+            Route::get('/summary', [OrgStructureController::class, 'summary']);
+            Route::get('/chart', [OrgStructureController::class, 'orgChart']);
+            Route::get('/team/{managerUserId}', [OrgStructureController::class, 'teamMembers']);
+            Route::get('/master-data', [OrgStructureController::class, 'masterData']);
+        });
+    });
+
+    // Approval Flows - SUPER ADMIN ONLY (system-critical configuration)
+    Route::middleware('role:super_admin')->prefix('approval-flows')->group(function () {
+        Route::get('/', [ApprovalFlowController::class, 'index']);
+        Route::post('/', [ApprovalFlowController::class, 'store']);
+        Route::get('/{id}', [ApprovalFlowController::class, 'show']);
+        Route::put('/{id}', [ApprovalFlowController::class, 'update']);
+        Route::delete('/{id}', [ApprovalFlowController::class, 'destroy']);
+    });
+
+    Route::middleware('role:admin,hr,super_admin')->prefix('compliance')->group(function () {
+        Route::get('/overview', [ComplianceController::class, 'overview']);
+        Route::get('/audit-summary', [ComplianceController::class, 'auditSummary']);
+        Route::get('/expiring-documents', [ComplianceController::class, 'expiringDocuments']);
     });
 
     Route::prefix('attendance')->group(function () {
@@ -216,6 +259,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/', [EmployeeDocumentController::class, 'index']);
             Route::post('/', [EmployeeDocumentController::class, 'store']);
             Route::get('/expiring', [EmployeeDocumentController::class, 'expiring']);
+            Route::get('/contracts', [EmployeeDocumentController::class, 'contracts']);
             Route::get('/{id}', [EmployeeDocumentController::class, 'show']);
             Route::put('/{id}', [EmployeeDocumentController::class, 'update']);
             Route::delete('/{id}', [EmployeeDocumentController::class, 'destroy']);
@@ -224,12 +268,153 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
         Route::prefix('requests')->group(function () {
             Route::get('/', [HrServiceRequestController::class, 'index']);
+            Route::get('/sla-summary', [HrServiceRequestController::class, 'slaSummary']);
             Route::post('/', [HrServiceRequestController::class, 'store']);
             Route::get('/{id}', [HrServiceRequestController::class, 'show']);
             Route::put('/{id}/assign', [HrServiceRequestController::class, 'assign']);
             Route::put('/{id}/status', [HrServiceRequestController::class, 'updateStatus']);
             Route::post('/{id}/comments', [HrServiceRequestController::class, 'comment']);
             Route::delete('/{id}', [HrServiceRequestController::class, 'destroy']);
+        });
+
+        Route::prefix('recruitment')->group(function () {
+            Route::get('/summary', [RecruitmentController::class, 'summary']);
+
+            Route::prefix('openings')->group(function () {
+                Route::get('/', [RecruitmentController::class, 'openingsIndex']);
+                Route::post('/', [RecruitmentController::class, 'openingsStore']);
+                Route::get('/{id}', [RecruitmentController::class, 'openingsShow']);
+                Route::put('/{id}', [RecruitmentController::class, 'openingsUpdate']);
+                Route::delete('/{id}', [RecruitmentController::class, 'openingsDestroy']);
+            });
+
+            Route::prefix('candidates')->group(function () {
+                Route::get('/', [RecruitmentController::class, 'candidatesIndex']);
+                Route::post('/', [RecruitmentController::class, 'candidatesStore']);
+                Route::get('/{id}', [RecruitmentController::class, 'candidatesShow']);
+                Route::put('/{id}', [RecruitmentController::class, 'candidatesUpdate']);
+                Route::put('/{id}/stage', [RecruitmentController::class, 'candidatesMoveStage']);
+                Route::delete('/{id}', [RecruitmentController::class, 'candidatesDestroy']);
+
+                Route::post('/{id}/interviews', [EnterpriseAtsController::class, 'scheduleInterview']);
+                Route::post('/{id}/offer', [EnterpriseAtsController::class, 'createOffer']);
+                Route::put('/{id}/background-check', [EnterpriseAtsController::class, 'upsertBackgroundCheck']);
+                Route::post('/{id}/talent-pool', [EnterpriseAtsController::class, 'addToTalentPool']);
+            });
+
+            Route::post('/interviews/{id}/evaluate', [EnterpriseAtsController::class, 'evaluateInterview']);
+            Route::put('/offers/{id}/status', [EnterpriseAtsController::class, 'updateOfferStatus']);
+            Route::get('/talent-pool', [EnterpriseAtsController::class, 'talentPoolIndex']);
+        });
+
+        Route::prefix('benefits')->group(function () {
+            Route::get('/', [BenefitController::class, 'index']);
+            Route::post('/', [BenefitController::class, 'store']);
+            Route::get('/employee/{employeeId}', [BenefitController::class, 'employeeBenefits']);
+            Route::get('/{id}', [BenefitController::class, 'show']);
+            Route::put('/{id}', [BenefitController::class, 'update']);
+            Route::delete('/{id}', [BenefitController::class, 'destroy']);
+            Route::post('/{id}/assign', [BenefitController::class, 'assignToEmployee']);
+        });
+
+        Route::prefix('performance')->group(function () {
+            Route::get('/summary', [PerformanceReviewController::class, 'summary']);
+
+            Route::prefix('cycles')->group(function () {
+                Route::get('/', [PerformanceReviewController::class, 'cyclesIndex']);
+                Route::post('/', [PerformanceReviewController::class, 'cyclesStore']);
+                Route::get('/{id}', [PerformanceReviewController::class, 'cyclesShow']);
+                Route::put('/{id}', [PerformanceReviewController::class, 'cyclesUpdate']);
+                Route::put('/{id}/close', [PerformanceReviewController::class, 'cyclesClose']);
+            });
+
+            Route::prefix('reviews')->group(function () {
+                Route::get('/', [PerformanceReviewController::class, 'reviewsIndex']);
+                Route::post('/', [PerformanceReviewController::class, 'reviewsStore']);
+                Route::get('/{id}', [PerformanceReviewController::class, 'reviewsShow']);
+                Route::put('/{id}', [PerformanceReviewController::class, 'reviewsUpdate']);
+                Route::put('/{id}/submit', [PerformanceReviewController::class, 'submit']);
+                Route::put('/{id}/review', [PerformanceReviewController::class, 'review']);
+                Route::put('/{id}/approve', [PerformanceReviewController::class, 'approve']);
+            });
+
+            Route::prefix('okrs')->group(function () {
+                Route::get('/', [OKRController::class, 'index']);
+                Route::post('/', [OKRController::class, 'store']);
+                Route::get('/{id}', [OKRController::class, 'show']);
+                Route::put('/{id}', [OKRController::class, 'update']);
+                Route::put('/{id}/submit', [OKRController::class, 'submit']);
+                Route::put('/{id}/approve', [OKRController::class, 'approve']);
+                Route::put('/{id}/progress', [OKRController::class, 'updateProgress']);
+                Route::put('/{id}/start', [OKRController::class, 'markInProgress']);
+                Route::put('/{id}/complete', [OKRController::class, 'markCompleted']);
+                Route::delete('/{id}', [OKRController::class, 'destroy']);
+            });
+
+            Route::prefix('360-reviews')->group(function () {
+                Route::get('/', [Review360Controller::class, 'index']);
+                Route::post('/', [Review360Controller::class, 'store']);
+                Route::get('/{id}', [Review360Controller::class, 'show']);
+                Route::post('/{id}/feeders', [Review360Controller::class, 'assignFeeders']);
+                Route::get('/{id}/feeder-status', [Review360Controller::class, 'getFeederStatus']);
+                Route::post('/{reviewId}/feeders/{feederId}/submit', [Review360Controller::class, 'submitFeederFeedback']);
+                Route::put('/{id}/self-assessment', [Review360Controller::class, 'submitSelfAssessment']);
+                Route::put('/{id}/manager-assessment', [Review360Controller::class, 'submitManagerAssessment']);
+                Route::put('/{id}/complete', [Review360Controller::class, 'completeReview']);
+                Route::put('/{id}/submit-review', [Review360Controller::class, 'submitForReview']);
+                Route::put('/{id}/approve', [Review360Controller::class, 'approveReview']);
+            });
+
+            Route::prefix('calibration')->group(function () {
+                Route::get('/', [CalibrationController::class, 'index']);
+                Route::post('/', [CalibrationController::class, 'store']);
+                Route::get('/{id}', [CalibrationController::class, 'show']);
+                Route::post('/{id}/participants', [CalibrationController::class, 'addParticipants']);
+                Route::post('/{id}/reviews', [CalibrationController::class, 'addReviewsForCalibration']);
+                Route::put('/{id}/start', [CalibrationController::class, 'startSession']);
+                Route::put('/{sessionId}/calibrate/{calibrationReviewId}', [CalibrationController::class, 'calibrateEmployee']);
+                Route::get('/{id}/report', [CalibrationController::class, 'getCalibrationReport']);
+                Route::put('/{id}/complete', [CalibrationController::class, 'completeSession']);
+                Route::delete('/{id}', [CalibrationController::class, 'destroy']);
+            });
+        });
+
+        Route::prefix('career')->group(function () {
+            Route::get('/idps', [CareerDevelopmentController::class, 'idpIndex']);
+            Route::post('/idps', [CareerDevelopmentController::class, 'idpStore']);
+            Route::put('/idps/{id}', [CareerDevelopmentController::class, 'idpUpdate']);
+            Route::get('/succession', [CareerDevelopmentController::class, 'successionMatrix']);
+            Route::post('/succession', [CareerDevelopmentController::class, 'successionStore']);
+        });
+
+        Route::prefix('engagement')->group(function () {
+            Route::get('/surveys', [EngagementController::class, 'surveyIndex']);
+            Route::post('/surveys', [EngagementController::class, 'surveyStore']);
+            Route::post('/surveys/{id}/responses', [EngagementController::class, 'submitResponse']);
+            Route::get('/surveys/{id}/analytics', [EngagementController::class, 'analytics']);
+        });
+
+        Route::prefix('workforce')->group(function () {
+            Route::get('/holidays', [WorkforcePolicyController::class, 'holidayCalendarIndex']);
+            Route::post('/holidays', [WorkforcePolicyController::class, 'holidayCalendarStore']);
+            Route::put('/leave-policies/{id}/advanced', [WorkforcePolicyController::class, 'advancedLeavePolicyUpdate']);
+            Route::get('/shift-swaps', [WorkforcePolicyController::class, 'shiftSwapIndex']);
+            Route::post('/shift-swaps', [WorkforcePolicyController::class, 'shiftSwapStore']);
+            Route::put('/shift-swaps/{id}', [WorkforcePolicyController::class, 'shiftSwapApprove']);
+            Route::get('/overtime-rules', [WorkforcePolicyController::class, 'overtimeRuleIndex']);
+            Route::post('/overtime-rules', [WorkforcePolicyController::class, 'overtimeRuleStore']);
+        });
+
+        Route::prefix('enterprise')->group(function () {
+            Route::put('/compensation/employee/{employeeId}', [EnterpriseOpsController::class, 'upsertCompProfile']);
+            Route::post('/compensation/retro-adjustments', [EnterpriseOpsController::class, 'addRetroAdjustment']);
+            Route::post('/compensation/bank-export-preview', [EnterpriseOpsController::class, 'bankExportPreview']);
+            Route::post('/notifications/templates', [EnterpriseOpsController::class, 'notificationTemplateStore']);
+            Route::post('/notifications/rules', [EnterpriseOpsController::class, 'notificationRuleStore']);
+            Route::post('/notifications/schedules', [EnterpriseOpsController::class, 'scheduleNotification']);
+            Route::post('/compliance/retention-policies', [EnterpriseOpsController::class, 'retentionPolicyStore']);
+            Route::post('/compliance/tasks', [EnterpriseOpsController::class, 'complianceTaskStore']);
+            Route::post('/compliance/privacy-requests', [EnterpriseOpsController::class, 'privacyRequestStore']);
         });
 
         // REPORTING & ANALYTICS
@@ -261,21 +446,23 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // ATTENDANCE (Admin)
-    Route::prefix('attendance')->group(function () {
+    // ATTENDANCE (Admin/HR/Super Admin ONLY)
+    Route::middleware('role:admin,hr,super_admin')->prefix('attendance')->group(function () {
         Route::get('/all', [AttendanceController::class, 'all']);
         Route::get('/{id}', [AttendanceController::class, 'show']);
         Route::delete('/{id}', [AttendanceController::class, 'destroy']);
     });
 
-    // EMPLOYEE MANAGEMENT
-    Route::apiResource('employees', EmployeeController::class);
+    // EMPLOYEE MANAGEMENT (Admin/HR/Super Admin ONLY)
+    Route::middleware('role:admin,hr,super_admin')->group(function () {
+        Route::apiResource('employees', EmployeeController::class);
 
-    Route::middleware('role:admin,hr,super_admin')->prefix('employees')->group(function () {
-        Route::put('/{id}/onboarding/start', [EmployeeController::class, 'startOnboarding']);
-        Route::put('/{id}/onboarding/complete', [EmployeeController::class, 'completeOnboarding']);
-        Route::put('/{id}/offboarding/start', [EmployeeController::class, 'offboard']);
-        Route::put('/{id}/offboarding/complete', [EmployeeController::class, 'completeOffboarding']);
+        Route::prefix('employees')->group(function () {
+            Route::put('/{id}/onboarding/start', [EmployeeController::class, 'startOnboarding']);
+            Route::put('/{id}/onboarding/complete', [EmployeeController::class, 'completeOnboarding']);
+            Route::put('/{id}/offboarding/start', [EmployeeController::class, 'offboard']);
+            Route::put('/{id}/offboarding/complete', [EmployeeController::class, 'completeOffboarding']);
+        });
     });
 
     // PAYROLL (HR / Admin)
@@ -302,28 +489,54 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         });
     });
 
-    // MASTER DATA & SYSTEM SETTINGS (Admin ONLY)
-    Route::middleware('role:admin,super_admin')->group(function () {
+    // MASTER DATA & SYSTEM SETTINGS (Super Admin ONLY - Akses kontrol & import)
+    Route::middleware('role:super_admin')->group(function () {
         Route::apiResource('locations', LocationController::class);
 
         Route::apiResource('work-schedules', WorkScheduleController::class);
 
         Route::prefix('admin/notifications')->group(function () {
+            Route::get('/summary', [NotificationController::class, 'summary']);
             Route::post('/', [NotificationController::class, 'store']);
             Route::post('/broadcast', [NotificationController::class, 'broadcast']);
+        });
+
+        Route::prefix('admin/email-notifications')->group(function () {
+            Route::post('/', [NotificationController::class, 'sendEmailNotification']);
+            Route::get('/logs', [NotificationController::class, 'getEmailLogs']);
+            Route::post('/{id}/retry', [NotificationController::class, 'retryEmailNotification']);
+        });
+
+        Route::prefix('admin/email-templates')->group(function () {
+            Route::get('/', [NotificationController::class, 'emailTemplateIndex']);
+            Route::post('/', [NotificationController::class, 'emailTemplateStore']);
+            Route::put('/{id}', [NotificationController::class, 'emailTemplateUpdate']);
+            Route::post('/{id}/preview', [NotificationController::class, 'emailTemplatePreview']);
+        });
+
+        Route::prefix('biometric')->group(function () {
+            Route::get('/devices', [BiometricIntegrationController::class, 'deviceIndex']);
+            Route::post('/devices', [BiometricIntegrationController::class, 'deviceStore']);
+            Route::post('/sync-attendance', [BiometricIntegrationController::class, 'syncAttendance']);
         });
 
         Route::prefix('admin')->group(function () {
             Route::get('/audit-logs', [AuditLogController::class, 'index']);
             Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
-        });
 
-        Route::prefix('admin')->group(function () {
+            // RBAC Management - SUPER ADMIN ONLY
             Route::get('/roles', [RoleController::class, 'index']);
             Route::get('/permissions', [PermissionController::class, 'index']);
             Route::get('/users', [UserController::class, 'index']);
             Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
             Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+
+            // Data Import - SUPER ADMIN ONLY
+            Route::prefix('import')->group(function () {
+                Route::post('/users', [DataImportController::class, 'importUsers']);
+                Route::post('/employees', [DataImportController::class, 'importEmployees']);
+                Route::get('/template', [DataImportController::class, 'getImportTemplate']);
+            });
         });
     });
 

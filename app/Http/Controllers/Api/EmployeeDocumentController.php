@@ -17,6 +17,98 @@ class EmployeeDocumentController extends Controller
 {
     use HasEmployee;
 
+    public function contracts(Request $request): JsonResponse
+    {
+        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'employee_id' => ['sometimes', 'integer', 'exists:employees,id'],
+            'status' => ['sometimes', 'string', 'in:pending,approved,rejected,expired,archived'],
+            'days' => ['sometimes', 'integer', 'min:1', 'max:365'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'search' => ['sometimes', 'string', 'max:255'],
+        ]);
+
+        $days = $validated['days'] ?? 90;
+        $from = now()->startOfDay();
+        $until = now()->addDays($days)->endOfDay();
+
+        $query = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email'])
+            ->where(function ($builder) {
+                $builder->where('category', 'contract')
+                    ->orWhere('document_type', 'contract')
+                    ->orWhere('document_type', 'employment_contract')
+                    ->orWhere('document_type', 'pkwt')
+                    ->orWhere('document_type', 'pkwtt');
+            })
+            ->latest();
+
+        if (!empty($validated['employee_id'])) {
+            $query->where('employee_id', $validated['employee_id']);
+        }
+
+        if (!empty($validated['status'])) {
+            $query->where('status', $validated['status']);
+        }
+
+        if (!empty($validated['search'])) {
+            $search = $validated['search'];
+            $query->where(function ($builder) use ($search) {
+                $builder->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('document_type', 'like', '%' . $search . '%')
+                    ->orWhere('category', 'like', '%' . $search . '%')
+                    ->orWhere('file_name', 'like', '%' . $search . '%');
+            });
+        }
+
+        $contracts = $query->paginate($validated['per_page'] ?? 15);
+
+        $baseCountQuery = EmployeeDocument::query()
+            ->where(function ($builder) {
+                $builder->where('category', 'contract')
+                    ->orWhere('document_type', 'contract')
+                    ->orWhere('document_type', 'employment_contract')
+                    ->orWhere('document_type', 'pkwt')
+                    ->orWhere('document_type', 'pkwtt');
+            });
+
+        if (!empty($validated['employee_id'])) {
+            $baseCountQuery->where('employee_id', $validated['employee_id']);
+        }
+
+        $summary = [
+            'total_contracts' => (clone $baseCountQuery)->count(),
+            'active_contracts' => (clone $baseCountQuery)
+                ->where('status', EmployeeDocument::STATUS_APPROVED)
+                ->where(function ($q) use ($from) {
+                    $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', $from->toDateString());
+                })
+                ->count(),
+            'expiring_within_days' => (clone $baseCountQuery)
+                ->whereNotNull('expires_at')
+                ->whereDate('expires_at', '>=', $from->toDateString())
+                ->whereDate('expires_at', '<=', $until->toDateString())
+                ->count(),
+            'expired_contracts' => (clone $baseCountQuery)
+                ->whereNotNull('expires_at')
+                ->whereDate('expires_at', '<', $from->toDateString())
+                ->count(),
+            'pending_review' => (clone $baseCountQuery)
+                ->where('status', EmployeeDocument::STATUS_PENDING)
+                ->count(),
+        ];
+
+        return ApiResponse::success('Contract tracking retrieved successfully', [
+            'window_days' => $days,
+            'from' => $from->toDateString(),
+            'to' => $until->toDateString(),
+            'summary' => $summary,
+            'contracts' => $contracts,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         if (!($request->user()->isAdmin() || $request->user()->isHR())) {

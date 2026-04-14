@@ -5,146 +5,84 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Constants\Permissions as PermissionRegistry;
 
 class RbacSeeder extends Seeder
 {
+    /**
+     * Seed the RBAC system with roles and permissions
+     * 
+     * All permissions are defined in App\Constants\Permissions
+     * Role-permission mappings can be customized at runtime via:
+     * 
+     * POST /admin/roles/{id}/assign-permission
+     * {
+     *     "permissions": [array of permission IDs]
+     * }
+     */
     public function run(): void
     {
-        // ======================
-        // ROLES
-        // ======================
-        $roles = ['super_admin', 'admin', 'hr', 'manager', 'employee'];
+        echo "\n🔐 Seeding RBAC System...\n";
 
+        // ======================
+        // 1. CREATE ROLES
+        // ======================
+        echo "  ✓ Creating roles...\n";
+        
+        $roles = ['super_admin', 'admin', 'hr', 'manager', 'employee'];
+        
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role]);
         }
 
         // ======================
-        // PERMISSIONS
+        // 2. CREATE PERMISSIONS FROM REGISTRY
         // ======================
-        $permissions = [
-            // Employee
-            'employee.view',
-            'employee.create',
-            'employee.update',
-            'employee.delete',
+        echo "  ✓ Creating permissions from registry...\n";
+        
+        $allPermissionsData = PermissionRegistry::all();
+        $createdPermissions = [];
 
-            // Leave
-            'leave.view',
-            'leave.create',
-            'leave.approve',
-
-            // Attendance
-            'attendance.view_all',
-            'attendance.delete',
-            'attendance.check_in',
-            'attendance.check_out',
-            'attendance.view_own',
-
-            // Location
-            'location.view',
-            'location.create',
-            'location.update',
-            'location.delete',
-
-            // Profile
-            'profile.view_all',
-            'profile.update',
-            'profile.delete',
-
-            // RBAC
-            'user.view',
-            'user.assign_role',
-            'role.view',
-            'role.assign_permission',
-            'permission.view',
-        ];
-
-        foreach ($permissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm]);
+        foreach ($allPermissionsData as $permissionName => $permissionDescription) {
+            $permission = Permission::firstOrCreate(
+                ['name' => $permissionName],
+                ['description' => $permissionDescription]
+            );
+            $createdPermissions[$permissionName] = $permission->id;
         }
 
-        $allPermissions = Permission::pluck('id');
-
         // ======================
-        // ROLE PERMISSION MAP
+        // 3. ASSIGN PERMISSIONS TO ROLES
         // ======================
-        $map = [
+        echo "  ✓ Assigning permissions to roles...\n";
 
-            // 🔥 FULL CONTROL (LOCKED)
-            'super_admin' => $allPermissions,
+        $rolePermissionMappings = PermissionRegistry::roleDefaultPermissions();
 
-            // 🔥 SYSTEM OPERATOR (CUSTOMIZABLE)
-            'admin' => Permission::whereIn('name', [
-                'employee.view',
-                'employee.create',
-                'employee.update',
-                'employee.delete',
-
-                'leave.view',
-                'leave.approve',
-
-                'attendance.view_all',
-                'attendance.delete',
-
-                'location.view',
-                'location.create',
-                'location.update',
-                'location.delete',
-
-                'profile.view_all',
-                'profile.update',
-                'profile.delete',
-
-                // 🔥 RBAC CONTROL (PENTING)
-                'user.view',
-                'user.assign_role',
-                'role.view',
-                'role.assign_permission',
-                'permission.view',
-            ])->pluck('id'),
-
-            // 👨‍💼 HR
-            'hr' => Permission::whereIn('name', [
-                'employee.view',
-                'employee.create',
-                'employee.update',
-
-                'leave.view',
-                'leave.approve',
-
-                'attendance.view_all',
-                'attendance.delete',
-
-                'profile.view_all',
-                'profile.update',
-            ])->pluck('id'),
-
-            // 👨‍💼 MANAGER
-            'manager' => Permission::whereIn('name', [
-                'employee.view',
-                'profile.view_all',
-
-                'leave.view',
-                'leave.approve',
-            ])->pluck('id'),
-
-            // 👨‍💻 EMPLOYEE
-            'employee' => Permission::whereIn('name', [
-                'leave.view',
-                'leave.create',
-
-                'attendance.check_in',
-                'attendance.check_out',
-                'attendance.view_own',
-
-                'profile.update',
-            ])->pluck('id'),
-        ];
-
-        foreach ($map as $roleName => $permissionIds) {
+        foreach ($rolePermissionMappings as $roleName => $permissionNames) {
             $role = Role::where('name', $roleName)->first();
-            $role?->permissions()->sync($permissionIds);
+            
+            if (!$role) {
+                $this->command->warn("    ⚠ Role '{$roleName}' not found, skipping...");
+                continue;
+            }
+
+            // Convert permission names to IDs
+            $permissionIds = array_map(
+                fn($permName) => $createdPermissions[$permName] ?? null,
+                $permissionNames
+            );
+            
+            // Remove null values
+            $permissionIds = array_filter($permissionIds);
+
+            // Sync permissions
+            $role->permissions()->sync($permissionIds);
+
+            $count = count($permissionIds);
+            $this->command->info("    → {$roleName}: {$count} permissions assigned");
         }
+
+        echo "\n✅ RBAC System seeded successfully!\n";
+        echo "📝 Customize permissions via: POST /admin/roles/{roleId}/assign-permission\n\n";
     }
 }
