@@ -46,7 +46,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['review_360_id', 'feeder_id']);
-            $table->unique(['review_360_id', 'feeder_id']);
+            $table->unique(['review_360_id', 'feeder_id'], 'review_360_feeder_unique');
         });
 
         Schema::create('calibration_sessions', function (Blueprint $table) {
@@ -74,7 +74,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->unique(['calibration_session_id', 'manager_id']);
+            $table->unique(['calibration_session_id', 'manager_id'], 'calibration_session_manager_unique');
         });
 
         Schema::create('calibration_employee_reviews', function (Blueprint $table) {
@@ -90,7 +90,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['calibration_session_id']);
-            $table->unique(['calibration_session_id', 'review_360_id']);
+            $table->unique(['calibration_session_id', 'review_360_id'], 'calibration_review_360_unique');
         });
     }
 
