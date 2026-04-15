@@ -212,6 +212,20 @@ Sistem HRIS ini dilengkapi dengan dokumentasi lengkap mencakup:
 
 ---
 
+### 6. **HRIS_API_FEATURES_FOR_PPT.md** (PPT-ready Feature Summary)
+**Fokus:** Ringkasan seluruh fitur pada `routes/api.php` dalam format yang siap dipindahkan ke slide presentasi.
+
+**Isi:**
+- Ringkasan eksekutif
+- Struktur slide yang disarankan
+- Daftar fitur lengkap berdasarkan kelompok route
+- Kategori fitur per modul
+- Poin penting untuk presentasi
+
+**📌 Best For:** **Presenter, stakeholder, dan tim marketing/produk** yang perlu bahan PPT cepat dan terstruktur
+
+---
+
 ### 6. **README.md** (Project Overview)
 **Fokus:** Project introduction
 

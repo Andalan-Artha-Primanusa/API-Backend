@@ -515,7 +515,6 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/leaves" \
     "type": "annual",
     "start_date": "2026-05-01",
     "end_date": "2026-05-05",
-    "total_days": 5,
     "reason": "Family vacation"
   }'
 ```
@@ -543,7 +542,6 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/leaves/{id}" \
   -d '{
     "start_date": "2026-05-02",
     "end_date": "2026-05-06",
-    "total_days": 5,
     "reason": "Updated reason"
   }'
 ```
@@ -569,7 +567,7 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/leaves/{id}/appr
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
-    "note": "Approved"
+    "status": "approved"
   }'
 ```
 
@@ -603,11 +601,15 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/employees" \
   -H "Accept: application/json" \
   -d '{
     "user_id": 2,
+    "manager_id": 1,
     "employee_code": "EMP-0002",
     "position": "Manager",
     "department": "IT",
     "hire_date": "2025-01-15",
-    "salary": 50000000
+    "salary": 50000000,
+    "status": "active",
+    "location_id": 1,
+    "work_schedule_id": 1
   }'
 ```
 
@@ -947,26 +949,6 @@ curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/payroll-details/
   }'
 ```
 
-### Bulk Update Payroll Details
-```bash
-curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/payroll-details/bulk-update" \
-  -H "Authorization: Bearer {TOKEN}" \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -d '{
-    "details": [
-      {
-        "id": 1,
-        "amount": 2500000
-      },
-      {
-        "id": 2,
-        "amount": 600000
-      }
-    ]
-  }'
-```
-
 ### Delete Payroll Detail
 ```bash
 curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/api/payroll-details/{id}" \
@@ -995,7 +977,8 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/kpis" \
     "employee_id": 1,
     "title": "Sales Target",
     "description": "Achieve 100 new customers",
-    "target": 100
+    "target": 100,
+    "period": "2026-Q2"
   }'
 ```
 
@@ -1346,6 +1329,717 @@ curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/reports/employee
 ### Asset Analytics
 ```bash
 curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/reports/assets" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+---
+
+## 🆕 FITUR BARU UNTUK TESTING
+
+### Organization Directory
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/organization/directory" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Organization Summary
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/organization/summary" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Organization Chart
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/organization/chart" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Team Members by Manager
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/organization/team/{managerUserId}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Organization Master Data
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/organization/master-data" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Compliance Overview
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/compliance/overview" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Compliance Audit Summary
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/compliance/audit-summary" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Expiring Documents
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/compliance/expiring-documents?days=30" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Notifications List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/notifications" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Notifications Unread Count
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/notifications/unread-count" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Mark All Notifications Read
+```bash
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/notifications/read-all" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Mark Notification Read
+```bash
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/notifications/{id}/read" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Delete Notification
+```bash
+curl -X DELETE "https://moccasin-crab-693879.hostingersite.com/api/notifications/{id}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Admin Notification Summary
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/admin/notifications/summary" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Broadcast Notification
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/notifications/broadcast" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "title": "System Maintenance",
+    "message": "System will be under maintenance tonight at 22:00.",
+    "type": "system.maintenance",
+    "category": "broadcast",
+    "data": {
+      "starts_at": "2026-04-15 22:00:00"
+    }
+  }'
+```
+
+### Create Admin Notification For Users
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/notifications" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "user_ids": [1, 2],
+    "title": "Profile Update Required",
+    "message": "Please update your employee profile.",
+    "type": "profile.reminder",
+    "category": "reminder",
+    "data": {
+      "deadline": "2026-04-30"
+    }
+  }'
+```
+
+### Email Notification Logs
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/admin/email-notifications/logs" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Send Email Notification
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/email-notifications" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "recipient_email": "employee@example.com",
+    "user_id": 2,
+    "subject": "Welcome to HRIS",
+    "body": "Your account has been activated.",
+    "type": "notification",
+    "reference_type": "employee",
+    "reference_id": 2
+  }'
+```
+
+### Email Templates
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/admin/email-templates" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Create Email Template
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/email-templates" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "key": "welcome-template",
+    "name": "Welcome Template",
+    "description": "Welcome email for new employees",
+    "subject": "Welcome to the company",
+    "html_body": "<p>Hello {{name}}, welcome aboard!</p>",
+    "text_body": "Hello {{name}}, welcome aboard!",
+    "placeholders": ["name"]
+  }'
+```
+
+### Update Email Template
+```bash
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/admin/email-templates/{id}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Updated Welcome Template",
+    "subject": "Updated subject",
+    "html_body": "<p>Updated template body</p>",
+    "text_body": "Updated template body",
+    "placeholders": ["name"],
+    "is_active": true
+  }'
+```
+
+### Preview Email Template
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/email-templates/{id}/preview" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "data": {
+      "name": "John Doe"
+    }
+  }'
+```
+
+### Biometric Devices
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/biometric/devices" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Register Biometric Device
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/biometric/devices" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Front Door Scanner",
+    "device_type": "fingerprint",
+    "vendor": "ZKTeco",
+    "serial_number": "BIO-001",
+    "endpoint_url": "https://device.local/api",
+    "api_key": "device-api-key",
+    "active": true,
+    "location_id": 1
+  }'
+```
+
+### Sync Biometric Attendance
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/biometric/sync-attendance" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "biometric_device_id": 1,
+    "external_reference": "SCAN-20260415-001",
+    "user_id": 2,
+    "attendance_date": "2026-04-15",
+    "check_in": "2026-04-15 08:05:00",
+    "check_out": "2026-04-15 17:02:00",
+    "latitude": -6.200000,
+    "longitude": 106.816666,
+    "status": "on_time",
+    "payload": {
+      "source": "biometric"
+    }
+  }'
+```
+
+### Audit Logs
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/admin/audit-logs" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Audit Log Detail
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/admin/audit-logs/{id}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Approval Flows List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/approval-flows" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Create Approval Flow
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/approval-flows" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Leave Approval",
+    "module": "leave",
+    "steps": [
+      {
+        "step_order": 1,
+        "role_id": 2
+      },
+      {
+        "step_order": 2,
+        "role_id": 3
+      }
+    ]
+  }'
+```
+
+### Benefits List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/benefits" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Employee Benefits
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/benefits/employee/{employeeId}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Performance Summary
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/performance/summary" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Create Review Cycle
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/performance/cycles" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Performance Cycle 2026 Q2",
+    "period_type": "quarterly",
+    "year": 2026,
+    "quarter": 2,
+    "start_date": "2026-04-01",
+    "end_date": "2026-06-30",
+    "status": "open",
+    "description": "Quarterly review cycle"
+  }'
+```
+
+### Create Performance Review
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/performance/reviews" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "review_cycle_id": 1,
+    "employee_id": 1,
+    "reviewer_user_id": 2,
+    "kpi_id": 1,
+    "score": 88,
+    "strengths": "Reliable execution and good collaboration.",
+    "improvements": "Increase ownership on complex tasks.",
+    "feedback": "Keep the current pace.",
+    "reviewer_comment": "Strong performance overall."
+  }'
+```
+
+### Create OKR
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/performance/okrs" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "employee_id": 1,
+    "period_id": 1,
+    "objective": "Improve customer response speed",
+    "description": "Reduce average response time for support tickets",
+    "weight": 80,
+    "target_value": 90,
+    "unit": "percentage",
+    "start_date": "2026-04-01",
+    "end_date": "2026-06-30"
+  }'
+```
+
+### Create 360 Review
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/performance/360-reviews" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "cycle_id": 1,
+    "employee_id": 1,
+    "manager_id": 2,
+    "feeders_required": 3,
+    "start_date": "2026-04-01",
+    "end_date": "2026-05-15"
+  }'
+```
+
+### Create Calibration Session
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/performance/calibration" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "cycle_id": 1,
+    "name": "Calibration Q2 2026",
+    "description": "Calibration session for Q2 review results",
+    "scheduled_at": "2026-06-15 10:00:00"
+  }'
+```
+
+### Create IDP
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/career/idps" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "employee_id": 1,
+    "review_cycle_id": 1,
+    "goal_title": "Move into team lead role",
+    "goal_description": "Build leadership and planning skills",
+    "status": "draft",
+    "target_date": "2026-12-31",
+    "mentor_user_id": 2
+  }'
+```
+
+### Create Succession Candidate
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/career/succession" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "position_key": "it_manager",
+    "employee_id": 1,
+    "readiness": "ready_1_2_years",
+    "talent_score": 82,
+    "notes": "Needs more budgeting exposure."
+  }'
+```
+
+### Create Engagement Survey
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/engagement/surveys" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "title": "Q2 Engagement Pulse",
+    "survey_type": "pulse",
+    "start_date": "2026-04-15",
+    "end_date": "2026-04-30",
+    "anonymous": true,
+    "status": "draft",
+    "questions": [
+      {
+        "question_type": "rating",
+        "question_text": "How satisfied are you with your work environment?",
+        "required": true
+      },
+      {
+        "question_type": "text",
+        "question_text": "What could improve your experience?",
+        "required": false
+      }
+    ]
+  }'
+```
+
+### Create Holiday Calendar
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/workforce/holidays" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Indonesia Holidays 2026",
+    "year": 2026,
+    "active": true,
+    "dates": [
+      {
+        "holiday_date": "2026-05-01",
+        "name": "Labour Day",
+        "is_national": true
+      }
+    ]
+  }'
+```
+
+### Create Shift Swap Request
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/workforce/shift-swaps" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "requester_employee_id": 1,
+    "target_employee_id": 2,
+    "swap_date": "2026-04-20",
+    "reason": "Personal appointment"
+  }'
+```
+
+### Approve Shift Swap
+```bash
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/workforce/shift-swaps/{id}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "status": "approved"
+  }'
+```
+
+### Create Overtime Rule
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/workforce/overtime-rules" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Weekend Overtime",
+    "department": "IT",
+    "location_id": 1,
+    "min_minutes": 60,
+    "multiplier": 1.5,
+    "requires_approval": true,
+    "active": true
+  }'
+```
+
+### OKR List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/performance/okrs" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### 360 Review List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/performance/360-reviews" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Calibration Sessions List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/performance/calibration" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Career IDP List
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/career/idps" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Career Succession Matrix
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/career/succession" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Engagement Surveys
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/engagement/surveys" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Workforce Holidays
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/workforce/holidays" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Workforce Shift Swaps
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/workforce/shift-swaps" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Workforce Overtime Rules
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/workforce/overtime-rules" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json"
+```
+
+### Enterprise Compensation Profile
+```bash
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/enterprise/compensation/employee/{employeeId}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "tax_number": "NPWP-123456789",
+    "tax_status": "TK/0",
+    "bpjs_kesehatan_pct": 1,
+    "bpjs_ketenagakerjaan_pct": 2,
+    "bank_name": "BCA",
+    "bank_account_no": "1234567890",
+    "bank_account_name": "John Doe"
+  }'
+```
+
+### Enterprise Notification Template
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/enterprise/notifications/templates" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "code": "hr_reminder",
+    "channel": "in_app",
+    "title_template": "HR Reminder",
+    "body_template": "Please complete your profile.",
+    "active": true
+  }'
+```
+
+### Enterprise Notification Rule
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/enterprise/notifications/rules" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "name": "Leave Submitted Rule",
+    "event_key": "leave.submitted",
+    "conditions": {
+      "status": "submitted"
+    },
+    "channels": ["in_app", "email"],
+    "template_id": 1,
+    "active": true
+  }'
+```
+
+### Enterprise Retention Policy
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/enterprise/compliance/retention-policies" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "module": "employee_documents",
+    "retain_days": 3650,
+    "anonymize_after_expiry": false,
+    "active": true
+  }'
+```
+
+### Enterprise Compliance Task
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/enterprise/compliance/tasks" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "title": "Annual Policy Review",
+    "module": "compliance",
+    "status": "open",
+    "due_date": "2026-05-01"
+  }'
+```
+
+### Enterprise Privacy Request
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/enterprise/compliance/privacy-requests" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "request_type": "export",
+    "description": "Request a copy of my personal data."
+  }'
+```
+
+### Import Users
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/import/users" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json" \
+  -F "role=employee" \
+  -F "file=@C:/path/to/users.csv"
+```
+
+### Import Employees
+```bash
+curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/admin/import/employees" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Accept: application/json" \
+  -F "update_existing=true" \
+  -F "file=@C:/path/to/employees.csv"
+```
+
+### Import Template
+```bash
+curl -X GET "https://moccasin-crab-693879.hostingersite.com/api/admin/import/template" \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Accept: application/json"
 ```
