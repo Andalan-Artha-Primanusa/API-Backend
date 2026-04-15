@@ -62,7 +62,72 @@ Authorization: Bearer {TOKEN}
 
 ---
 
-## 👤 USER PROFILE
+## � ROLE-BASED FEATURE INDEX
+
+Test endpoints sesuai role Anda. Ikuti urutan feature agar testing lebih terstruktur dan tidak loncat-loncat.
+
+### 👑 SUPER_ADMIN Features (use HRIS_ADMIN_TOKEN)
+1. **Admin Notifications** - Summary & Broadcast
+2. **Email Notifications** - Send & Logs
+3. **Email Templates** - Create, List, Update
+4. **Biometric Devices** - Register & Sync
+5. **Audit Logs** - View logs
+6. **Import** - Users & Employees
+
+### 🛡️ ADMIN Features (use HRIS_ADMIN_TOKEN)
+1. **User Management** - List, Assign Roles
+2. **Role Management** - List, Assign Permissions
+3. **Permission Management** - List all
+4. **Notifications** - Summary, Broadcast, Admin notifications
+5. **Email** - Send, Templates, Logs
+6. **Audit Logs** - View logs
+7. **Biometric** - Devices, Sync
+8. **Import** - Users, Employees, Templates
+
+### 💼 HR Features (use HRIS_HR_TOKEN)
+1. **Employees** - Create, List, Update, Onboarding/Offboarding
+2. **Leave Policies** - Create, List, Update
+3. **Payroll** - Create, Generate, Update, Approve, Mark Paid
+4. **Payroll Details** - Add, Update, Delete
+5. **Benefits** - List, Assign
+6. **Reports** - Dashboard, Attendance, Leave, Payroll, Competency
+7. **Compliance** - Overview, Audit, Expiring Documents
+8. **Training** - Programs, Enrollments
+9. **Competencies** - Create, Assign
+10. **Documents** - Review, Expiring
+11. **Requests** - Assign, Update Status
+
+### 👔 MANAGER Features (use HRIS_MANAGER_TOKEN)
+1. **Organization** - Directory, Summary, Chart, Team Members
+2. **Leaves** - Pending, Approve, Reject
+3. **KPI** - Create, List, Approve
+4. **Reimbursements** - Create, List, Approve, Reject
+5. **People Insights** - Detailed Dashboard
+6. **Performance** - Summary, Cycles, Reviews
+7. **OKR** - Create, List, Update
+8. **360 Reviews** - Create, List
+9. **Calibration** - Sessions
+10. **Career** - IDP, Succession
+11. **Engagement** - Surveys
+12. **Recruitment** - Job Openings
+13. **Workforce Policies** - Shift Swaps, Overtime, Holidays
+
+### 👨‍💼 EMPLOYEE Features (use HRIS_EMPLOYEE_TOKEN)
+1. **My Profile** - View, Update
+2. **My KPI** - View, Submit
+3. **My Reimbursements** - Create, View, Submit
+4. **My Payroll** - View, Export
+5. **My Leaves** - Create, View, Balance
+6. **Attendance** - Check-in, Check-out, History
+7. **My Documents** - Upload, View
+8. **My Trainings** - View, Competencies
+9. **My Assets** - View
+10. **Notifications** - View, Mark Read
+11. **Requests (Helpdesk)** - Create, View, Comment
+
+---
+
+## �👤 USER PROFILE
 
 ### Get All Profiles
 ```bash
