@@ -13,6 +13,7 @@ return [
 
     'allowed_origins' => [
         'https://salmon-octopus-221724.hostingersite.com',
+        'https://regal-brigadeiros-b9aa86.netlify.app',
     ],
 
     'allowed_origins_patterns' => [],
