@@ -10,7 +10,7 @@ return [
     'allowed_methods' => ['*'],
 
     // Configurable via .env for production deployment
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')),
+    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,https://salmon-octopus-221724.hostingersite.com')),
 
     'allowed_origins_patterns' => [],
 
