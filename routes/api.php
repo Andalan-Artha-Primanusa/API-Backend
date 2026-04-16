@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Middleware\HandleCors;
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
@@ -44,27 +45,34 @@ use App\Http\Controllers\Api\OKRController;
 use App\Http\Controllers\Api\Review360Controller;
 use App\Http\Controllers\Api\CalibrationController;
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC ROUTES
-|--------------------------------------------------------------------------
-*/
 
-Route::get('/', function () {
-    return response()->json([
-        'success' => true,
-        'message' => 'API HRIS aktif 🚀'
-    ]);
-});
+// Group all API routes with CORS middleware
+Route::middleware(['cors'])->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | PUBLIC ROUTES
+    |--------------------------------------------------------------------------
+    */
 
-// AUTH
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1');
+    Route::get('/', function () {
+        return response()->json([
+            'success' => true,
+            'message' => 'API HRIS aktif 🚀'
+        ]);
+    });
 
-// GOOGLE SSO
-Route::prefix('auth')->group(function () {
-    Route::get('/google', [GoogleAuthController::class, 'redirect']);
-    Route::get('/google/callback', [GoogleAuthController::class, 'callback']);
+    // AUTH
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1');
+
+    // GOOGLE SSO
+    Route::prefix('auth')->group(function () {
+        Route::get('/google', [GoogleAuthController::class, 'redirect']);
+        Route::get('/google/callback', [GoogleAuthController::class, 'callback']);
+    });
+
+    // ...existing code...
+    // Seluruh route lain tetap sama, sudah otomatis ter-cover group ini
 });
 
 
