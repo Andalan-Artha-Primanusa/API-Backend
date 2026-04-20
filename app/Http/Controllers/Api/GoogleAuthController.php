@@ -18,7 +18,7 @@ class GoogleAuthController extends Controller
 
     /**
      * Return the Google OAuth redirect URL for the SPA frontend.
-     * 
+     *
      * @return JsonResponse
      */
     public function redirect(): JsonResponse
@@ -39,15 +39,15 @@ class GoogleAuthController extends Controller
 
     /**
      * Handle the Google OAuth callback.
-     * 
+     *
      * Validates email, creates/updates user, and returns API token via Redirect.
-     * 
+     *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function callback()
     {
         // 1. Definisikan URL Frontend Anda (Tarik dari .env atau fallback default)
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $frontendUrl = rtrim(config('app.frontend_url'), '/');
 
         try {
             // Fetch Google user
