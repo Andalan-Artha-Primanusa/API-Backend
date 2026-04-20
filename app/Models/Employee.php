@@ -79,4 +79,8 @@ class Employee extends Model
     {
         return $this->hasMany(\App\Models\HrServiceRequest::class);
     }
-}
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
+    }
+    }
