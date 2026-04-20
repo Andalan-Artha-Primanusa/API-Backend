@@ -28,7 +28,7 @@ return new class extends Migration
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
             $table->foreign('initiated_by_id')->references('id')->on('employees')->nullOnDelete();
             $table->foreign('approved_by_id')->references('id')->on('users')->nullOnDelete();
-            $table$table->index(['employee_id', 'event_type', 'event_date'], 'ele_idx_emp_type_date');
+            $table->index(['employee_id', 'event_type', 'event_date'], 'ele_idx_emp_type_date');
         });
     }
 
