@@ -37,7 +37,8 @@ class EmployeeService
         $order = $request->get('order') === 'desc' ? 'desc' : 'asc';
         $query->orderBy($sort, $order);
 
-        return $query->paginate(15);
+        $perPage = $request->integer('per_page', 15);
+        return $query->paginate($perPage);
     }
 
     /**
