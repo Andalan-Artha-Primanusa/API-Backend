@@ -1,0 +1,88 @@
+{
+  "info": {
+    "_postman_id": "b1e1e1e1-1234-5678-9101-abcdefabcdef",
+    "name": "HRIS API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Kumpulan endpoint API HRIS lengkap untuk import ke Postman."
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"]},
+        "body": {"mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}"}
+      }
+    },
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"]},
+        "body": {"mode": "raw", "raw": "{\n  \"name\": \"User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"}
+      }
+    },
+    {
+      "name": "Employee - List",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+        "url": {"raw": "{{base_url}}/api/employees", "host": ["{{base_url}}"], "path": ["api", "employees"]}
+      }
+    },
+    {
+      "name": "Employee - Detail",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+        "url": {"raw": "{{base_url}}/api/employees/:id", "host": ["{{base_url}}"], "path": ["api", "employees", ":id"]}
+      }
+    },
+    {
+      "name": "Leave - Request",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/leaves", "host": ["{{base_url}}"], "path": ["api", "leaves"]},
+        "body": {"mode": "raw", "raw": "{\n  \"type\": \"annual\",\n  \"start_date\": \"2026-05-01\",\n  \"end_date\": \"2026-05-03\",\n  \"reason\": \"Cuti tahunan\"\n}"}
+      }
+    },
+    {
+      "name": "Leave - Approve",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+        "url": {"raw": "{{base_url}}/api/leaves/:id/approve", "host": ["{{base_url}}"], "path": ["api", "leaves", ":id", "approve"]}
+      }
+    },
+    {
+      "name": "Payroll - My Slip",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+        "url": {"raw": "{{base_url}}/api/my/payroll/:id/slip", "host": ["{{base_url}}"], "path": ["api", "my", "payroll", ":id", "slip"]}
+      }
+    },
+    {
+      "name": "Promotion - Submit",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/employees/:id/promote", "host": ["{{base_url}}"], "path": ["api", "employees", ":id", "promote"]},
+        "body": {"mode": "raw", "raw": "{\n  \"new_position\": \"Senior Developer\",\n  \"reason\": \"Kinerja sangat baik\",\n  \"effective_date\": \"2026-06-01\"\n}"}
+      }
+    },
+    {
+      "name": "Tax - Progressive Calculate",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/tax/progressive/calculate", "host": ["{{base_url}}"], "path": ["api", "tax", "progressive", "calculate"]},
+        "body": {"mode": "raw", "raw": "{\n  \"annual_income\": 120000000\n}"}
+      }
+    }
+    // ...tambahkan endpoint lain sesuai kebutuhan
+  ]
+}

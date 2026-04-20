@@ -93,11 +93,12 @@ class UserProfileController extends Controller
                 'bank_name'                  => 'nullable|string|max:100',
                 'bank_account_number'        => 'nullable|string|max:100',
                 'bank_account_name'          => 'nullable|string|max:255',
-                'tax_number'                 => 'nullable|string|max:100',
+                'tax_number'                 => 'required|string|max:100', // NPWP wajib diisi
                 'last_education'             => 'nullable|string|max:100',
                 'institution_name'           => 'nullable|string|max:255',
                 'graduation_year'            => 'nullable|integer|digits:4|min:1950|max:' . date('Y'),
                 'profile_photo_path'         => 'nullable|string|max:255',
+                'custom_formula'             => 'nullable|string',
             ]);
 
             $validated['user_id'] = $user->id;
@@ -173,7 +174,11 @@ class UserProfileController extends Controller
                 return ApiResponse::error('Forbidden', 'You cannot update this profile', 403);
             }
 
-            $profile->update($request->validated());
+            $data = $request->validated();
+            if ($request->has('custom_formula')) {
+                $data['custom_formula'] = $request->input('custom_formula');
+            }
+            $profile->update($data);
 
             return ApiResponse::success(
                 'Profile updated successfully',

@@ -39,7 +39,7 @@ class UpdateProfileRequest extends FormRequest
             'bank_name' => ['sometimes', 'nullable', 'string', 'max:100'],
             'bank_account_number' => ['sometimes', 'nullable', 'string', 'max:100'],
             'bank_account_name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'tax_number' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'tax_number' => ['required', 'string', 'max:100'], // NPWP wajib diisi saat update
             'last_education' => ['sometimes', 'nullable', 'string', 'max:100'],
             'institution_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'graduation_year' => ['sometimes', 'nullable', 'integer', 'digits:4', 'min:1950', 'max:' . date('Y')],

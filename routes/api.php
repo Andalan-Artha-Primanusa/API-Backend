@@ -1,7 +1,12 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\PromotionController;
+use App\Services\ProgressiveTaxService;
+use App\Http\Controllers\Api\EmploymentLetterController;
+use App\Http\Controllers\Api\AssignmentLetterController;
+use App\Http\Controllers\Api\SeveranceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\UserProfileController;
@@ -43,6 +48,18 @@ use App\Http\Controllers\Api\EnterpriseOpsController;
 use App\Http\Controllers\Api\OKRController;
 use App\Http\Controllers\Api\Review360Controller;
 use App\Http\Controllers\Api\CalibrationController;
+// PROMOTION (Kenaikan Jabatan)
+Route::post('employees/{employee}/promote', [PromotionController::class, 'promote']);
+
+// PROGRESSIVE TAX (PPh21 Progresif)
+Route::post('tax/progressive/calculate', function (\Illuminate\Http\Request $request) {
+    $validated = $request->validate([
+        'annual_income' => 'required|numeric|min:0',
+    ]);
+    $service = new ProgressiveTaxService();
+    $result = $service->calculate($validated['annual_income']);
+    return \App\Helpers\ApiResponse::success('Pajak progresif dihitung', $result);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +73,10 @@ Route::get('/', function () {
         'message' => 'API HRIS aktif 🚀'
     ]);
 });
+// ...existing use statements...
+// Surat Pengalaman Kerja & Surat Keterangan Bekerja
+
+// ...existing public routes...
 
 // AUTH
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -73,7 +94,22 @@ Route::prefix('auth')->group(function () {
 | PROTECTED ROUTES (AUTHENTICATED)
 |--------------------------------------------------------------------------
 */
+
 Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
+    // Surat Pengalaman Kerja & Surat Keterangan Bekerja
+    Route::post('employees/{employee}/experience-letter', [EmploymentLetterController::class, 'generateExperienceLetter']);
+    Route::post('employees/{employee}/employment-letter', [EmploymentLetterController::class, 'generateEmploymentLetter']);
+
+    // Assignment Letter (Surat Tugas) dengan approval
+    Route::get('assignment-letters', [AssignmentLetterController::class, 'index']);
+    Route::post('assignment-letters', [AssignmentLetterController::class, 'store']);
+    Route::get('assignment-letters/{id}', [AssignmentLetterController::class, 'show']);
+    Route::post('assignment-letters/{id}/approve', [AssignmentLetterController::class, 'approve']);
+    Route::post('assignment-letters/{id}/reject', [AssignmentLetterController::class, 'reject']);
+
+    // Pesangon PP 35/2021
+    Route::get('employees/{employee}/severance/calculate', [SeveranceController::class, 'calculate']);
+    Route::get('employees/{employee}/severance/export', [SeveranceController::class, 'exportExcel']);
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);

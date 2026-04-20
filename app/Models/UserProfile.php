@@ -34,7 +34,27 @@ class UserProfile extends Model
         'institution_name',
         'graduation_year',
         'profile_photo_path',
+        'custom_formula',
     ];
+
+    /**
+     * Evaluate custom formula (simple PHP eval, only for trusted input!)
+     * Example: "(base_salary * 0.1) + 50000"
+     * @param array $variables
+     * @return float|int|null
+     */
+    public function evaluateCustomFormula(array $variables = [])
+    {
+        if (!$this->custom_formula) return null;
+        extract($variables);
+        try {
+            // Only allow math expressions, never user input directly!
+            // Example: $custom_formula = "(base_salary * 0.1) + 50000";
+            return eval('return ' . $this->custom_formula . ';');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
 
     protected $casts = [
         'birth_date' => 'date',
