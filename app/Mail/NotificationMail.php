@@ -23,20 +23,13 @@ class NotificationMail extends Mailable
         $this->recipientEmail = $recipientEmail;
     }
 
-    public function envelope(): Envelope
+    // Override build agar email selalu dikirim sebagai HTML
+    public function build()
     {
-        return new Envelope(
-            subject: $this->subject,
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.notification',
-            with: [
+        return $this->subject($this->subject)
+            ->view('emails.notification')
+            ->with([
                 'body' => $this->body,
-            ],
-        );
+            ]);
     }
 }

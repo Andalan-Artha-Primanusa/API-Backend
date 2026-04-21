@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Models\UserNotification;
-use App\Models\EmailTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,18 +36,9 @@ class NotificationController extends Controller
         $unread = (clone $baseQuery)->whereNull('read_at')->count();
         $read = $total - $unread;
 
-        $byCategory = (clone $baseQuery)
-            ->selectRaw('COALESCE(category, ?) as category, COUNT(*) as total', ['uncategorized'])
-            ->groupBy('category')
-            ->orderByDesc('total')
-            ->get();
+        $byCategory = (clone $baseQuery)->selectRaw('COALESCE(category, ?) as category, COUNT(*) as total', ['uncategorized'])->groupBy('category')->orderByDesc('total')->get();
 
-        $byType = (clone $baseQuery)
-            ->selectRaw('type, COUNT(*) as total')
-            ->groupBy('type')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
+        $byType = (clone $baseQuery)->selectRaw('type, COUNT(*) as total')->groupBy('type')->orderByDesc('total')->limit(10)->get();
 
         return ApiResponse::success('Notification summary retrieved successfully', [
             'window' => [
@@ -75,9 +66,7 @@ class NotificationController extends Controller
             'unread_only' => 'sometimes|boolean',
         ]);
 
-        $query = UserNotification::with('sender:id,name,email')
-            ->where('user_id', $request->user()->id)
-            ->latest();
+        $query = UserNotification::with('sender:id,name,email')->where('user_id', $request->user()->id)->latest();
 
         if (!empty($validated['category'])) {
             $query->where('category', $validated['category']);
@@ -98,9 +87,7 @@ class NotificationController extends Controller
 
     public function unreadCount(Request $request): JsonResponse
     {
-        $count = UserNotification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
-            ->count();
+        $count = UserNotification::where('user_id', $request->user()->id)->whereNull('read_at')->count();
 
         return ApiResponse::success('Unread notification count', [
             'count' => $count,
@@ -141,9 +128,7 @@ class NotificationController extends Controller
 
     public function markAllAsRead(Request $request): JsonResponse
     {
-        UserNotification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+        UserNotification::where('user_id', $request->user()->id)->whereNull('read_at')->update(['read_at' => now()]);
 
         return ApiResponse::success('All notifications marked as read');
     }
@@ -217,10 +202,7 @@ class NotificationController extends Controller
             'data' => 'nullable|array',
         ]);
 
-        $recipientIds = User::query()
-            ->where('id', '!=', $user->id)
-            ->pluck('id')
-            ->all();
+        $recipientIds = User::query()->where('id', '!=', $user->id)->pluck('id')->all();
 
         $notifications = [];
 
@@ -245,10 +227,7 @@ class NotificationController extends Controller
 
     public function emailTemplateIndex(Request $request): JsonResponse
     {
-        $templates = EmailTemplate::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->paginate($request->integer('per_page', 15));
+        $templates = EmailTemplate::query()->where('is_active', true)->orderBy('name')->paginate($request->integer('per_page', 15));
 
         return ApiResponse::success('Email templates retrieved', $templates);
     }
@@ -282,10 +261,9 @@ class NotificationController extends Controller
             DB::commit();
 
             return ApiResponse::success('Email template created', $template, 201);
-
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('EmailTemplateStore Error: '.$e->getMessage());
+            Log::error('EmailTemplateStore Error: ' . $e->getMessage());
 
             return ApiResponse::error('Internal server error', $e->getMessage(), 500);
         }
@@ -329,5 +307,132 @@ class NotificationController extends Controller
             'html_body' => $template->renderHtmlBody($data),
             'text_body' => $template->renderTextBody($data),
         ]);
+    }
+
+  
+    public function sendEmailNotification(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Hanya admin & HR yang boleh kirim email
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        // Validasi request
+        $validated = $request->validate([
+            'recipient_email' => 'required|email',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'subject' => 'sometimes|string|max:500',
+            'body' => 'sometimes|string',
+            'template_key' => 'sometimes|string|exists:email_templates,key',
+            'template_data' => 'sometimes|array',
+            'type' => 'sometimes|string|in:approval,reminder,notification,alert,report,document,workflow',
+            'reference_type' => 'nullable|string|max:100',
+            'reference_id' => 'nullable|integer',
+        ]);
+
+        // Default type
+        $validated['type'] = $validated['type'] ?? 'notification';
+
+        // Default user_id ke user login jika tidak dikirim
+        if (empty($validated['user_id'])) {
+            $validated['user_id'] = $user->id;
+        }
+
+        // Jika pakai template, render subject & body dari template
+        if (!empty($validated['template_key'])) {
+            $template = EmailTemplate::where('key', $validated['template_key'])->firstOrFail();
+            $templateData = $validated['template_data'] ?? [];
+
+            // Validasi placeholder wajib terisi
+            $placeholders = $template->placeholders ?? [];
+            $missingPlaceholders = [];
+            foreach ($placeholders as $ph) {
+                if (!array_key_exists($ph, $templateData)) {
+                    $missingPlaceholders[] = $ph;
+                }
+            }
+            if (count($missingPlaceholders) > 0) {
+                return ApiResponse::error('Missing template_data for placeholders: ' . implode(', ', $missingPlaceholders), null, 422);
+            }
+
+            $validated['subject'] = $template->renderSubject($templateData);
+            $validated['body'] = $template->renderHtmlBody($templateData);
+        }
+
+        // Jika tidak pakai template, subject & body wajib ada
+        if (empty($validated['subject']) || empty($validated['body'])) {
+            return ApiResponse::error('Subject and body are required (either directly or via template)', null, 422);
+        }
+
+        // Set default reference_type dan reference_id jika null
+        $referenceType = $validated['reference_type'] ?? 'user';
+        $referenceId = $validated['reference_id'] ?? $validated['user_id'];
+
+        // Simpan log email dengan field konsisten
+        $emailLog = \App\Models\EmailLog::create([
+            'recipient_email' => $validated['recipient_email'],
+            'user_id' => $validated['user_id'],
+            'subject' => $validated['subject'],
+            'body' => $validated['body'],
+            'type' => $validated['type'],
+            'reference_type' => $referenceType,
+            'reference_id' => $referenceId,
+        ]);
+
+        // Dispatch job pengiriman email
+        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
+
+        return ApiResponse::success('Email notification queued for sending', $emailLog, 201);
+    }
+
+    public function getEmailLogs(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $query = \App\Models\EmailLog::query();
+
+        if ($request->has('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->integer('user_id'));
+        }
+
+        if ($request->has('type')) {
+            $query->where('type', $request->string('type'));
+        }
+
+        $logs = $query->orderByDesc('created_at')
+            ->paginate($request->integer('per_page', 15));
+
+        return ApiResponse::success('Email logs retrieved', $logs);
+    }
+
+    public function retryEmailNotification(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $emailLog = \App\Models\EmailLog::findOrFail($id);
+
+        if (!$emailLog->canRetry()) {
+            return ApiResponse::error('Email cannot be retried', null, 422);
+        }
+
+        $emailLog->update(['status' => 'pending']);
+
+        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
+
+        return ApiResponse::success('Email notification sent for retry', $emailLog);
     }
 }
