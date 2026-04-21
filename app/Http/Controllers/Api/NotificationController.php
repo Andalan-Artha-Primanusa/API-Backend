@@ -386,34 +386,33 @@ class NotificationController extends Controller
 
         return ApiResponse::success('Email notification queued for sending', $emailLog, 201);
     }
+public function getEmailLogs(Request $request): JsonResponse
+{
+    $user = $request->user();
 
-    public function getEmailLogs(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $query = \App\Models\EmailLog::query();
-
-        if ($request->has('status')) {
-            $query->where('status', $request->string('status'));
-        }
-
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->integer('user_id'));
-        }
-
-        if ($request->has('type')) {
-            $query->where('type', $request->string('type'));
-        }
-
-        $logs = $query->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 15));
-
-        return ApiResponse::success('Email logs retrieved', $logs);
+    if (!$user->isAdmin() && !$user->isHR()) {
+        return ApiResponse::error('Forbidden', 'No permission', 403);
     }
+
+    $query = \App\Models\EmailLog::query();
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->get('status'));
+    }
+
+    if ($request->filled('user_id')) {
+        $query->where('user_id', $request->integer('user_id'));
+    }
+
+    if ($request->filled('type')) {
+        $query->where('type', $request->get('type'));
+    }
+
+    $logs = $query->orderByDesc('created_at')
+        ->paginate($request->integer('per_page', 15));
+
+    return ApiResponse::success('Email logs retrieved', $logs);
+}
 
     public function retryEmailNotification(Request $request, $id): JsonResponse
     {
