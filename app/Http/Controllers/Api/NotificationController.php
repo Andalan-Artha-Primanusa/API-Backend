@@ -6,8 +6,11 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Models\EmailTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class NotificationController extends Controller
 {
@@ -238,93 +241,11 @@ class NotificationController extends Controller
         ], 201);
     }
 
-    // EMAIL NOTIFICATION METHODS
-
-    public function sendEmailNotification(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $validated = $request->validate([
-            'recipient_email' => 'required|email',
-            'user_id' => 'nullable|integer|exists:users,id',
-            'subject' => 'required|string|max:500',
-            'body' => 'required|string',
-            'type' => 'sometimes|string|in:approval,reminder,notification,alert,report,document,workflow',
-            'reference_type' => 'nullable|string|max:100',
-            'reference_id' => 'nullable|integer',
-        ]);
-
-        $validated['type'] = $validated['type'] ?? 'notification';
-
-        $emailLog = \App\Models\EmailLog::create($validated);
-
-        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
-
-        return ApiResponse::success('Email notification queued for sending', $emailLog, 201);
-    }
-
-    public function getEmailLogs(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $query = \App\Models\EmailLog::query();
-
-        if ($request->has('status')) {
-            $query->where('status', $request->string('status'));
-        }
-
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->integer('user_id'));
-        }
-
-        if ($request->has('type')) {
-            $query->where('type', $request->string('type'));
-        }
-
-        $logs = $query->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 15));
-
-        return ApiResponse::success('Email logs retrieved', $logs);
-    }
-
-    public function retryEmailNotification(Request $request, $id): JsonResponse
-    {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $emailLog = \App\Models\EmailLog::findOrFail($id);
-
-        if (!$emailLog->canRetry()) {
-            return ApiResponse::error('Email cannot be retried', null, 422);
-        }
-
-        $emailLog->update(['status' => 'pending']);
-
-        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
-
-        return ApiResponse::success('Email notification sent for retry', $emailLog);
-    }
+    // ================= EMAIL TEMPLATE =================
 
     public function emailTemplateIndex(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $templates = \App\Models\EmailTemplate::query()
+        $templates = EmailTemplate::query()
             ->where('is_active', true)
             ->orderBy('name')
             ->paginate($request->integer('per_page', 15));
@@ -334,39 +255,45 @@ class NotificationController extends Controller
 
     public function emailTemplateStore(Request $request): JsonResponse
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
+            $validated = $request->validate([
+                'key' => 'required|string|max:100|unique:email_templates,key',
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'subject' => 'required|string|max:500',
+                'html_body' => 'required|string',
+                'text_body' => 'nullable|string',
+                'placeholders' => 'nullable|array',
+            ]);
+
+            DB::beginTransaction();
+
+            $validated['created_by'] = $user->id;
+            $validated['is_active'] = true;
+
+            if (isset($validated['placeholders'])) {
+                $validated['placeholders'] = array_values($validated['placeholders']);
+            }
+
+            $template = EmailTemplate::create($validated);
+
+            DB::commit();
+
+            return ApiResponse::success('Email template created', $template, 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('EmailTemplateStore Error: '.$e->getMessage());
+
+            return ApiResponse::error('Internal server error', $e->getMessage(), 500);
         }
-
-        $validated = $request->validate([
-            'key' => 'required|string|max:100|unique:email_templates',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'subject' => 'required|string|max:500',
-            'html_body' => 'required|string',
-            'text_body' => 'nullable|string',
-            'placeholders' => 'nullable|array',
-        ]);
-
-        $validated['created_by'] = $user->id;
-        $validated['is_active'] = true;
-
-        $template = \App\Models\EmailTemplate::create($validated);
-
-        return ApiResponse::success('Email template created', $template, 201);
     }
 
     public function emailTemplateUpdate(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $template = \App\Models\EmailTemplate::findOrFail($id);
+        $template = EmailTemplate::findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -378,6 +305,10 @@ class NotificationController extends Controller
             'is_active' => 'sometimes|boolean',
         ]);
 
+        if (isset($validated['placeholders'])) {
+            $validated['placeholders'] = array_values($validated['placeholders']);
+        }
+
         $template->update($validated);
 
         return ApiResponse::success('Email template updated', $template);
@@ -385,7 +316,7 @@ class NotificationController extends Controller
 
     public function emailTemplatePreview(Request $request, $id): JsonResponse
     {
-        $template = \App\Models\EmailTemplate::findOrFail($id);
+        $template = EmailTemplate::findOrFail($id);
 
         $validated = $request->validate([
             'data' => 'sometimes|array',
@@ -393,12 +324,10 @@ class NotificationController extends Controller
 
         $data = $validated['data'] ?? [];
 
-        $preview = [
+        return ApiResponse::success('Email template preview', [
             'subject' => $template->renderSubject($data),
             'html_body' => $template->renderHtmlBody($data),
             'text_body' => $template->renderTextBody($data),
-        ];
-
-        return ApiResponse::success('Email template preview', $preview);
+        ]);
     }
 }
