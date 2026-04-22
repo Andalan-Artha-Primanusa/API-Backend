@@ -249,8 +249,14 @@ class PeopleInsightService
                 continue;
             }
 
-            $scheduled = Carbon::parse($row->date . ' ' . $checkOutTime);
-            $actual = Carbon::parse($row->check_out);
+            $attendanceDate = $row->date instanceof \Carbon\Carbon
+                ? $row->date->toDateString()
+                : Carbon::parse($row->date)->toDateString();
+
+            $scheduled = Carbon::parse($attendanceDate . ' ' . $checkOutTime);
+            $actual = $row->check_out instanceof \Carbon\Carbon
+                ? $row->check_out
+                : Carbon::parse($row->check_out);
 
             if ($actual->gt($scheduled)) {
                 $overtimeMinutes += $actual->diffInMinutes($scheduled);
