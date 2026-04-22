@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendEmailNotificationJob;
+use App\Models\EmailLog;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Models\UserNotification;
@@ -371,7 +373,7 @@ class NotificationController extends Controller
         $referenceId = $validated['reference_id'] ?? $validated['user_id'];
 
         // Simpan log email dengan field konsisten
-        $emailLog = \App\Models\EmailLog::create([
+        $emailLog = EmailLog::create([
             'recipient_email' => $validated['recipient_email'],
             'user_id' => $validated['user_id'],
             'subject' => $validated['subject'],
@@ -382,37 +384,38 @@ class NotificationController extends Controller
         ]);
 
         // Dispatch job pengiriman email
-        \App\Jobs\SendEmailNotificationJob::dispatch($emailLog);
+        SendEmailNotificationJob::dispatch($emailLog);
 
         return ApiResponse::success('Email notification queued for sending', $emailLog, 201);
     }
-public function getEmailLogs(Request $request): JsonResponse
-{
-    $user = $request->user();
 
-    if (!$user->isAdmin() && !$user->isHR()) {
-        return ApiResponse::error('Forbidden', 'No permission', 403);
+    public function getEmailLogs(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $query = EmailLog::query();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->integer('user_id'));
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->get('type'));
+        }
+
+        $logs = $query->orderByDesc('created_at')
+            ->paginate($request->integer('per_page', 15));
+
+        return ApiResponse::success('Email logs retrieved', $logs);
     }
-
-    $query = \App\Models\EmailLog::query();
-
-    if ($request->filled('status')) {
-        $query->where('status', $request->get('status'));
-    }
-
-    if ($request->filled('user_id')) {
-        $query->where('user_id', $request->integer('user_id'));
-    }
-
-    if ($request->filled('type')) {
-        $query->where('type', $request->get('type'));
-    }
-
-    $logs = $query->orderByDesc('created_at')
-        ->paginate($request->integer('per_page', 15));
-
-    return ApiResponse::success('Email logs retrieved', $logs);
-}
 
     public function retryEmailNotification(Request $request, $id): JsonResponse
     {

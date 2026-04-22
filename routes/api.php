@@ -525,15 +525,10 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         });
     });
 
-    // MASTER DATA & SYSTEM SETTINGS (Super Admin ONLY - Akses kontrol & import)
-    Route::middleware('role:super_admin')->group(function () {
-        Route::apiResource('locations', LocationController::class);
-
-        Route::apiResource('work-schedules', WorkScheduleController::class);
-
+    // MASTER DATA & SYSTEM SETTINGS (Super Admin & Admin/HR)
+    Route::middleware('role:admin,hr,super_admin')->group(function () {
         Route::prefix('admin/notifications')->group(function () {
             Route::get('/summary', [NotificationController::class, 'summary']);
-            Route::post('/', [NotificationController::class, 'store']);
             Route::post('/broadcast', [NotificationController::class, 'broadcast']);
         });
 
@@ -549,6 +544,19 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/{id}', [NotificationController::class, 'emailTemplateUpdate']);
             Route::post('/{id}/preview', [NotificationController::class, 'emailTemplatePreview']);
         });
+    });
+
+    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
+        Route::prefix('admin/notifications')->group(function () {
+            Route::post('/', [NotificationController::class, 'store']);
+        });
+    });
+
+    Route::middleware('role:super_admin')->group(function () {
+        Route::apiResource('locations', LocationController::class);
+
+        Route::apiResource('work-schedules', WorkScheduleController::class);
+
 
         Route::prefix('biometric')->group(function () {
             Route::get('/devices', [BiometricIntegrationController::class, 'deviceIndex']);
