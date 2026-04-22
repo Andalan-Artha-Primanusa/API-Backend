@@ -266,6 +266,35 @@ class AssetController extends Controller
         return ApiResponse::success('Asset returned successfully', $assignment->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email']));
     }
 
+    public function assignments(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'status'   => 'sometimes|string|in:assigned,returned',
+        ]);
+
+        $query = InventoryAssetAssignment::with([
+            'asset',
+            'employee.user:id,name,email',
+            'assignedBy:id,name,email',
+        ])->latest();
+
+        if (!empty($validated['status'])) {
+            $query->where('status', $validated['status']);
+        }
+
+        return ApiResponse::success(
+            'Asset assignments retrieved successfully',
+            $query->paginate($validated['per_page'] ?? 15)
+        );
+    }
+
     public function myAssets(Request $request): JsonResponse
     {
         $employee = $request->user()->employee;
