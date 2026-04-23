@@ -88,6 +88,7 @@ Route::prefix('auth')->group(function () {
     Route::get('/google/callback', [GoogleAuthController::class, 'callback']);
 });
 
+Route::get('/documents/{filename}', [EmployeeDocumentController::class, 'download']);
 
 /*
 |--------------------------------------------------------------------------
@@ -99,7 +100,6 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     // Surat Pengalaman Kerja & Surat Keterangan Bekerja
     Route::post('employees/{employee}/experience-letter', [EmploymentLetterController::class, 'generateExperienceLetter']);
     Route::post('employees/{employee}/employment-letter', [EmploymentLetterController::class, 'generateEmploymentLetter']);
-Route::get('/documents/{filename}', [EmployeeDocumentController::class, 'download']);
     // Assignment Letter (Surat Tugas) dengan approval
     Route::get('assignment-letters', [AssignmentLetterController::class, 'index']);
     Route::post('assignment-letters', [AssignmentLetterController::class, 'store']);
