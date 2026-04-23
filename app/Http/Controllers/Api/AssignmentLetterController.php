@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ApiResponse;
 use App\Models\AssignmentLetter;
 use App\Models\ApprovalFlow;
+use App\Models\EmployeeDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -128,6 +129,26 @@ class AssignmentLetterController
         $pdfContent = $pdf->output();
         $storedPath = 'employee-documents/' . $letter->user->employee->id . '/' . $filename;
         Storage::disk('public')->put($storedPath, $pdfContent);
+
+        // Save to employee_documents table
+        EmployeeDocument::updateOrCreate(
+            [
+                'employee_id' => $letter->user->employee->id,
+                'title' => 'Surat Tugas: ' . $letter->title,
+                'document_type' => 'assignment_letter',
+            ],
+            [
+                'uploaded_by' => $user->id,
+                'category' => 'official_letter',
+                'status' => 'approved',
+                'file_name' => $filename,
+                'file_path' => $storedPath,
+                'file_mime' => 'application/pdf',
+                'file_size' => strlen($pdfContent),
+                'reviewed_at' => $now,
+                'reviewed_by' => $user->id,
+            ]
+        );
 
         return ApiResponse::success('Surat tugas berhasil dibuat', [
             'file_url' => asset('storage/' . $storedPath),
