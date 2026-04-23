@@ -118,6 +118,10 @@ class AssignmentLetterController
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
+        if (!$letter->user || !$letter->user->employee) {
+            return ApiResponse::error('Employee record not found for this user', null, 404);
+        }
+
         $now = now();
         $filename = 'assignment-letter-' . $letter->id . '-' . $now->format('YmdHis') . '.pdf';
 
@@ -151,7 +155,7 @@ class AssignmentLetterController
         );
 
         return ApiResponse::success('Surat tugas berhasil dibuat', [
-            'file_url' => asset('storage/' . $storedPath),
+            'file_url' => Storage::disk('public')->url($storedPath),
             'filename' => $filename
         ]);
     }

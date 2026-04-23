@@ -63,6 +63,6 @@ class EmployeeDocument extends Model
             return null;
         }
 
-        return asset('storage/' . ltrim($this->file_path, '/'));
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->file_path);
     }
 }
