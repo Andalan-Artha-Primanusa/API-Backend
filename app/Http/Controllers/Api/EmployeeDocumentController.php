@@ -10,8 +10,8 @@ use App\Models\UserNotification;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeDocumentController extends Controller
 {
@@ -379,4 +379,20 @@ class EmployeeDocumentController extends Controller
 
         return $document->employee?->user_id === $user->id;
     }
+public function download($id)
+{
+    $doc = EmployeeDocument::findOrFail($id);
+
+    // 🔐 SECURITY CHECK
+    if (!$this->canAccessDocument(request(), $doc)) {
+        abort(403, 'Unauthorized');
+    }
+
+    if (!Storage::disk('public')->exists($doc->file_path)) {
+        abort(404, 'File tidak ditemukan');
+    }
+
+    return Storage::disk('public')->download($doc->file_path);
+}
+
 }
