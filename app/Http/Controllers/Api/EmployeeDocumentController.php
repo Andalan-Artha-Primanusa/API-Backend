@@ -379,20 +379,16 @@ class EmployeeDocumentController extends Controller
 
         return $document->employee?->user_id === $user->id;
     }
-public function download($id)
+public function download($filename)
 {
-    $doc = EmployeeDocument::findOrFail($id);
+    $path = "public/employee-documents/1/" . $filename;
 
-    // 🔐 SECURITY CHECK
-    if (!$this->canAccessDocument(request(), $doc)) {
-        abort(403, 'Unauthorized');
+    if (!Storage::exists($path)) {
+        return response()->json([
+            'message' => 'File tidak ditemukan'
+        ], 404);
     }
 
-    if (!Storage::disk('public')->exists($doc->file_path)) {
-        abort(404, 'File tidak ditemukan');
-    }
-
-    return Storage::disk('public')->download($doc->file_path);
+    return Storage::download($path);
 }
-
 }
