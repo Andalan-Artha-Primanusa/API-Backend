@@ -590,20 +590,31 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
 // Helper for storage link on restricted hosting
 Route::get('/setup-storage', function () {
-    $target = storage_path('app/public');
     $link = public_path('storage');
-
-    if (file_exists($link)) {
-        return response()->json(['message' => 'Link or folder already exists.']);
+    
+    // 1. Hapus jika sudah ada (link rusak atau folder)
+    if (file_exists($link) || is_link($link)) {
+        if (windows_os()) {
+            if (is_dir($link) && !is_link($link)) {
+                // Di windows, folder tidak bisa di-unlink
+                \Illuminate\Support\Facades\File::deleteDirectory($link);
+            } else {
+                @unlink($link);
+            }
+        } else {
+            @exec('rm -rf ' . escapeshellarg($link));
+        }
     }
 
     try {
-        if (symlink($target, $link)) {
-            return response()->json(['message' => 'Symlink created successfully via PHP!']);
+        // 2. Gunakan RELATIVE path (Lebih aman untuk Hostinger)
+        // Di Hostinger: public_html/storage -> ../storage/app/public
+        if (symlink('../storage/app/public', $link)) {
+            return response()->json(['message' => 'Relative Symlink created successfully!']);
         }
     } catch (\Throwable $e) {
         return response()->json([
-            'message' => 'Failed to create symlink. Using fallback route in web.php.',
+            'message' => 'Symlink failed. Fallback route in web.php is active.',
             'error' => $e->getMessage()
         ], 500);
     }

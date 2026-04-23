@@ -40,12 +40,9 @@ Route::get('/storage/{path}', function ($path) {
     $path = str_replace('..', '', $path);
     $fullPath = storage_path('app/public/' . $path);
 
-    if (!\Illuminate\Support\Facades\File::exists($fullPath)) {
+    if (!file_exists($fullPath)) {
         abort(404);
     }
 
-    $file = \Illuminate\Support\Facades\File::get($fullPath);
-    $type = \Illuminate\Support\Facades\File::mimeType($fullPath);
-
-    return response($file)->header("Content-Type", $type);
+    return response()->file($fullPath);
 })->where('path', '.*');
