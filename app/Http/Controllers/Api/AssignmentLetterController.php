@@ -8,6 +8,9 @@ use App\Models\ApprovalFlow;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class AssignmentLetterController
 {
@@ -100,4 +103,36 @@ class AssignmentLetterController
         $letter->update(['status' => 'rejected']);
         return ApiResponse::success('Assignment letter rejected', $letter->fresh(['approvalFlow.steps.role', 'approver.profile']));
     }
+
+    public function generatePdf(Request $request, int $id): JsonResponse
+    {
+        $letter = AssignmentLetter::with(['user.profile', 'user.employee'])->findOrFail($id);
+        
+        if ($letter->status !== 'approved') {
+            return ApiResponse::error('Only approved assignment letters can generate PDF', null, 400);
+        }
+
+        $user = $request->user();
+        if ($letter->user_id !== $user->id && !$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $now = now();
+        $filename = 'assignment-letter-' . $letter->id . '-' . $now->format('YmdHis') . '.pdf';
+
+        $pdf = Pdf::loadView('pdf.assignment-letter', [
+            'letter' => $letter,
+            'date' => $now->toDateString(),
+        ]);
+
+        $pdfContent = $pdf->output();
+        $storedPath = 'employee-documents/' . $letter->user->employee->id . '/' . $filename;
+        Storage::disk('public')->put($storedPath, $pdfContent);
+
+        return ApiResponse::success('Surat tugas berhasil dibuat', [
+            'file_url' => asset('storage/' . $storedPath),
+            'filename' => $filename
+        ]);
+    }
 }
+

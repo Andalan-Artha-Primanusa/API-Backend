@@ -106,6 +106,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::get('assignment-letters/{id}', [AssignmentLetterController::class, 'show']);
     Route::post('assignment-letters/{id}/approve', [AssignmentLetterController::class, 'approve']);
     Route::post('assignment-letters/{id}/reject', [AssignmentLetterController::class, 'reject']);
+    Route::get('assignment-letters/{id}/pdf', [AssignmentLetterController::class, 'generatePdf']);
 
     // Pesangon PP 35/2021
     Route::get('employees/{employee}/severance/calculate', [SeveranceController::class, 'calculate']);
