@@ -34,17 +34,18 @@ Route::get('/employee/profile', [ProfileController::class, 'index'])
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
-// Fallback for storage link on shared hosting (Hostinger)
-// This replaces 'php artisan storage:link' which is often disabled on shared hosting
+// Fix for storage link on shared hosting (Hostinger)
+// This serves files directly from storage/app/public because symlinks are often disabled
 Route::get('/storage/{path}', function ($path) {
     $path = str_replace('..', '', $path);
-    
-    // Construct the absolute path manually to avoid Storage facade issues on restricted servers
     $fullPath = storage_path('app/public/' . $path);
-    
-    if (!file_exists($fullPath) || is_dir($fullPath)) {
+
+    if (!\Illuminate\Support\Facades\File::exists($fullPath)) {
         abort(404);
     }
-    
-    return response()->file($fullPath);
+
+    $file = \Illuminate\Support\Facades\File::get($fullPath);
+    $type = \Illuminate\Support\Facades\File::mimeType($fullPath);
+
+    return response($file)->header("Content-Type", $type);
 })->where('path', '.*');

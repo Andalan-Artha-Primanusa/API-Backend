@@ -587,3 +587,24 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     });
 
 });
+
+// Helper for storage link on restricted hosting
+Route::get('/setup-storage', function () {
+    $target = storage_path('app/public');
+    $link = public_path('storage');
+
+    if (file_exists($link)) {
+        return response()->json(['message' => 'Link or folder already exists.']);
+    }
+
+    try {
+        if (symlink($target, $link)) {
+            return response()->json(['message' => 'Symlink created successfully via PHP!']);
+        }
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => 'Failed to create symlink. Using fallback route in web.php.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
