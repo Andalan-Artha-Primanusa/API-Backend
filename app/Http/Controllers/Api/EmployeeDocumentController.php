@@ -381,11 +381,13 @@ class EmployeeDocumentController extends Controller
     }
 public function download($filename)
 {
+    // 🔥 ini yang bener (include folder 1)
     $path = "public/employee-documents/1/" . $filename;
 
     if (!Storage::exists($path)) {
         return response()->json([
-            'message' => 'File tidak ditemukan'
+            'message' => 'File tidak ditemukan',
+            'debug_path' => $path
         ], 404);
     }
 
