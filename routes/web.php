@@ -37,12 +37,18 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 // Fallback for storage link on shared hosting (Hostinger)
 Route::get('/storage/{path}', function ($path) {
     $path = str_replace('..', '', $path);
-    if (!Storage::disk('public')->exists($path)) {
+    $disk = Storage::disk('public');
+    
+    if (!$disk->exists($path)) {
         abort(404);
     }
     
-    $file = Storage::disk('public')->get($path);
-    $type = Storage::disk('public')->mimeType($path);
+    $fullPath = $disk->path($path);
     
-    return Response::make($file, 200)->header("Content-Type", $type);
+    // Safety check: ensure it's a file, not a directory
+    if (is_dir($fullPath)) {
+        abort(404);
+    }
+    
+    return response()->file($fullPath);
 })->where('path', '.*');
