@@ -44,5 +44,5 @@ Route::get('/storage/{path}', function ($path) {
         abort(404);
     }
 
-    return response()->file($fullPath);
+    return response()->download($fullPath);
 })->where('path', '.*');
