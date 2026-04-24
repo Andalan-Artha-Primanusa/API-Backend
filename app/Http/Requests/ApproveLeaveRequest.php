@@ -14,7 +14,7 @@ class ApproveLeaveRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:approved,rejected'],
+            'status' => ['sometimes', 'in:approved,rejected'],
         ];
     }
 }

@@ -27,9 +27,9 @@ class WorkScheduleController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'check_in_time' => 'required|date_format:H:i',
+            'check_in_time' => ['required', 'regex:/^([01][0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/'],
             'grace_period' => 'required|integer|min:0',
-            'check_out_time' => 'required|date_format:H:i',
+            'check_out_time' => ['required', 'regex:/^([01][0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/'],
         ]);
 
         $schedule = WorkSchedule::create($validated);
