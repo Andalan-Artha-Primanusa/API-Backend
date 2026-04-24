@@ -70,6 +70,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 429);
         });
 
+        // 404 — Route Not Found
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Route not found',
+            ], 404);
+        });
+
         // 500 — Catch-all (only show details in local)
         $exceptions->render(function (\Throwable $e) {
             return response()->json([

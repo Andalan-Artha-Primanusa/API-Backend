@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\EnterpriseOpsController;
 use App\Http\Controllers\Api\OKRController;
 use App\Http\Controllers\Api\Review360Controller;
 use App\Http\Controllers\Api\CalibrationController;
+use App\Http\Controllers\Api\WorkforceComplianceController;
 // PROMOTION (Kenaikan Jabatan)
 Route::post('employees/{employee}/promote', [PromotionController::class, 'promote']);
 
@@ -442,7 +443,10 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/surveys/{id}/analytics', [EngagementController::class, 'analytics']);
         });
 
+
         Route::prefix('workforce')->group(function () {
+            Route::get('/compliance/stats', [WorkforceComplianceController::class, 'stats']);
+            Route::get('/compliance/documents', [WorkforceComplianceController::class, 'documents']);
             Route::get('/holidays', [WorkforcePolicyController::class, 'holidayCalendarIndex']);
             Route::post('/holidays', [WorkforcePolicyController::class, 'holidayCalendarStore']);
             Route::put('/leave-policies/{id}/advanced', [WorkforcePolicyController::class, 'advancedLeavePolicyUpdate']);
