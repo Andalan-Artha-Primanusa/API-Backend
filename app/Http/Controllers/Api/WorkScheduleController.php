@@ -56,9 +56,9 @@ class WorkScheduleController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'check_in_time' => 'sometimes|date_format:H:i',
+            'check_in_time' => ['sometimes', 'regex:/^([01][0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/'],
             'grace_period' => 'sometimes|integer|min:0',
-            'check_out_time' => 'sometimes|date_format:H:i',
+            'check_out_time' => ['sometimes', 'regex:/^([01][0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/'],
         ]);
 
         $schedule->update($validated);
