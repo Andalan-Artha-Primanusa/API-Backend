@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Api\CompetencyController;
 use App\Http\Controllers\Api\LeavePolicyController;
+use App\Http\Controllers\Api\LeaveTypeController;
 use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\EmployeeDocumentController;
 use App\Http\Controllers\Api\HrServiceRequestController;
@@ -255,6 +256,13 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
         Route::prefix('attendance')->group(function () {
             Route::get('/employee/{userId}/intelligence', [AttendanceController::class, 'employeeIntelligence']);
+        });
+
+        Route::prefix('leave-types')->group(function () {
+            Route::get('/', [LeaveTypeController::class, 'index']);
+            Route::post('/', [LeaveTypeController::class, 'store']);
+            Route::put('/{id}', [LeaveTypeController::class, 'update']);
+            Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
         });
 
         Route::prefix('leave-policies')->group(function () {

@@ -32,7 +32,13 @@ class LeavePolicyController extends Controller
         }
 
         $validated = $request->validate([
-            'year' => 'required|integer|min:2020|max:2100|unique:leave_policies,year',
+            'name' => 'required|string|max:255',
+            'policy_code' => 'required|string|max:50|unique:leave_policies,policy_code',
+            'entitlement_type' => 'sometimes|string|in:fixed,accrual,unlimited',
+            'entitlement_value' => 'sometimes|integer|min:0',
+            'max_carryover_days' => 'sometimes|integer|min:0',
+            'is_paid' => 'sometimes|boolean',
+            'year' => 'sometimes|nullable|integer|min:2020|max:2100',
             'annual_allowance' => 'sometimes|integer|min:0|max:365',
             'carry_over_allowance' => 'sometimes|integer|min:0|max:365',
             'max_pending_days' => 'sometimes|integer|min:0|max:365',
@@ -60,7 +66,13 @@ class LeavePolicyController extends Controller
         }
 
         $validated = $request->validate([
-            'year' => 'sometimes|integer|min:2020|max:2100|unique:leave_policies,year,' . $id,
+            'name' => 'sometimes|required|string|max:255',
+            'policy_code' => 'sometimes|required|string|max:50|unique:leave_policies,policy_code,' . $id,
+            'entitlement_type' => 'sometimes|string|in:fixed,accrual,unlimited',
+            'entitlement_value' => 'sometimes|integer|min:0',
+            'max_carryover_days' => 'sometimes|integer|min:0',
+            'is_paid' => 'sometimes|boolean',
+            'year' => 'sometimes|nullable|integer|min:2020|max:2100',
             'annual_allowance' => 'sometimes|integer|min:0|max:365',
             'carry_over_allowance' => 'sometimes|integer|min:0|max:365',
             'max_pending_days' => 'sometimes|integer|min:0|max:365',
