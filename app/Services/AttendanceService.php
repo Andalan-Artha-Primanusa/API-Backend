@@ -192,14 +192,19 @@ class AttendanceService
     {
         $user->loadMissing('employee.workSchedule');
 
-        if (!$user->employee) {
-            throw new \RuntimeException('Employee data not found.');
+        if (!$user->employee || !$user->employee->workSchedule) {
+            return [
+                'present_days' => 0,
+                'total_working_hours' => 0,
+                'overtime_hours' => 0,
+                'overtime_minutes' => 0,
+                'late_count' => 0,
+                'early_checkout_count' => 0,
+                'records' => []
+            ];
         }
 
         $schedule = $user->employee->workSchedule;
-        if (!$schedule) {
-            throw new \RuntimeException('No work schedule assigned.');
-        }
 
         $fromDate = now()->subDays(max(1, $days - 1))->startOfDay();
         $records = Attendance::where('user_id', $user->id)

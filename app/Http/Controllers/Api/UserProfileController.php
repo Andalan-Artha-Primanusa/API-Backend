@@ -24,8 +24,28 @@ class UserProfileController extends Controller
     ];
 
     /**
+     * Get the authenticated user's profile.
+     */
+    public function me(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $profile = UserProfile::with(self::PROFILE_RELATIONS)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$profile) {
+                return ApiResponse::error('Profile not found', null, 404);
+            }
+
+            return ApiResponse::success('Own profile retrieved', $profile);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch profile', null, 500);
+        }
+    }
+
+    /**
      * List user profiles with access control.
-     * Users with profile.view_all see all profiles; others see only their own.
      */
     public function index(Request $request): JsonResponse
     {

@@ -129,6 +129,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     | All routes that apply to the currently authenticated user's employee file
     */
     Route::prefix('my')->group(function () {
+        // Profile
+        Route::get('/profile', [UserProfileController::class, 'me']);
         // KPI
         Route::get('/kpi', [KpiController::class, 'myKpi']);
         Route::post('/kpi/{id}/submit', [KpiController::class, 'submit']);
