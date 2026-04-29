@@ -564,6 +564,12 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/{id}', [NotificationController::class, 'emailTemplateUpdate']);
             Route::post('/{id}/preview', [NotificationController::class, 'emailTemplatePreview']);
         });
+
+        // Notification Settings
+        Route::prefix('notification-settings')->group(function () {
+            Route::get('/', [NotificationSettingController::class, 'index']);
+            Route::put('/{category}', [NotificationSettingController::class, 'update']);
+        });
     });
 
     Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
@@ -610,12 +616,6 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
                 Route::post('/users', [DataImportController::class, 'importUsers']);
                 Route::post('/employees', [DataImportController::class, 'importEmployees']);
                 Route::get('/template', [DataImportController::class, 'getImportTemplate']);
-            });
-
-            // Notification Settings - SUPER ADMIN ONLY (or Admin/HR)
-            Route::prefix('notification-settings')->group(function () {
-                Route::get('/', [NotificationSettingController::class, 'index']);
-                Route::put('/{category}', [NotificationSettingController::class, 'update']);
             });
         });
     });
