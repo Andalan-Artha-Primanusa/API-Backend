@@ -53,6 +53,7 @@ use App\Http\Controllers\Api\WorkforceComplianceController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\PositionController;
+use App\Http\Controllers\Api\NotificationSettingController;
 // PROMOTION (Kenaikan Jabatan)
 Route::post('employees/{employee}/promote', [PromotionController::class, 'promote']);
 
@@ -609,6 +610,12 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
                 Route::post('/users', [DataImportController::class, 'importUsers']);
                 Route::post('/employees', [DataImportController::class, 'importEmployees']);
                 Route::get('/template', [DataImportController::class, 'getImportTemplate']);
+            });
+
+            // Notification Settings - SUPER ADMIN ONLY (or Admin/HR)
+            Route::prefix('notification-settings')->group(function () {
+                Route::get('/', [NotificationSettingController::class, 'index']);
+                Route::put('/{category}', [NotificationSettingController::class, 'update']);
             });
         });
     });
