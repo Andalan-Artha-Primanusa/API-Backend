@@ -229,7 +229,7 @@ class NotificationController extends Controller
 
     public function emailTemplateIndex(Request $request): JsonResponse
     {
-        $templates = EmailTemplate::query()->where('is_active', true)->orderBy('name')->paginate($request->integer('per_page', 15));
+        $templates = EmailTemplate::query()->orderBy('name')->paginate($request->integer('per_page', 15));
 
         return ApiResponse::success('Email templates retrieved', $templates);
     }
@@ -311,7 +311,20 @@ class NotificationController extends Controller
         ]);
     }
 
-  
+    public function emailTemplateDestroy(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR()) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $template = EmailTemplate::findOrFail($id);
+        $template->delete();
+
+        return ApiResponse::success('Email template deleted successfully');
+    }
+
     public function sendEmailNotification(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -342,25 +355,31 @@ class NotificationController extends Controller
             $validated['user_id'] = $user->id;
         }
 
-        // Jika pakai template, render subject & body dari template
+        // Jika pakai template, render subject & body dari template HANYA jika tidak dikirim manual
         if (!empty($validated['template_key'])) {
             $template = EmailTemplate::where('key', $validated['template_key'])->firstOrFail();
             $templateData = $validated['template_data'] ?? [];
 
-            // Validasi placeholder wajib terisi
-            $placeholders = $template->placeholders ?? [];
-            $missingPlaceholders = [];
-            foreach ($placeholders as $ph) {
-                if (!array_key_exists($ph, $templateData)) {
-                    $missingPlaceholders[] = $ph;
+            // Jika subject kosong, ambil dari template
+            if (empty($validated['subject'])) {
+                // Validasi placeholder hanya jika subject/body diambil dari template
+                $placeholders = $template->placeholders ?? [];
+                $missingPlaceholders = [];
+                foreach ($placeholders as $ph) {
+                    if (!array_key_exists($ph, $templateData)) {
+                        $missingPlaceholders[] = $ph;
+                    }
                 }
-            }
-            if (count($missingPlaceholders) > 0) {
-                return ApiResponse::error('Missing template_data for placeholders: ' . implode(', ', $missingPlaceholders), null, 422);
+                if (count($missingPlaceholders) > 0) {
+                    return ApiResponse::error('Missing template_data for placeholders: ' . implode(', ', $missingPlaceholders), null, 422);
+                }
+                $validated['subject'] = $template->renderSubject($templateData);
             }
 
-            $validated['subject'] = $template->renderSubject($templateData);
-            $validated['body'] = $template->renderHtmlBody($templateData);
+            // Jika body kosong, ambil dari template
+            if (empty($validated['body'])) {
+                $validated['body'] = $template->renderHtmlBody($templateData);
+            }
         }
 
         // Jika tidak pakai template, subject & body wajib ada

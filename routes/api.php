@@ -562,6 +562,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/', [NotificationController::class, 'emailTemplateIndex']);
             Route::post('/', [NotificationController::class, 'emailTemplateStore']);
             Route::put('/{id}', [NotificationController::class, 'emailTemplateUpdate']);
+            Route::delete('/{id}', [NotificationController::class, 'emailTemplateDestroy']);
             Route::post('/{id}/preview', [NotificationController::class, 'emailTemplatePreview']);
         });
 
