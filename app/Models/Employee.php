@@ -18,6 +18,8 @@ class Employee extends Model
         'employee_code',
         'position',
         'department',
+        'position_id',
+        'department_id',
         'status',
         'hire_date',
         'probation_end_date',
@@ -58,6 +60,16 @@ class Employee extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
     }
 
     public function workSchedule(): BelongsTo

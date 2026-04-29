@@ -204,6 +204,10 @@ class Permissions
     const ADMIN_SETTINGS = [
         'admin.email.manage' => 'Manage email notifications & templates',
         'admin.location.manage' => 'Manage locations',
+        'admin.department.manage' => 'Manage departments',
+        'admin.position.manage' => 'Manage positions',
+        'admin.company.view' => 'View company data',
+        'admin.company.update' => 'Update company data',
         'admin.schedule.manage' => 'Manage work schedules',
         'admin.approval_flow.manage' => 'Manage approval workflows',
         'admin.biometric.manage' => 'Manage biometric devices',

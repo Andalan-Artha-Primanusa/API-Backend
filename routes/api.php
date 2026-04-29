@@ -50,6 +50,9 @@ use App\Http\Controllers\Api\OKRController;
 use App\Http\Controllers\Api\Review360Controller;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\WorkforceComplianceController;
+use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\PositionController;
 // PROMOTION (Kenaikan Jabatan)
 Route::post('employees/{employee}/promote', [PromotionController::class, 'promote']);
 
@@ -570,6 +573,14 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
     Route::middleware('role:super_admin')->group(function () {
         Route::apiResource('locations', LocationController::class);
+
+        Route::apiResource('departments', DepartmentController::class);
+
+        Route::apiResource('positions', PositionController::class);
+
+        Route::get('/company', [CompanyController::class, 'show']);
+        Route::put('/company/{id}', [CompanyController::class, 'update']);
+        Route::post('/company/{id}/logo', [CompanyController::class, 'update']);
 
         Route::apiResource('work-schedules', WorkScheduleController::class);
 
