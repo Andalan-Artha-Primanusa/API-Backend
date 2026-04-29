@@ -14,6 +14,56 @@ use Illuminate\Validation\ValidationException;
 class CompanyController extends Controller
 {
     /**
+     * POST /company - Create company data
+     */
+    public function store(Request $request): JsonResponse
+    {
+        if (!$request->user()->hasPermission('admin.company.update')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        try {
+            $existing = Company::first();
+            if ($existing) {
+                return ApiResponse::error('Company already exists', 'Use PUT to update existing company', 400);
+            }
+
+            $validated = $request->validate([
+                'name'        => 'required|string|max:255',
+                'legal_name'  => 'nullable|string|max:255',
+                'tax_number'  => 'nullable|string|max:100',
+                'email'       => 'nullable|email|max:255',
+                'phone'       => 'nullable|string|max:50',
+                'website'     => 'nullable|string|max:255',
+                'address'     => 'nullable|string|max:1000',
+                'city'        => 'nullable|string|max:100',
+                'state'       => 'nullable|string|max:100',
+                'postal_code' => 'nullable|string|max:20',
+                'country'     => 'nullable|string|max:100',
+                'logo'        => 'nullable|image|max:2048',
+            ]);
+
+            $company = new Company();
+            $company->fill($validated);
+
+            if ($request->hasFile('logo')) {
+                $file = $request->file('logo');
+                $storedName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
+                $company->logo_path = $file->storeAs('company/logo', $storedName, 'public');
+            }
+
+            $company->save();
+
+            return ApiResponse::success('Company data created successfully', $company->fresh(), 201);
+
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to create company data', null, 500);
+        }
+    }
+
+    /**
      * GET /company - Get company data
      */
     public function show(Request $request): JsonResponse

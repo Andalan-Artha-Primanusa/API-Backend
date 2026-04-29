@@ -579,6 +579,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::apiResource('positions', PositionController::class);
 
         Route::get('/company', [CompanyController::class, 'show']);
+        Route::post('/company', [CompanyController::class, 'store']);
         Route::put('/company/{id}', [CompanyController::class, 'update']);
         Route::post('/company/{id}/logo', [CompanyController::class, 'update']);
 
