@@ -581,7 +581,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/company', [CompanyController::class, 'show']);
         Route::post('/company', [CompanyController::class, 'store']);
         Route::put('/company/{id}', [CompanyController::class, 'update']);
-        Route::post('/company/{id}/logo', [CompanyController::class, 'update']);
+        Route::post('/company/{id}/logo', [CompanyController::class, 'uploadLogo']);
+        Route::delete('/company/{id}/logo', [CompanyController::class, 'deleteLogo']);
 
         Route::apiResource('work-schedules', WorkScheduleController::class);
 

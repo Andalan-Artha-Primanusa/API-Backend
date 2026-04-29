@@ -141,4 +141,77 @@ class CompanyController extends Controller
             return ApiResponse::error('Failed to update company data', null, 500);
         }
     }
+
+    /**
+     * POST /company/{id}/logo - Upload/update company logo only
+     */
+    public function uploadLogo(Request $request, int $id): JsonResponse
+    {
+        if (!$request->user()->hasPermission('admin.company.update')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        try {
+            if ($id <= 0) {
+                throw ValidationException::withMessages(['id' => 'Invalid company ID']);
+            }
+
+            $company = Company::findOrFail($id);
+
+            $validated = $request->validate([
+                'logo' => 'required|image|max:2048',
+            ]);
+
+            if ($company->logo_path) {
+                Storage::disk('public')->delete($company->logo_path);
+            }
+
+            $file = $request->file('logo');
+            $storedName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
+            $company->logo_path = $file->storeAs('company/logo', $storedName, 'public');
+            $company->save();
+
+            return ApiResponse::success('Company logo updated successfully', $company->fresh());
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return ApiResponse::error('Not found', 'Company not found', 404);
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to upload company logo', null, 500);
+        }
+    }
+
+    /**
+     * DELETE /company/{id}/logo - Delete company logo
+     */
+    public function deleteLogo(Request $request, int $id): JsonResponse
+    {
+        if (!$request->user()->hasPermission('admin.company.update')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        try {
+            if ($id <= 0) {
+                throw ValidationException::withMessages(['id' => 'Invalid company ID']);
+            }
+
+            $company = Company::findOrFail($id);
+
+            if ($company->logo_path) {
+                Storage::disk('public')->delete($company->logo_path);
+                $company->logo_path = null;
+                $company->save();
+            }
+
+            return ApiResponse::success('Company logo deleted successfully', $company->fresh());
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return ApiResponse::error('Not found', 'Company not found', 404);
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Invalid request', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to delete company logo', null, 500);
+        }
+    }
 }
