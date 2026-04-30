@@ -54,6 +54,7 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\NotificationSettingController;
+use App\Http\Controllers\Api\OvertimeController;
 // PROMOTION (Kenaikan Jabatan)
 Route::post('employees/{employee}/promote', [PromotionController::class, 'promote']);
 
@@ -154,6 +155,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
         // Training and competencies
         Route::get('/trainings', [TrainingController::class, 'myTrainings']);
+        Route::get('/trainings/available', [TrainingController::class, 'availableTrainings']);
+        Route::post('/trainings/{id}/enroll', [TrainingController::class, 'selfEnroll']);
         Route::get('/competencies', [CompetencyController::class, 'myCompetencies']);
         Route::get('/assets', [AssetController::class, 'myAssets']);
         Route::get('/benefits', [BenefitController::class, 'myBenefits']);
@@ -164,6 +167,10 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::post('/requests', [HrServiceRequestController::class, 'store']);
         Route::get('/requests/{id}', [HrServiceRequestController::class, 'show']);
         Route::post('/requests/{id}/comments', [HrServiceRequestController::class, 'comment']);
+
+        // Overtime requests (ESS)
+        Route::get('/overtime', [OvertimeController::class, 'myOvertimeRequests']);
+        Route::put('/overtime/{id}/reason', [OvertimeController::class, 'addReason']);
     });
 
     Route::prefix('leaves')->group(function () {
@@ -208,6 +215,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
     Route::prefix('attendance')->group(function () {
         // ESS Attendance Management
+        Route::get('/locations', [LocationController::class, 'activeLocations']);
         Route::post('/check-in', [AttendanceController::class, 'checkIn']);
         Route::post('/check-out', [AttendanceController::class, 'checkOut']);
         Route::get('/history', [AttendanceController::class, 'history']);
@@ -224,6 +232,14 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/pending', [LeaveController::class, 'pending']);
             Route::put('/{id}/approve', [LeaveController::class, 'approve']);
             Route::put('/{id}/reject', [LeaveController::class, 'reject']);
+        });
+
+        // OVERTIME APPROVAL
+        Route::prefix('overtime/requests')->group(function () {
+            Route::get('/', [OvertimeController::class, 'index']);
+            Route::get('/pending', [OvertimeController::class, 'pending']);
+            Route::put('/{id}/approve', [OvertimeController::class, 'approve']);
+            Route::put('/{id}/reject', [OvertimeController::class, 'reject']);
         });
 
         // KPI MANAGEMENT
@@ -284,7 +300,10 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/programs/{id}', [TrainingController::class, 'update']);
             Route::delete('/programs/{id}', [TrainingController::class, 'destroy']);
             Route::post('/programs/{id}/enroll', [TrainingController::class, 'enroll']);
+            Route::get('/enrollments', [TrainingController::class, 'enrollmentsIndex']);
             Route::put('/enrollments/{id}/complete', [TrainingController::class, 'complete']);
+            Route::put('/enrollments/{id}/approve', [TrainingController::class, 'approveEnrollment']);
+            Route::put('/enrollments/{id}/reject', [TrainingController::class, 'rejectEnrollment']);
         });
 
         Route::prefix('competencies')->group(function () {

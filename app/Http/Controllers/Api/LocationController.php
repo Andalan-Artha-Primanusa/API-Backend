@@ -50,6 +50,19 @@ class LocationController extends Controller
     }
 
     /**
+     * GET /attendance/locations - List active locations for attendance check-in (employee accessible)
+     */
+    public function activeLocations(Request $request): JsonResponse
+    {
+        try {
+            $locations = Location::select(['id', 'name', 'latitude', 'longitude', 'radius'])->get();
+            return ApiResponse::success('Location list', $locations);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch locations', null, 500);
+        }
+    }
+
+    /**
      * POST /locations - Create new location
      */
     public function store(Request $request): JsonResponse

@@ -116,7 +116,7 @@ class AttendanceService
      *
      * @throws \DomainException if not checked in or already checked out
      */
-    public function checkOut(User $user): Attendance
+    public function checkOut(User $user): array
     {
 
         $user->loadMissing('employee.workSchedule'); // 🔥 TAMBAH INI
@@ -150,7 +150,28 @@ class AttendanceService
 
         $attendance->update(['check_out' => now()]);
 
-        return $attendance->fresh(['user.profile']);
+        // 🔥 AUTO-CREATE OVERTIME REQUEST
+        $overtimeRequest = null;
+        if ($now->gt($checkOutTime)) {
+            $overtimeMinutes = $now->diffInMinutes($checkOutTime);
+
+            if ($overtimeMinutes >= 1) {
+                $overtimeRequest = \App\Models\OvertimeRequest::create([
+                    'employee_id' => $employee->id,
+                    'attendance_id' => $attendance->id,
+                    'date' => now()->toDateString(),
+                    'scheduled_checkout' => $schedule->check_out_time,
+                    'actual_checkout' => $now->format('H:i:s'),
+                    'overtime_minutes' => $overtimeMinutes,
+                    'status' => 'pending',
+                ]);
+            }
+        }
+
+        return [
+            'attendance' => $attendance->fresh(['user.profile']),
+            'overtime_request' => $overtimeRequest,
+        ];
     }
 
     /**

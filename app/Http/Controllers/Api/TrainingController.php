@@ -258,4 +258,149 @@ class TrainingController extends Controller
 
         return ApiResponse::success('Training enrollment completed successfully', $enrollment->fresh(['program', 'employee.user.profile']));
     }
+
+    public function enrollmentsIndex(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $query = TrainingEnrollment::with(['program', 'employee.user.profile'])->latest();
+
+        return ApiResponse::success('Enrollments retrieved', $query->get());
+    }
+
+    public function availableTrainings(Request $request): JsonResponse
+    {
+        $employee = $this->getAuthenticatedEmployee();
+
+        $enrolledIds = TrainingEnrollment::where('employee_id', $employee->id)
+            ->pluck('training_program_id')
+            ->toArray();
+
+        $validated = $request->validate([
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'sometimes|string|max:255',
+        ]);
+
+        $query = TrainingProgram::where('status', 'active')
+            ->whereNotIn('id', $enrolledIds)
+            ->latest();
+
+        if (!empty($validated['search'])) {
+            $search = $validated['search'];
+            $query->where(function ($builder) use ($search) {
+                $builder->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('provider', 'like', '%' . $search . '%');
+            });
+        }
+
+        return ApiResponse::success('Available trainings retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+    }
+
+    public function selfEnroll(Request $request, int $id): JsonResponse
+    {
+        $employee = $this->getAuthenticatedEmployee();
+        $program = TrainingProgram::find($id);
+
+        if (!$program) {
+            return ApiResponse::error('Training program not found', null, 404);
+        }
+
+        if ($program->status !== 'active') {
+            return ApiResponse::error('This training program is not active', null, 400);
+        }
+
+        $existingEnrollment = TrainingEnrollment::where('training_program_id', $program->id)
+            ->where('employee_id', $employee->id)
+            ->first();
+
+        if ($existingEnrollment) {
+            return ApiResponse::error('You are already enrolled in this training program', null, 400);
+        }
+
+        $enrollment = TrainingEnrollment::create([
+            'training_program_id' => $program->id,
+            'employee_id' => $employee->id,
+            'status' => 'pending',
+        ]);
+
+        return ApiResponse::success('Successfully requested enrollment in training program. Waiting for approval.', $enrollment, 201);
+    }
+
+    public function approveEnrollment(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+
+        if (!$enrollment) {
+            return ApiResponse::error('Training enrollment not found', null, 404);
+        }
+
+        if ($enrollment->status !== 'pending') {
+            return ApiResponse::error('Only pending enrollments can be approved', null, 400);
+        }
+
+        $enrollment->update(['status' => 'enrolled']);
+
+        if ($enrollment->employee?->user) {
+            UserNotification::create([
+                'user_id' => $enrollment->employee->user_id,
+                'sender_user_id' => $user->id,
+                'title' => 'Training Approved',
+                'message' => 'Your request to join training: ' . $enrollment->program->title . ' has been approved.',
+                'type' => 'training.approved',
+                'category' => 'training',
+                'data' => [
+                    'training_program_id' => $enrollment->training_program_id,
+                ],
+            ]);
+        }
+
+        return ApiResponse::success('Training enrollment approved', $enrollment->fresh(['program', 'employee.user.profile']));
+    }
+
+    public function rejectEnrollment(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+
+        if (!$enrollment) {
+            return ApiResponse::error('Training enrollment not found', null, 404);
+        }
+
+        if ($enrollment->status !== 'pending') {
+            return ApiResponse::error('Only pending enrollments can be rejected', null, 400);
+        }
+
+        $enrollment->update(['status' => 'cancelled']);
+
+        if ($enrollment->employee?->user) {
+            UserNotification::create([
+                'user_id' => $enrollment->employee->user_id,
+                'sender_user_id' => $user->id,
+                'title' => 'Training Rejected',
+                'message' => 'Your request to join training: ' . $enrollment->program->title . ' has been rejected.',
+                'type' => 'training.rejected',
+                'category' => 'training',
+                'data' => [
+                    'training_program_id' => $enrollment->training_program_id,
+                ],
+            ]);
+        }
+
+        return ApiResponse::success('Training enrollment rejected', $enrollment->fresh(['program', 'employee.user.profile']));
+    }
 }

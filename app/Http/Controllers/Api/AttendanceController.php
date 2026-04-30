@@ -62,9 +62,18 @@ class AttendanceController extends Controller
         }
 
         try {
-            $attendance = $this->attendanceService->checkOut($request->user());
+            $result = $this->attendanceService->checkOut($request->user());
 
-            return ApiResponse::success('Check-out successful', $attendance);
+            $message = 'Check-out successful';
+            if ($result['overtime_request']) {
+                $minutes = $result['overtime_request']->overtime_minutes;
+                $message .= '. Overtime detected: ' . floor($minutes / 60) . 'h ' . ($minutes % 60) . 'm (pending approval)';
+            }
+
+            return ApiResponse::success($message, [
+                'attendance' => $result['attendance'],
+                'overtime_request' => $result['overtime_request'],
+            ]);
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 400);
         } catch (\Exception $e) {
