@@ -57,7 +57,11 @@ use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\NotificationSettingController;
 use App\Http\Controllers\Api\OvertimeController;
 // PROMOTION (Kenaikan Jabatan)
-Route::post('employees/{employee}/promote', [PromotionController::class, 'promote']);
+Route::get('promotions', [PromotionController::class, 'index']);
+Route::post('promotions', [PromotionController::class, 'store']);
+Route::post('promotions/{id}/approve', [PromotionController::class, 'approve']);
+Route::post('promotions/{id}/reject', [PromotionController::class, 'reject']);
+Route::delete('promotions/{id}', [PromotionController::class, 'destroy']);
 
 // PROGRESSIVE TAX (PPh21 Progresif)
 Route::post('tax/progressive/calculate', function (\Illuminate\Http\Request $request) {
