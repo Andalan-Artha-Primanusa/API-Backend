@@ -22,7 +22,11 @@ class PromotionController
         ->where('event_type', 'promotion');
 
         if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
-            $query->where('initiated_by_id', $user->employee?->id);
+            $employeeId = $user->employee?->id;
+            $query->where(function ($q) use ($employeeId) {
+                $q->where('employee_id', $employeeId)
+                  ->orWhere('initiated_by_id', $employeeId);
+            });
         }
 
         $status = $request->query('status');
@@ -105,18 +109,16 @@ class PromotionController
         try {
             $remarks = json_decode($event->remarks, true) ?? [];
 
-            $employeeUpdate = [
-                'position' => $event->to_value,
-            ];
+            $employee = $event->employee;
 
-            if (!empty($remarks['new_department'])) {
-                $employeeUpdate['department'] = $remarks['new_department'];
-            }
-            if (!empty($remarks['new_salary'])) {
-                $employeeUpdate['salary'] = $remarks['new_salary'];
-            }
-
-            $event->employee->update($employeeUpdate);
+            DB::table('employees')
+                ->where('id', $employee->id)
+                ->update([
+                    'position' => $event->to_value,
+                    'department' => !empty($remarks['new_department']) ? $remarks['new_department'] : $employee->department,
+                    'salary' => !empty($remarks['new_salary']) ? $remarks['new_salary'] : $employee->salary,
+                    'updated_at' => now(),
+                ]);
 
             $event->update([
                 'status' => 'approved',

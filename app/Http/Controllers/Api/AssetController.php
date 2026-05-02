@@ -338,10 +338,11 @@ class AssetController extends Controller
 
     public function myAssets(Request $request): JsonResponse
     {
-        $employee = $request->user()->employee;
+        $user = $request->user();
+        $employee = $user->employee;
 
         if (!$employee) {
-            return ApiResponse::error('Employee record not found', null, 404);
+            return ApiResponse::success('My assets retrieved successfully', []);
         }
 
         $assignments = InventoryAssetAssignment::with(['asset', 'assignedBy:id,name,email'])
