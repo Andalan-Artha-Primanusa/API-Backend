@@ -184,6 +184,9 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         // Overtime requests (ESS)
         Route::get('/overtime', [OvertimeController::class, 'myOvertimeRequests']);
         Route::put('/overtime/{id}/reason', [OvertimeController::class, 'addReason']);
+
+        // Promotions (ESS)
+        Route::get('/promotions', [PromotionController::class, 'myPromotions']);
     });
 
     Route::prefix('leaves')->group(function () {

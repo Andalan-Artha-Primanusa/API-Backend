@@ -181,4 +181,37 @@ class PromotionController
         $event->delete();
         return ApiResponse::success('Pengajuan promosi dihapus');
     }
+
+    public function myPromotions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $query = EmployeeLifecycleEvent::with([
+            'employee.user',
+            'approver',
+        ])
+        ->where('event_type', 'promotion');
+
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+            $query->where('initiated_by_id', $user->employee?->id);
+        }
+
+        $status = $request->query('status');
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $promotions = $query->latest()->get();
+
+        $summary = [
+            'total' => $promotions->count(),
+            'approved' => $promotions->where('status', 'approved')->count(),
+            'pending' => $promotions->where('status', 'pending')->count(),
+            'rejected' => $promotions->where('status', 'rejected')->count(),
+        ];
+
+        return ApiResponse::success('My promotions', [
+            'promotions' => $promotions,
+            'summary' => $summary,
+        ]);
+    }
 }
