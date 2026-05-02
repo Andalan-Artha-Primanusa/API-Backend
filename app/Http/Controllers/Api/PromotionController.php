@@ -97,31 +97,32 @@ class PromotionController
         if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
             return ApiResponse::error('Forbidden', null, 403);
         }
+        if (!$event->employee) {
+            return ApiResponse::error('Employee not found', null, 404);
+        }
 
         DB::beginTransaction();
         try {
             $remarks = json_decode($event->remarks, true) ?? [];
 
-            $updateData = [
+            $employeeUpdate = [
+                'position' => $event->to_value,
+            ];
+
+            if (!empty($remarks['new_department'])) {
+                $employeeUpdate['department'] = $remarks['new_department'];
+            }
+            if (!empty($remarks['new_salary'])) {
+                $employeeUpdate['salary'] = $remarks['new_salary'];
+            }
+
+            $event->employee->update($employeeUpdate);
+
+            $event->update([
                 'status' => 'approved',
                 'approved_by_id' => $user->id,
                 'approval_date' => now(),
-            ];
-
-            if (isset($remarks['new_department'])) {
-                $updateData['department'] = $remarks['new_department'];
-            }
-            if (isset($remarks['new_salary'])) {
-                $updateData['salary'] = $remarks['new_salary'];
-            }
-
-            $event->employee->update([
-                'position' => $event->to_value,
-                ...($updateData['department'] ? ['department' => $updateData['department']] : []),
-                ...($updateData['new_salary'] ? ['salary' => $updateData['new_salary']] : []),
             ]);
-
-            $event->update($updateData);
             $event->load(['employee.user', 'approver']);
 
             DB::commit();
@@ -183,27 +184,27 @@ class PromotionController
     public function myPromotions(Request $request): JsonResponse
     {
         $user = $request->user();
+        $employee = $user->employee;
+
+        $query = EmployeeLifecycleEvent::with([
+            'employee.user',
+            'approver',
+            'initiator.user',
+        ])
+        ->where('event_type', 'promotion');
 
         if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin()) {
-            $promotions = EmployeeLifecycleEvent::with([
-                'employee.user',
-                'approver',
-            ])
-            ->where('event_type', 'promotion')
-            ->latest()
-            ->get();
+            // Admin/HR can see all promotions
         } else {
-            $employee = $user->employee;
+            // Regular user: see promotions where they are the employee OR they initiated it
             $employeeId = $employee ? $employee->id : 0;
-            $promotions = EmployeeLifecycleEvent::with([
-                'employee.user',
-                'approver',
-            ])
-            ->where('event_type', 'promotion')
-            ->where('employee_id', $employeeId)
-            ->latest()
-            ->get();
+            $query->where(function ($q) use ($employeeId, $user) {
+                $q->where('employee_id', $employeeId)
+                  ->orWhere('initiated_by_id', $employeeId);
+            });
         }
+
+        $promotions = $query->latest()->get();
 
         $summary = [
             'total' => $promotions->count(),
