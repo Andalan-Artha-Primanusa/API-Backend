@@ -35,14 +35,22 @@ class AssignmentLetterController
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'location' => 'nullable|string|max:255',
+            'user_id' => 'nullable|integer|exists:users,id',
         ]);
+
+        $targetUserId = $validated['user_id'] ?? $user->id;
+
+        if ($targetUserId !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+            return ApiResponse::error('Forbidden: only admin/HR can create letters for other users', null, 403);
+        }
+
         $flow = ApprovalFlow::where('module', 'assignment_letter')->first();
         if (!$flow) {
             return ApiResponse::error('Approval flow for assignment letter not configured', null, 500);
         }
         $letter = AssignmentLetter::create([
             ...$validated,
-            'user_id' => $user->id,
+            'user_id' => $targetUserId,
             'approval_flow_id' => $flow->id,
             'current_step' => 1,
             'status' => 'pending',

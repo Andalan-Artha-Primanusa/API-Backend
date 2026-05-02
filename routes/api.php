@@ -313,6 +313,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/{id}', [CompetencyController::class, 'update']);
             Route::delete('/{id}', [CompetencyController::class, 'destroy']);
             Route::post('/{id}/assign', [CompetencyController::class, 'assignToEmployee']);
+            Route::post('/assignment/{id}/assess', [CompetencyController::class, 'assessCompetency']);
             Route::get('/employee/{employeeId}', [CompetencyController::class, 'employeeCompetencies']);
         });
 

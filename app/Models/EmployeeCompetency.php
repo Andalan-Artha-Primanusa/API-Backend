@@ -14,6 +14,7 @@ class EmployeeCompetency extends Model
         'assessed_by',
         'assessed_at',
         'notes',
+        'status',
     ];
 
     protected $casts = [

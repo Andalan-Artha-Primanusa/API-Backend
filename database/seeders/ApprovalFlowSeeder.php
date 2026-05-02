@@ -51,5 +51,65 @@ class ApprovalFlowSeeder extends Seeder
         );
 
         $this->command?->info('Approval Flow for Leave seeded successfully.');
+
+        // ==============================
+        // Assignment Letter Approval Flow
+        // ==============================
+        $letterFlow = ApprovalFlow::firstOrCreate(
+            ['module' => 'assignment_letter'],
+            ['name' => 'Assignment Letter Approval Flow']
+        );
+
+        ApprovalStep::firstOrCreate(
+            [
+                'approval_flow_id' => $letterFlow->id,
+                'step_order' => 1,
+            ],
+            [
+                'role_id' => $manager->id,
+            ]
+        );
+
+        ApprovalStep::firstOrCreate(
+            [
+                'approval_flow_id' => $letterFlow->id,
+                'step_order' => 2,
+            ],
+            [
+                'role_id' => $hr->id,
+            ]
+        );
+
+        $this->command?->info('Approval Flow for Assignment Letter seeded successfully.');
+
+        // ==============================
+        // Overtime Approval Flow
+        // ==============================
+        $overtimeFlow = ApprovalFlow::firstOrCreate(
+            ['module' => 'overtime'],
+            ['name' => 'Overtime Approval Flow']
+        );
+
+        ApprovalStep::firstOrCreate(
+            [
+                'approval_flow_id' => $overtimeFlow->id,
+                'step_order' => 1,
+            ],
+            [
+                'role_id' => $manager->id,
+            ]
+        );
+
+        ApprovalStep::firstOrCreate(
+            [
+                'approval_flow_id' => $overtimeFlow->id,
+                'step_order' => 2,
+            ],
+            [
+                'role_id' => $hr->id,
+            ]
+        );
+
+        $this->command?->info('Approval Flow for Overtime seeded successfully.');
     }
 }

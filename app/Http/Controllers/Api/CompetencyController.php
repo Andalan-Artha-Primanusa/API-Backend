@@ -137,7 +137,7 @@ class CompetencyController extends Controller
         $validated = $request->validate([
             'employee_ids' => 'required|array|min:1',
             'employee_ids.*' => 'required|exists:employees,id',
-            'proficiency_level' => 'required|integer|min:1|max:5',
+            'proficiency_level' => 'nullable|integer|min:1|max:5',
             'assessed_at' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
@@ -151,23 +151,60 @@ class CompetencyController extends Controller
         $results = [];
 
         foreach ($validated['employee_ids'] as $employeeId) {
+            $isAssessed = !empty($validated['proficiency_level']);
+
             $record = EmployeeCompetency::updateOrCreate(
                 [
                     'employee_id' => $employeeId,
                     'competency_id' => $competency->id,
                 ],
                 [
-                    'proficiency_level' => $validated['proficiency_level'],
-                    'assessed_by' => $user->id,
-                    'assessed_at' => $validated['assessed_at'] ?? now(),
+                    'proficiency_level' => $validated['proficiency_level'] ?? null,
+                    'assessed_by' => $isAssessed ? $user->id : null,
+                    'assessed_at' => $isAssessed ? ($validated['assessed_at'] ?? now()) : null,
                     'notes' => $validated['notes'] ?? null,
+                    'status' => $isAssessed ? 'assessed' : 'pending',
                 ]
             );
 
             $results[] = $record;
         }
 
-        return ApiResponse::success('Competency assigned successfully', $results, 201);
+        $message = $results[0]?->status === 'assessed'
+            ? 'Competency assigned and assessed successfully'
+            : 'Competency assigned successfully, pending assessment';
+
+        return ApiResponse::success($message, $results, 201);
+    }
+
+    public function assessCompetency(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'proficiency_level' => 'required|integer|min:1|max:5',
+            'notes' => 'nullable|string',
+        ]);
+
+        $record = EmployeeCompetency::with(['competency', 'employee'])->find($id);
+
+        if (!$record) {
+            return ApiResponse::error('Competency assignment not found', null, 404);
+        }
+
+        $record->update([
+            'proficiency_level' => $validated['proficiency_level'],
+            'assessed_by' => $user->id,
+            'assessed_at' => now(),
+            'notes' => $validated['notes'] ?? $record->notes,
+            'status' => 'assessed',
+        ]);
+
+        return ApiResponse::success('Competency assessed successfully', $record->fresh(['competency', 'employee']));
     }
 
     public function myCompetencies(Request $request): JsonResponse
