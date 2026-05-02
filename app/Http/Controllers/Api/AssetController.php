@@ -266,6 +266,47 @@ class AssetController extends Controller
         return ApiResponse::success('Asset returned successfully', $assignment->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email']));
     }
 
+    public function returnAssetByEmployee(Request $request, int $assignmentId): JsonResponse
+    {
+        $user = $request->user();
+        $employee = $user->employee;
+
+        if (!$employee) {
+            return ApiResponse::error('Employee record not found', null, 404);
+        }
+
+        $validated = $request->validate([
+            'return_note' => 'nullable|string',
+            'returned_at' => 'nullable|date',
+        ]);
+
+        $assignment = InventoryAssetAssignment::with('asset', 'employee.user')->find($assignmentId);
+
+        if (!$assignment) {
+            return ApiResponse::error('Assignment not found', null, 404);
+        }
+
+        if ($assignment->status !== 'assigned') {
+            return ApiResponse::error('Asset is not currently assigned', null, 400);
+        }
+
+        if ($assignment->employee_id !== $employee->id) {
+            return ApiResponse::error('Forbidden', 'This asset is not assigned to you', 403);
+        }
+
+        $assignment->update([
+            'status' => 'returned',
+            'returned_at' => $validated['returned_at'] ?? now(),
+            'return_note' => $validated['return_note'] ?? null,
+        ]);
+
+        $assignment->asset->update([
+            'status' => 'available',
+        ]);
+
+        return ApiResponse::success('Asset return request submitted', $assignment->fresh(['asset']));
+    }
+
     public function assignments(Request $request): JsonResponse
     {
         $user = $request->user();

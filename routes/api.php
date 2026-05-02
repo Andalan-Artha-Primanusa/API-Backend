@@ -342,6 +342,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::delete('/{id}', [AssetController::class, 'destroy']);
             Route::post('/{id}/assign', [AssetController::class, 'assign']);
             Route::put('/assignments/{assignmentId}/return', [AssetController::class, 'returnAsset']);
+            Route::put('/assignments/{assignmentId}/return-ess', [AssetController::class, 'returnAssetByEmployee']);
         });
 
         Route::prefix('documents')->group(function () {
