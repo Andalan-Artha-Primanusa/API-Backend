@@ -56,13 +56,6 @@ use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\NotificationSettingController;
 use App\Http\Controllers\Api\OvertimeController;
-// PROMOTION (Kenaikan Jabatan)
-Route::get('promotions', [PromotionController::class, 'index']);
-Route::post('promotions', [PromotionController::class, 'store']);
-Route::post('promotions/{id}/approve', [PromotionController::class, 'approve']);
-Route::post('promotions/{id}/reject', [PromotionController::class, 'reject']);
-Route::delete('promotions/{id}', [PromotionController::class, 'destroy']);
-
 // PROGRESSIVE TAX (PPh21 Progresif)
 Route::post('tax/progressive/calculate', function (\Illuminate\Http\Request $request) {
     $validated = $request->validate([
@@ -127,6 +120,13 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::put('tasks/{id}', [TaskController::class, 'update']);
     Route::delete('tasks/{id}', [TaskController::class, 'destroy']);
     Route::get('my/tasks', [TaskController::class, 'myTasks']);
+
+    // Promotions
+    Route::get('promotions', [PromotionController::class, 'index']);
+    Route::post('promotions', [PromotionController::class, 'store']);
+    Route::post('promotions/{id}/approve', [PromotionController::class, 'approve']);
+    Route::post('promotions/{id}/reject', [PromotionController::class, 'reject']);
+    Route::delete('promotions/{id}', [PromotionController::class, 'destroy']);
 
     // Pesangon PP 35/2021
     Route::get('employees/{employee}/severance/calculate', [SeveranceController::class, 'calculate']);
