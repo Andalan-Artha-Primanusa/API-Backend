@@ -183,22 +183,27 @@ class PromotionController
     public function myPromotions(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = EmployeeLifecycleEvent::with([
-            'employee.user',
-            'approver',
-        ])
-        ->where('event_type', 'promotion');
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
-            $query->where('initiated_by_id', $user->employee?->id);
+        if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin()) {
+            $promotions = EmployeeLifecycleEvent::with([
+                'employee.user',
+                'approver',
+            ])
+            ->where('event_type', 'promotion')
+            ->latest()
+            ->get();
+        } else {
+            $employee = $user->employee;
+            $employeeId = $employee ? $employee->id : 0;
+            $promotions = EmployeeLifecycleEvent::with([
+                'employee.user',
+                'approver',
+            ])
+            ->where('event_type', 'promotion')
+            ->where('employee_id', $employeeId)
+            ->latest()
+            ->get();
         }
-
-        $status = $request->query('status');
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        $promotions = $query->latest()->get();
 
         $summary = [
             'total' => $promotions->count(),
