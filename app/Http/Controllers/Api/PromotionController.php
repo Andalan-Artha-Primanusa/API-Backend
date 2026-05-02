@@ -16,8 +16,6 @@ class PromotionController
         $user = $request->user();
         $query = EmployeeLifecycleEvent::with([
             'employee.user',
-            'employee.department',
-            'employee.position',
             'initiator.user',
             'approver',
         ])
