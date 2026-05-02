@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PromotionController;
 use App\Services\ProgressiveTaxService;
 use App\Http\Controllers\Api\EmploymentLetterController;
 use App\Http\Controllers\Api\AssignmentLetterController;
+use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\SeveranceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
@@ -114,6 +115,14 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::post('assignment-letters/{id}/approve', [AssignmentLetterController::class, 'approve']);
     Route::post('assignment-letters/{id}/reject', [AssignmentLetterController::class, 'reject']);
     Route::get('assignment-letters/{id}/pdf', [AssignmentLetterController::class, 'generatePdf']);
+
+    // Task Management
+    Route::get('tasks', [TaskController::class, 'index']);
+    Route::post('tasks', [TaskController::class, 'store']);
+    Route::get('tasks/{id}', [TaskController::class, 'show']);
+    Route::put('tasks/{id}', [TaskController::class, 'update']);
+    Route::delete('tasks/{id}', [TaskController::class, 'destroy']);
+    Route::get('my/tasks', [TaskController::class, 'myTasks']);
 
     // Pesangon PP 35/2021
     Route::get('employees/{employee}/severance/calculate', [SeveranceController::class, 'calculate']);
