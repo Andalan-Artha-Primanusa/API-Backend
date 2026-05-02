@@ -159,7 +159,7 @@ class CompetencyController extends Controller
                     'competency_id' => $competency->id,
                 ],
                 [
-                    'proficiency_level' => $validated['proficiency_level'] ?? null,
+                    'proficiency_level' => $validated['proficiency_level'] ?? 1,
                     'assessed_by' => $isAssessed ? $user->id : null,
                     'assessed_at' => $isAssessed ? ($validated['assessed_at'] ?? now()) : null,
                     'notes' => $validated['notes'] ?? null,
