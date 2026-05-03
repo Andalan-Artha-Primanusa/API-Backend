@@ -172,6 +172,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::post('/trainings/{id}/enroll', [TrainingController::class, 'selfEnroll']);
         Route::get('/competencies', [CompetencyController::class, 'myCompetencies']);
         Route::get('/assets', [AssetController::class, 'myAssets']);
+        Route::put('/assets/return/{assignmentId}', [AssetController::class, 'returnAssetByEmployee']);
         Route::get('/benefits', [BenefitController::class, 'myBenefits']);
         Route::get('/performance-reviews', [PerformanceReviewController::class, 'myReviews']);
         Route::get('/documents', [EmployeeDocumentController::class, 'myDocuments']);
@@ -343,9 +344,6 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::post('/{id}/assign', [AssetController::class, 'assign']);
             Route::put('/assignments/{assignmentId}/return', [AssetController::class, 'returnAsset']);
         });
-
-        // ESS: Employee can return their own assets
-        Route::put('assets/assignments/{assignmentId}/return-ess', [AssetController::class, 'returnAssetByEmployee']);
 
         Route::prefix('documents')->group(function () {
             Route::get('/', [EmployeeDocumentController::class, 'index']);
