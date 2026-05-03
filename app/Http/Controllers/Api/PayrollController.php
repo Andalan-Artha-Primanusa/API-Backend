@@ -389,5 +389,162 @@ class PayrollController extends Controller
         ];
     }
 
+    public function exportBcaKlikPay(Request $request)
+    {
+        $user = $request->user();
 
+        if (!($user->isAdmin() || $user->isHR())) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
+        $request->validate([
+            'period' => 'required|string|max:50',
+            'bank' => 'nullable|string|max:100',
+        ]);
+
+        $period = $request->input('period');
+        $bankFilter = $request->input('bank');
+
+        $query = Payroll::with(['employee.user.profile', 'employee.user'])
+            ->where('period', $period)
+            ->whereIn('status', ['approved', 'paid']);
+
+        if ($bankFilter) {
+            $query->whereHas('employee.user.profile', function ($q) use ($bankFilter) {
+                $q->where('bank_name', 'like', '%' . $bankFilter . '%');
+            });
+        }
+
+        $payrolls = $query->get();
+
+        if ($payrolls->isEmpty()) {
+            return ApiResponse::error('No payroll data found for the selected period', null, 404);
+        }
+
+        $rows = [['No', 'Account Number', 'Account Name', 'Amount', 'Description', 'Email']];
+        $totalAmount = 0;
+
+        foreach ($payrolls as $index => $payroll) {
+            $profile = $payroll->employee?->user?->profile;
+            $bankAccountNumber = $profile?->bank_account_number ?? '';
+            $bankAccountName = $profile?->bank_account_name ?? $payroll->employee?->user?->name ?? '';
+            $bankName = $profile?->bank_name ?? '';
+            $amount = (float) $payroll->take_home_pay;
+            $email = $payroll->employee?->user?->email ?? '';
+
+            if ($bankFilter && stripos($bankName, $bankFilter) === false) {
+                continue;
+            }
+
+            $totalAmount += $amount;
+
+            $rows[] = [
+                $index + 1,
+                $bankAccountNumber,
+                $bankAccountName,
+                number_format($amount, 2, '.', ''),
+                'Gaji ' . $period,
+                $email,
+            ];
+        }
+
+        $rows[] = ['', '', 'TOTAL', number_format($totalAmount, 2, '.', ''), '', ''];
+
+        $filename = 'bca-klikpay-' . str_replace(['/', '\\', ' ', '-'], '', $period) . '.csv';
+
+        return response()->streamDownload(function () use ($rows): void {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            foreach ($rows as $row) {
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function exportPayrollSummaryCsv(Request $request)
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR())) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
+        $request->validate([
+            'period' => 'required|string|max:50',
+        ]);
+
+        $period = $request->input('period');
+
+        $payrolls = Payroll::with(['employee.user.profile', 'employee.user'])
+            ->where('period', $period)
+            ->get();
+
+        if ($payrolls->isEmpty()) {
+            return ApiResponse::error('No payroll data found for the selected period', null, 404);
+        }
+
+        $rows = [
+            ['No', 'Employee Code', 'Name', 'Department', 'Position', 'Bank', 'Account Number', 'Account Name', 'Basic Salary', 'Allowance', 'Bonus', 'BPJS Kesehatan', 'BPJS Ketenagakerjaan', 'PPh 21', 'Total Deduction', 'Take Home Pay', 'Status'],
+        ];
+        $totalBasic = $totalAllowance = $totalBonus = $totalDeduction = $totalNet = 0;
+
+        foreach ($payrolls as $index => $payroll) {
+            $profile = $payroll->employee?->user?->profile;
+            $basic = (float) $payroll->basic_salary;
+            $allowance = (float) $payroll->allowance;
+            $bonus = (float) $payroll->bonus;
+            $deduction = (float) $payroll->total_deduction;
+            $net = (float) $payroll->take_home_pay;
+
+            $totalBasic += $basic;
+            $totalAllowance += $allowance;
+            $totalBonus += $bonus;
+            $totalDeduction += $deduction;
+            $totalNet += $net;
+
+            $rows[] = [
+                $index + 1,
+                $payroll->employee?->employee_code ?? '',
+                $payroll->employee?->user?->name ?? '',
+                $payroll->employee?->department ?? '',
+                $payroll->employee?->position ?? '',
+                $profile?->bank_name ?? '',
+                $profile?->bank_account_number ?? '',
+                $profile?->bank_account_name ?? '',
+                number_format($basic, 2, '.', ''),
+                number_format($allowance, 2, '.', ''),
+                number_format($bonus, 2, '.', ''),
+                number_format((float) $payroll->bpjs_kesehatan, 2, '.', ''),
+                number_format((float) $payroll->bpjs_ketenagakerjaan, 2, '.', ''),
+                number_format((float) $payroll->pph21, 2, '.', ''),
+                number_format($deduction, 2, '.', ''),
+                number_format($net, 2, '.', ''),
+                $payroll->status,
+            ];
+        }
+
+        $rows[] = ['', '', '', '', '', '', '', '', 'TOTAL', number_format($totalBasic, 2, '.', ''), number_format($totalAllowance, 2, '.', ''), number_format($totalBonus, 2, '.', ''), '', '', '', number_format($totalDeduction, 2, '.', ''), number_format($totalNet, 2, '.', ''), ''];
+
+        $filename = 'payroll-summary-' . str_replace(['/', '\\', ' ', '-'], '', $period) . '.csv';
+
+        return response()->streamDownload(function () use ($rows): void {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            foreach ($rows as $row) {
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
 }

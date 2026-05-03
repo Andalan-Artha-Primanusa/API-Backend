@@ -571,6 +571,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/', [PayrollController::class, 'index']);
             Route::post('/', [PayrollController::class, 'store']);
             Route::post('/generate/monthly', [PayrollController::class, 'generateMonthly']);
+            Route::get('/export/bca-klikpay', [PayrollController::class, 'exportBcaKlikPay']);
+            Route::get('/export/summary', [PayrollController::class, 'exportPayrollSummaryCsv']);
             Route::get('/{id}', [PayrollController::class, 'show']);
             Route::get('/{id}/slip', [PayrollController::class, 'slip']);
             Route::get('/{id}/export', [PayrollController::class, 'exportSlipCsv']);
