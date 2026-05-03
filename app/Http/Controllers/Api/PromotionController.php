@@ -18,6 +18,7 @@ class PromotionController
             'employee.user',
             'initiator.user',
             'approver',
+            'reportApprover',
         ])
         ->where('event_type', 'promotion');
 
@@ -192,6 +193,7 @@ class PromotionController
             'employee.user',
             'approver',
             'initiator.user',
+            'reportApprover',
         ])
         ->where('event_type', 'promotion');
 
@@ -219,5 +221,102 @@ class PromotionController
             'promotions' => $promotions,
             'summary' => $summary,
         ]);
+    }
+
+    public function submitReport(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $employee = $user->employee;
+
+        if (!$employee) {
+            return ApiResponse::error('Employee record not found', null, 404);
+        }
+
+        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+
+        if ($event->event_type !== 'promotion') {
+            return ApiResponse::error('Invalid event type', null, 400);
+        }
+        if ($event->status !== 'approved') {
+            return ApiResponse::error('Promotion must be approved first', null, 400);
+        }
+        if ($event->employee_id !== $employee->id) {
+            return ApiResponse::error('Forbidden', 'This promotion is not yours', 403);
+        }
+        if ($event->report_status !== null) {
+            return ApiResponse::error('Activity report already submitted', null, 400);
+        }
+
+        $validated = $request->validate([
+            'activity_report' => 'required|string|max:5000',
+        ]);
+
+        $event->update([
+            'activity_report' => $validated['activity_report'],
+            'report_status' => 'submitted',
+        ]);
+
+        return ApiResponse::success('Activity report submitted', $event->fresh(['employee.user', 'approver']));
+    }
+
+    public function approveReport(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+
+        if ($event->event_type !== 'promotion') {
+            return ApiResponse::error('Invalid event type', null, 400);
+        }
+        if ($event->status !== 'approved') {
+            return ApiResponse::error('Promotion is not approved', null, 400);
+        }
+        if ($event->report_status !== 'submitted') {
+            return ApiResponse::error('No pending activity report', null, 400);
+        }
+
+        $event->update([
+            'report_status' => 'approved',
+            'report_approved_by_id' => $user->id,
+            'report_approved_at' => now(),
+            'status' => 'completed',
+        ]);
+
+        return ApiResponse::success('Activity report approved. Promotion completed!', $event->fresh(['employee.user', 'approver', 'reportApprover']));
+    }
+
+    public function rejectReport(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+
+        if ($event->event_type !== 'promotion') {
+            return ApiResponse::error('Invalid event type', null, 400);
+        }
+        if ($event->report_status !== 'submitted') {
+            return ApiResponse::error('No pending activity report', null, 400);
+        }
+
+        $event->update([
+            'report_status' => 'rejected',
+            'report_approved_by_id' => $user->id,
+            'report_approved_at' => now(),
+            'report_rejection_reason' => $validated['rejection_reason'],
+        ]);
+
+        return ApiResponse::success('Activity report rejected', $event->fresh(['employee.user', 'approver', 'reportApprover']));
     }
 }

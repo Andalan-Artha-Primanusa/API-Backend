@@ -21,6 +21,11 @@ class EmployeeLifecycleEvent extends Model
         'effective_date',
         'status',
         'remarks',
+        'activity_report',
+        'report_status',
+        'report_approved_by_id',
+        'report_approved_at',
+        'report_rejection_reason',
     ];
 
     protected $casts = [
@@ -43,5 +48,10 @@ class EmployeeLifecycleEvent extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by_id');
+    }
+
+    public function reportApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'report_approved_by_id');
     }
 }

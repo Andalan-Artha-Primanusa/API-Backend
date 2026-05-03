@@ -128,6 +128,11 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::post('promotions/{id}/reject', [PromotionController::class, 'reject']);
     Route::delete('promotions/{id}', [PromotionController::class, 'destroy']);
 
+    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+        Route::post('promotions/{id}/report/approve', [PromotionController::class, 'approveReport']);
+        Route::post('promotions/{id}/report/reject', [PromotionController::class, 'rejectReport']);
+    });
+
     // Pesangon PP 35/2021
     Route::get('employees/{employee}/severance/calculate', [SeveranceController::class, 'calculate']);
     Route::get('employees/{employee}/severance/export', [SeveranceController::class, 'exportExcel']);
@@ -185,6 +190,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         // Overtime requests (ESS)
         Route::get('/overtime', [OvertimeController::class, 'myOvertimeRequests']);
         Route::put('/overtime/{id}/reason', [OvertimeController::class, 'addReason']);
+
+        Route::post('/promotions/{id}/report/submit', [PromotionController::class, 'submitReport']);
 
         // Promotions (ESS)
         Route::get('/promotions', [PromotionController::class, 'myPromotions']);
