@@ -531,22 +531,4 @@ class PayrollController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
-
-        $rows[] = ['', '', '', '', '', '', '', '', 'TOTAL', number_format($totalBasic, 2, '.', ''), number_format($totalAllowance, 2, '.', ''), number_format($totalBonus, 2, '.', ''), '', '', '', number_format($totalDeduction, 2, '.', ''), number_format($totalNet, 2, '.', ''), ''];
-
-        $filename = 'payroll-summary-' . str_replace(['/', '\\', ' ', '-'], '', $period) . '.csv';
-
-        return response()->streamDownload(function () use ($rows): void {
-            $handle = fopen('php://output', 'w');
-
-            foreach ($rows as $row) {
-                fputcsv($handle, $row, ',', '"', '');
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
 }
