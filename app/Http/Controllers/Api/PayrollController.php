@@ -421,7 +421,8 @@ class PayrollController extends Controller
             return ApiResponse::error('No payroll data found for the selected period', null, 404);
         }
 
-        $rows = [['No', 'Account Number', 'Account Name', 'Amount', 'Description', 'Email']];
+        $headers = ['No', 'Account Number', 'Account Name', 'Amount', 'Description', 'Email'];
+        $lines = [implode(',', $headers)];
         $totalAmount = 0;
 
         foreach ($payrolls as $index => $payroll) {
@@ -438,29 +439,22 @@ class PayrollController extends Controller
 
             $totalAmount += $amount;
 
-            $rows[] = [
+            $lines[] = implode(',', [
                 $index + 1,
                 $bankAccountNumber,
                 $bankAccountName,
                 number_format($amount, 2, '.', ''),
                 'Gaji ' . $period,
                 $email,
-            ];
+            ]);
         }
 
-        $rows[] = ['', '', 'TOTAL', number_format($totalAmount, 2, '.', ''), '', ''];
+        $lines[] = implode(',', ['', '', 'TOTAL', number_format($totalAmount, 2, '.', ''), '', '']);
 
         $filename = 'bca-klikpay-' . str_replace(['/', '\\', ' ', '-'], '', $period) . '.csv';
+        $content = implode("\n", $lines) . "\n";
 
-        return response()->streamDownload(function () use ($rows): void {
-            $handle = fopen('php://output', 'w');
-
-            foreach ($rows as $row) {
-                fputcsv($handle, $row);
-            }
-
-            fclose($handle);
-        }, $filename, [
+        return response($content, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
@@ -488,9 +482,8 @@ class PayrollController extends Controller
             return ApiResponse::error('No payroll data found for the selected period', null, 404);
         }
 
-        $rows = [
-            ['No', 'Employee Code', 'Name', 'Department', 'Position', 'Bank', 'Account Number', 'Account Name', 'Basic Salary', 'Allowance', 'Bonus', 'BPJS Kesehatan', 'BPJS Ketenagakerjaan', 'PPh 21', 'Total Deduction', 'Take Home Pay', 'Status'],
-        ];
+        $headers = ['No', 'Employee Code', 'Name', 'Department', 'Position', 'Bank', 'Account Number', 'Account Name', 'Basic Salary', 'Allowance', 'Bonus', 'BPJS Kesehatan', 'BPJS Ketenagakerjaan', 'PPh 21', 'Total Deduction', 'Take Home Pay', 'Status'];
+        $lines = [implode(',', $headers)];
         $totalBasic = $totalAllowance = $totalBonus = $totalDeduction = $totalNet = 0;
 
         foreach ($payrolls as $index => $payroll) {
@@ -507,7 +500,7 @@ class PayrollController extends Controller
             $totalDeduction += $deduction;
             $totalNet += $net;
 
-            $rows[] = [
+            $lines[] = implode(',', [
                 $index + 1,
                 $payroll->employee?->employee_code ?? '',
                 $payroll->employee?->user?->name ?? '',
@@ -525,8 +518,19 @@ class PayrollController extends Controller
                 number_format($deduction, 2, '.', ''),
                 number_format($net, 2, '.', ''),
                 $payroll->status,
-            ];
+            ]);
         }
+
+        $lines[] = implode(',', ['', '', '', '', '', '', '', '', 'TOTAL', number_format($totalBasic, 2, '.', ''), number_format($totalAllowance, 2, '.', ''), number_format($totalBonus, 2, '.', ''), '', '', '', number_format($totalDeduction, 2, '.', ''), number_format($totalNet, 2, '.', ''), '']);
+
+        $filename = 'payroll-summary-' . str_replace(['/', '\\', ' ', '-'], '', $period) . '.csv';
+        $content = implode("\n", $lines) . "\n";
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
 
         $rows[] = ['', '', '', '', '', '', '', '', 'TOTAL', number_format($totalBasic, 2, '.', ''), number_format($totalAllowance, 2, '.', ''), number_format($totalBonus, 2, '.', ''), '', '', '', number_format($totalDeduction, 2, '.', ''), number_format($totalNet, 2, '.', ''), ''];
 
@@ -534,15 +538,14 @@ class PayrollController extends Controller
 
         return response()->streamDownload(function () use ($rows): void {
             $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             foreach ($rows as $row) {
-                fputcsv($handle, $row);
+                fputcsv($handle, $row, ',', '"', '');
             }
 
             fclose($handle);
         }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
