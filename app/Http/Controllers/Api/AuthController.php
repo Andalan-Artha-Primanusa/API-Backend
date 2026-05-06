@@ -235,7 +235,7 @@ class AuthController extends Controller
                 [
                     'email' => $validated['email'],
                     'password' => $validated['password'],
-                    'password_confirmation' => $validated['password_confirmation'],
+                    'password_confirmation' => $request->input('password_confirmation'),
                     'token' => $validated['token'],
                 ],
                 function ($user, $password) {
