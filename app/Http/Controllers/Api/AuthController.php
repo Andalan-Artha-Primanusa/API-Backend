@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Services\UserService;
 use App\Models\Employee;
@@ -179,6 +183,74 @@ class AuthController extends Controller
             ]);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch authenticated user', null, 500);
+        }
+    }
+
+    /**
+     * Send a reset password link to the provided email.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+            ]);
+
+            $status = Password::sendResetLink([
+                'email' => $validated['email'],
+            ]);
+
+            if ($status !== Password::RESET_LINK_SENT) {
+                return ApiResponse::error(__($status), null, 400);
+            }
+
+            return ApiResponse::success('Link reset password sudah dikirim ke email Anda.');
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Gagal mengirim link reset password', null, 500);
+        }
+    }
+
+    /**
+     * Reset password using token sent by email.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'token' => 'required|string',
+                'email' => 'required|email',
+                'password' => 'required|string|min:8|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/',
+            ]);
+
+            $status = Password::reset(
+                [
+                    'email' => $validated['email'],
+                    'password' => $validated['password'],
+                    'password_confirmation' => $validated['password_confirmation'],
+                    'token' => $validated['token'],
+                ],
+                function ($user, $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password),
+                        'remember_token' => Str::random(60),
+                    ])->save();
+
+                    $user->tokens()->delete();
+                    event(new PasswordReset($user));
+                }
+            );
+
+            if ($status !== Password::PASSWORD_RESET) {
+                return ApiResponse::error(__($status), null, 400);
+            }
+
+            return ApiResponse::success('Password berhasil direset. Silakan login kembali.');
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Gagal reset password', null, 500);
         }
     }
 
