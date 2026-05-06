@@ -17,6 +17,8 @@ class UpdateEmployeeRequest extends FormRequest
         $employeeId = $this->route('employee') ?? $this->route('id');
 
         return [
+            'name'          => ['sometimes', 'string', 'max:255'],
+            'user_id'       => ['sometimes', 'nullable', 'exists:users,id'],
             'employee_code' => [
                 'sometimes', 'string',
                 Rule::unique('employees', 'employee_code')->ignore($employeeId),
