@@ -16,6 +16,13 @@ class TrainingController extends Controller
 {
     use HasEmployee;
 
+    private function canUseAdminTrainingViews(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager());
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -203,6 +210,14 @@ class TrainingController extends Controller
 
     public function myTrainings(Request $request): JsonResponse
     {
+        if ($this->canUseAdminTrainingViews($request)) {
+            $data = TrainingEnrollment::with('program', 'employee.user.profile')
+                ->latest()
+                ->get();
+
+            return ApiResponse::success('My trainings retrieved successfully', $data);
+        }
+
         $employee = $this->getAuthenticatedEmployee();
 
         $data = TrainingEnrollment::with('program')
@@ -274,20 +289,22 @@ class TrainingController extends Controller
 
     public function availableTrainings(Request $request): JsonResponse
     {
-        $employee = $this->getAuthenticatedEmployee();
-
-        $enrolledIds = TrainingEnrollment::where('employee_id', $employee->id)
-            ->pluck('training_program_id')
-            ->toArray();
-
         $validated = $request->validate([
             'per_page' => 'sometimes|integer|min:1|max:100',
             'search' => 'sometimes|string|max:255',
         ]);
 
-        $query = TrainingProgram::where('status', 'active')
-            ->whereNotIn('id', $enrolledIds)
-            ->latest();
+        $query = TrainingProgram::where('status', 'active')->latest();
+
+        if (!$this->canUseAdminTrainingViews($request)) {
+            $employee = $this->getAuthenticatedEmployee();
+
+            $enrolledIds = TrainingEnrollment::where('employee_id', $employee->id)
+                ->pluck('training_program_id')
+                ->toArray();
+
+            $query->whereNotIn('id', $enrolledIds);
+        }
 
         if (!empty($validated['search'])) {
             $search = $validated['search'];
