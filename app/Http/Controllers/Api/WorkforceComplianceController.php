@@ -56,7 +56,7 @@ class WorkforceComplianceController extends Controller
      */
     public function documents(Request $request): JsonResponse
     {
-        $documents = \App\Models\EmployeeDocument::with('employee.user.profile')->get();
+        $documents = \App\Models\EmployeeDocument::with('employee.user')->get();
         
         $data = $documents->map(function ($doc) {
             $risk = 'LOW';
@@ -78,8 +78,8 @@ class WorkforceComplianceController extends Controller
 
             return [
                 'id' => $doc->id,
-                'name' => $doc->employee?->user?->profile?->full_name ?? 'Unknown',
-                'emp_id' => $doc->employee?->employee_id ?? 'N/A',
+                'name' => $doc->employee?->user?->name ?? 'Unknown',
+                'emp_id' => $doc->employee?->employee_code ?? 'N/A',
                 'doc' => $doc->document_type ?? $doc->title,
                 'date' => $dateStr,
                 'risk' => $risk,
