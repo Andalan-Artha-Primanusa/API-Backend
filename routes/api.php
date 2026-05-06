@@ -527,6 +527,9 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::post('/notifications/templates', [EnterpriseOpsController::class, 'notificationTemplateStore']);
             Route::post('/notifications/rules', [EnterpriseOpsController::class, 'notificationRuleStore']);
             Route::post('/notifications/schedules', [EnterpriseOpsController::class, 'scheduleNotification']);
+            Route::get('/compliance/retention-policies', [EnterpriseOpsController::class, 'getRetentionPolicies']);
+            Route::delete('/compliance/retention-policies/{module}', [EnterpriseOpsController::class, 'deactivateRetentionPolicy']);
+            Route::get('/compliance/privacy-requests', [EnterpriseOpsController::class, 'getPrivacyRequests']);
             Route::post('/compliance/retention-policies', [EnterpriseOpsController::class, 'retentionPolicyStore']);
             Route::post('/compliance/tasks', [EnterpriseOpsController::class, 'complianceTaskStore']);
             Route::post('/compliance/privacy-requests', [EnterpriseOpsController::class, 'privacyRequestStore']);

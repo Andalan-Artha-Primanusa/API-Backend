@@ -152,6 +152,45 @@ class EnterpriseOpsController extends Controller
         return ApiResponse::success('Notification scheduled successfully', DB::table('scheduled_notifications')->where('id', $id)->first(), 201);
     }
 
+    public function getRetentionPolicies(): JsonResponse
+    {
+        $policies = DB::table('data_retention_policies')
+            ->where('active', true)
+            ->orderBy('module')
+            ->get();
+        return ApiResponse::success('Retention policies retrieved successfully', $policies);
+    }
+
+    public function getPrivacyRequests(): JsonResponse
+    {
+        $requests = DB::table('privacy_requests')
+            ->leftJoin('users', 'privacy_requests.requester_user_id', '=', 'users.id')
+            ->leftJoin('employees', 'users.id', '=', 'employees.user_id')
+            ->select(
+                'privacy_requests.id',
+                'privacy_requests.request_type',
+                'privacy_requests.status',
+                'privacy_requests.description',
+                'privacy_requests.created_at',
+                'privacy_requests.updated_at',
+                'users.name as requester_name',
+                'employees.employee_code',
+                'employees.department'
+            )
+            ->orderByDesc('privacy_requests.created_at')
+            ->get();
+        return ApiResponse::success('Privacy requests retrieved successfully', $requests);
+    }
+
+    public function deactivateRetentionPolicy(string $module): JsonResponse
+    {
+        $deleted = DB::table('data_retention_policies')->where('module', $module)->delete();
+        if ($deleted === 0) {
+            return ApiResponse::error('Retention policy not found', null, 404);
+        }
+        return ApiResponse::success('Retention policy deleted successfully');
+    }
+
     public function retentionPolicyStore(Request $request): JsonResponse
     {
         $validated = $request->validate([
