@@ -114,11 +114,12 @@ class AdminSeeder extends Seeder
         );
 
         // Create or UPDATE user (ensures password & role are always current)
+        // Note: Do NOT use Hash::make() — User model has 'hashed' cast
         $user = User::updateOrCreate(
             ['email' => $config['email']],
             [
                 'name'     => $config['name'],
-                'password' => Hash::make($password),
+                'password' => $password,
             ]
         );
 

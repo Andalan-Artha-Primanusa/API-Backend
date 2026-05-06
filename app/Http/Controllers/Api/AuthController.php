@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -208,6 +209,7 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
+            Log::error('Forgot password failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return ApiResponse::error('Gagal mengirim link reset password', null, 500);
         }
     }
@@ -235,12 +237,15 @@ class AuthController extends Controller
                 [
                     'email' => $validated['email'],
                     'password' => $validated['password'],
-                    'password_confirmation' => $validated['password_confirmation'],
+                    'password_confirmation' => $request->input('password_confirmation'),
                     'token' => $validated['token'],
                 ],
                 function ($user, $password) {
+                    // Note: Do NOT use Hash::make() here — the User model
+                    // has a 'hashed' cast on 'password' which auto-hashes on set.
+                    // Using Hash::make() would cause double-hashing.
                     $user->forceFill([
-                        'password' => Hash::make($password),
+                        'password' => $password,
                         'remember_token' => Str::random(60),
                     ])->save();
 
@@ -257,6 +262,7 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
+            Log::error('Reset password failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return ApiResponse::error('Gagal reset password', null, 500);
         }
     }

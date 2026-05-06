@@ -18,10 +18,11 @@ class UserService
 
     public function register(array $data): User
     {
+        // Note: Do NOT use Hash::make() — User model has 'hashed' cast
         $user = $this->userRepo->create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'],
         ]);
 
         // Assign default employee role via RBAC pivot table
@@ -59,10 +60,11 @@ class UserService
     $user = $this->userRepo->findByEmail($googleUser->getEmail());
 
     if (!$user) {
+        // Note: Do NOT use Hash::make() — User model has 'hashed' cast
         $user = $this->userRepo->create([
             'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'User',
             'email' => $googleUser->getEmail(),
-            'password' => Hash::make(Str::random(32)),
+            'password' => Str::random(32),
         ]);
 
         // assign role
