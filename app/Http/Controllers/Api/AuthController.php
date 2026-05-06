@@ -221,7 +221,14 @@ class AuthController extends Controller
             $validated = $request->validate([
                 'token' => 'required|string',
                 'email' => 'required|email',
-                'password' => 'required|string|min:8|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/',
+                'password' => 'required|string|min:8|confirmed',
+            ], [
+                'token.required' => 'Token reset password wajib diisi.',
+                'email.required' => 'Email wajib diisi.',
+                'email.email' => 'Format email tidak valid.',
+                'password.required' => 'Password wajib diisi.',
+                'password.min' => 'Password minimal 8 karakter.',
+                'password.confirmed' => 'Konfirmasi password tidak sama.',
             ]);
 
             $status = Password::reset(

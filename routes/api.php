@@ -88,6 +88,8 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,1');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
+// Backward-compatible alias for older frontend bundles
+Route::post('/vendor-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
 // GOOGLE SSO
 Route::prefix('auth')->group(function () {
