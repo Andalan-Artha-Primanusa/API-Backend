@@ -42,9 +42,17 @@ class Permissions
     const PAYROLL = [
         'payroll.view' => 'View payroll records',
         'payroll.create' => 'Create payroll run',
+        'payroll.generate' => 'Generate payroll batch',
         'payroll.approve' => 'Approve payroll payment',
         'payroll.pay' => 'Process payroll payment',
         'payroll.export' => 'Export payroll slips',
+    ];
+
+    const OVERTIME = [
+        'overtime.view' => 'View overtime requests',
+        'overtime.create' => 'Create overtime request',
+        'overtime.approve' => 'Approve overtime request (Manager/HR)',
+        'overtime.manage' => 'Manage overtime records',
     ];
 
     const KPI = [
@@ -246,6 +254,7 @@ class Permissions
             self::ENGAGEMENT,
             self::ORGANIZATION,
             self::COMPLIANCE,
+            self::OVERTIME,
             self::REPORTING,
             self::ADMIN_SYSTEM,
             self::ADMIN_SETTINGS,
@@ -271,6 +280,7 @@ class Permissions
                 array_keys(self::PAYROLL),
                 array_keys(self::KPI),
                 array_keys(self::REIMBURSEMENT),
+                array_keys(self::OVERTIME),
                 array_keys(self::TRAINING),
                 array_keys(self::COMPETENCY),
                 array_keys(self::ASSET),
@@ -297,6 +307,7 @@ class Permissions
                 array_keys(self::PAYROLL),
                 array_keys(self::KPI),
                 array_keys(self::REIMBURSEMENT),
+                array_keys(self::OVERTIME),
                 array_keys(self::TRAINING),
                 array_keys(self::COMPETENCY),
                 array_keys(self::DOCUMENT),
@@ -317,6 +328,7 @@ class Permissions
                 ['employee.view', 'employee.update'],
                 array_keys(self::LEAVE),
                 ['attendance.view_all'],
+                ['overtime.approve'],
                 ['kpi.view', 'kpi.approve'],
                 ['performance.review.view', 'performance.review.approve'],
                 ['okr.view', 'okr.approve'],
@@ -332,6 +344,8 @@ class Permissions
                 'attendance.check_in',
                 'attendance.check_out',
                 'attendance.view_own',
+                'overtime.create',
+                'overtime.view',
                 'kpi.view',
                 'reimbursement.view',
                 'reimbursement.create',

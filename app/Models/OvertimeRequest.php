@@ -41,4 +41,14 @@ class OvertimeRequest extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function evidences()
+    {
+        return $this->hasMany(OvertimeEvidence::class);
+    }
+
+    public function approvedEvidences()
+    {
+        return $this->evidences()->where('status', 'approved');
+    }
 }

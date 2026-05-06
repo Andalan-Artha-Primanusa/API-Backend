@@ -38,6 +38,28 @@ class AdminSeeder extends Seeder
             'default_pass'  => 'Admin@123456',
         ],
         [
+            'email'         => 'hr@gmail.com',
+            'name'          => 'HR',
+            'role'          => User::ROLE_HR,
+            'employee_code' => 'HR-001',
+            'position'      => 'HR Officer',
+            'department'    => 'Human Resources',
+            'salary'        => 12000000,
+            'env_password'  => 'HR_PASSWORD',
+            'default_pass'  => 'HrOfficer@123',
+        ],
+        [
+            'email'         => 'manager@gmail.com',
+            'name'          => 'Manager',
+            'role'          => User::ROLE_MANAGER,
+            'employee_code' => 'MGR-001',
+            'position'      => 'Team Manager',
+            'department'    => 'Management',
+            'salary'        => 14000000,
+            'env_password'  => 'MANAGER_PASSWORD',
+            'default_pass'  => 'Manager@1234',
+        ],
+        [
             'email'         => 'employee@gmail.com',
             'name'          => 'Employee',
             'role'          => User::ROLE_EMPLOYEE,
@@ -58,6 +80,8 @@ class AdminSeeder extends Seeder
             $roles = Role::whereIn('name', [
                 User::ROLE_SUPER_ADMIN,
                 User::ROLE_ADMIN,
+                User::ROLE_HR,
+                User::ROLE_MANAGER,
                 User::ROLE_EMPLOYEE,
             ])->get()->keyBy('name');
 

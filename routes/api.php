@@ -190,6 +190,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         // Overtime requests (ESS)
         Route::get('/overtime', [OvertimeController::class, 'myOvertimeRequests']);
         Route::put('/overtime/{id}/reason', [OvertimeController::class, 'addReason']);
+        Route::post('/overtime/{id}/evidence', [OvertimeController::class, 'uploadEvidence']);
+        Route::get('/overtime/{id}/evidences', [OvertimeController::class, 'myOvertimeEvidences']);
 
         Route::post('/promotions/{id}/report/submit', [PromotionController::class, 'submitReport']);
 
@@ -264,6 +266,13 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/pending', [OvertimeController::class, 'pending']);
             Route::put('/{id}/approve', [OvertimeController::class, 'approve']);
             Route::put('/{id}/reject', [OvertimeController::class, 'reject']);
+        });
+
+        // OVERTIME EVIDENCES
+        Route::prefix('overtime/evidences')->group(function () {
+            Route::get('/request/{id}', [OvertimeController::class, 'overtimeEvidences']);
+            Route::put('/{id}/approve', [OvertimeController::class, 'approveEvidence']);
+            Route::put('/{id}/reject', [OvertimeController::class, 'rejectEvidence']);
         });
 
         // KPI MANAGEMENT
@@ -497,12 +506,18 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/compliance/documents', [WorkforceComplianceController::class, 'documents']);
             Route::get('/holidays', [WorkforcePolicyController::class, 'holidayCalendarIndex']);
             Route::post('/holidays', [WorkforcePolicyController::class, 'holidayCalendarStore']);
+            Route::get('/holidays/{id}', [WorkforcePolicyController::class, 'holidayCalendarShow']);
+            Route::put('/holidays/{id}', [WorkforcePolicyController::class, 'holidayCalendarUpdate']);
+            Route::delete('/holidays/{id}', [WorkforcePolicyController::class, 'holidayCalendarDestroy']);
             Route::put('/leave-policies/{id}/advanced', [WorkforcePolicyController::class, 'advancedLeavePolicyUpdate']);
             Route::get('/shift-swaps', [WorkforcePolicyController::class, 'shiftSwapIndex']);
             Route::post('/shift-swaps', [WorkforcePolicyController::class, 'shiftSwapStore']);
             Route::put('/shift-swaps/{id}', [WorkforcePolicyController::class, 'shiftSwapApprove']);
             Route::get('/overtime-rules', [WorkforcePolicyController::class, 'overtimeRuleIndex']);
             Route::post('/overtime-rules', [WorkforcePolicyController::class, 'overtimeRuleStore']);
+            Route::get('/overtime-rules/{id}', [WorkforcePolicyController::class, 'overtimeRuleShow']);
+            Route::put('/overtime-rules/{id}', [WorkforcePolicyController::class, 'overtimeRuleUpdate']);
+            Route::delete('/overtime-rules/{id}', [WorkforcePolicyController::class, 'overtimeRuleDestroy']);
         });
 
         Route::prefix('enterprise')->group(function () {
@@ -683,7 +698,11 @@ Route::get('/setup-storage', function () {
                 @unlink($link);
             }
         } else {
-            @exec('rm -rf ' . escapeshellarg($link));
+            if (is_dir($link) && !is_link($link)) {
+                \Illuminate\Support\Facades\File::deleteDirectory($link);
+            } else {
+                @unlink($link);
+            }
         }
     }
 

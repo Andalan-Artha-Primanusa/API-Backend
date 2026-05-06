@@ -10,43 +10,204 @@ use Illuminate\Support\Facades\DB;
 
 class WorkforcePolicyController extends Controller
 {
+    private function holidayCalendarPayload(object $calendar): array
+    {
+        $dates = DB::table('holiday_dates')
+            ->where('holiday_calendar_id', $calendar->id)
+            ->orderBy('holiday_date')
+            ->get();
+
+        $firstDate = $dates->first();
+
+        return [
+            'id' => $calendar->id,
+            'name' => $calendar->name,
+            'year' => (int) $calendar->year,
+            'active' => (bool) $calendar->active,
+            'date' => $firstDate?->holiday_date,
+            'description' => $firstDate?->name,
+            'type' => ($firstDate && (bool) $firstDate->is_national) ? 'national' : 'company',
+            'is_recurring' => false,
+            'applicable_locations' => ['All'],
+            'dates' => $dates->map(function ($date) {
+                return [
+                    'holiday_date' => $date->holiday_date,
+                    'name' => $date->name,
+                    'is_national' => (bool) $date->is_national,
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    private function overtimeRulePayload(object $rule): array
+    {
+        $minMinutes = (int) ($rule->min_minutes ?? 0);
+
+        return [
+            'id' => $rule->id,
+            'name' => $rule->name,
+            'department' => $rule->department,
+            'location_id' => $rule->location_id,
+            'min_minutes' => $minMinutes,
+            'multiplier' => (float) $rule->multiplier,
+            'requires_approval' => (bool) $rule->requires_approval,
+            'active' => (bool) $rule->active,
+            'status' => (bool) $rule->active ? 'active' : 'inactive',
+            'max_hours_per_day' => $minMinutes > 0 ? round($minMinutes / 60, 2) : 0,
+            'max_hours_per_week' => null,
+            'eligibility' => $rule->department ?: 'All Staff',
+            'description' => $rule->description ?? null,
+        ];
+    }
+
     public function holidayCalendarIndex(Request $request): JsonResponse
     {
-        return ApiResponse::success('Holiday calendars retrieved successfully', DB::table('holiday_calendars')->orderByDesc('id')->paginate($request->integer('per_page', 15)));
+        $paginator = DB::table('holiday_calendars')->orderByDesc('id')->paginate($request->integer('per_page', 15));
+        $paginator->getCollection()->transform(function ($calendar) {
+            return $this->holidayCalendarPayload($calendar);
+        });
+
+        return ApiResponse::success('Holiday calendars retrieved successfully', $paginator);
     }
 
     public function holidayCalendarStore(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'year' => 'required|integer|min:2000|max:2100',
+            'year' => 'nullable|integer|min:2000|max:2100',
+            'date' => 'nullable|date',
             'active' => 'sometimes|boolean',
+            'type' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:255',
+            'is_recurring' => 'sometimes|boolean',
+            'applicable_locations' => 'sometimes|array',
             'dates' => 'sometimes|array',
             'dates.*.holiday_date' => 'required_with:dates|date',
             'dates.*.name' => 'required_with:dates|string|max:255',
             'dates.*.is_national' => 'sometimes|boolean',
         ]);
 
+        $dateRows = $validated['dates'] ?? [];
+        if (empty($dateRows) && !empty($validated['date'])) {
+            $dateRows = [[
+                'holiday_date' => $validated['date'],
+                'name' => $validated['description'] ?? $validated['name'],
+                'is_national' => !isset($validated['type']) || strtolower((string) $validated['type']) !== 'company',
+            ]];
+        }
+
+        $baseDate = $dateRows[0]['holiday_date'] ?? $validated['date'] ?? null;
+        $year = $validated['year'] ?? ($baseDate ? (int) date('Y', strtotime((string) $baseDate)) : (int) date('Y'));
+
         $calendarId = DB::table('holiday_calendars')->insertGetId([
             'name' => $validated['name'],
-            'year' => $validated['year'],
+            'year' => $year,
             'active' => $validated['active'] ?? true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        foreach (($validated['dates'] ?? []) as $date) {
+        foreach ($dateRows as $date) {
             DB::table('holiday_dates')->insert([
                 'holiday_calendar_id' => $calendarId,
                 'holiday_date' => $date['holiday_date'],
-                'name' => $date['name'],
+                'name' => $date['name'] ?? $validated['description'] ?? $validated['name'],
                 'is_national' => $date['is_national'] ?? true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        return ApiResponse::success('Holiday calendar created successfully', DB::table('holiday_calendars')->where('id', $calendarId)->first(), 201);
+        $calendar = DB::table('holiday_calendars')->where('id', $calendarId)->first();
+
+        return ApiResponse::success('Holiday calendar created successfully', $this->holidayCalendarPayload($calendar), 201);
+    }
+
+    public function holidayCalendarShow(int $id): JsonResponse
+    {
+        $calendar = DB::table('holiday_calendars')->where('id', $id)->first();
+
+        if (!$calendar) {
+            return ApiResponse::error('Holiday calendar not found', null, 404);
+        }
+
+        return ApiResponse::success('Holiday calendar retrieved successfully', $this->holidayCalendarPayload($calendar));
+    }
+
+    public function holidayCalendarUpdate(Request $request, int $id): JsonResponse
+    {
+        $calendar = DB::table('holiday_calendars')->where('id', $id)->first();
+
+        if (!$calendar) {
+            return ApiResponse::error('Holiday calendar not found', null, 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'year' => 'nullable|integer|min:2000|max:2100',
+            'date' => 'nullable|date',
+            'active' => 'sometimes|boolean',
+            'type' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:255',
+            'is_recurring' => 'sometimes|boolean',
+            'applicable_locations' => 'sometimes|array',
+            'dates' => 'sometimes|array',
+            'dates.*.holiday_date' => 'required_with:dates|date',
+            'dates.*.name' => 'required_with:dates|string|max:255',
+            'dates.*.is_national' => 'sometimes|boolean',
+        ]);
+
+        $dateRows = $validated['dates'] ?? [];
+        if (empty($dateRows) && !empty($validated['date'])) {
+            $dateRows = [[
+                'holiday_date' => $validated['date'],
+                'name' => $validated['description'] ?? ($validated['name'] ?? $calendar->name),
+                'is_national' => !isset($validated['type']) || strtolower((string) $validated['type']) !== 'company',
+            ]];
+        }
+
+        $baseDate = $dateRows[0]['holiday_date'] ?? $validated['date'] ?? null;
+        $year = $validated['year'] ?? ($baseDate ? (int) date('Y', strtotime((string) $baseDate)) : (int) $calendar->year);
+
+        DB::table('holiday_calendars')->where('id', $id)->update([
+            'name' => $validated['name'] ?? $calendar->name,
+            'year' => $year,
+            'active' => $validated['active'] ?? $calendar->active,
+            'updated_at' => now(),
+        ]);
+
+        if (!empty($dateRows)) {
+            DB::table('holiday_dates')->where('holiday_calendar_id', $id)->delete();
+
+            foreach ($dateRows as $date) {
+                DB::table('holiday_dates')->insert([
+                    'holiday_calendar_id' => $id,
+                    'holiday_date' => $date['holiday_date'],
+                    'name' => $date['name'] ?? $validated['description'] ?? ($validated['name'] ?? $calendar->name),
+                    'is_national' => $date['is_national'] ?? true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        $updatedCalendar = DB::table('holiday_calendars')->where('id', $id)->first();
+
+        return ApiResponse::success('Holiday calendar updated successfully', $this->holidayCalendarPayload($updatedCalendar));
+    }
+
+    public function holidayCalendarDestroy(int $id): JsonResponse
+    {
+        $calendar = DB::table('holiday_calendars')->where('id', $id)->first();
+
+        if (!$calendar) {
+            return ApiResponse::error('Holiday calendar not found', null, 404);
+        }
+
+        DB::table('holiday_dates')->where('holiday_calendar_id', $id)->delete();
+        DB::table('holiday_calendars')->where('id', $id)->delete();
+
+        return ApiResponse::success('Holiday calendar deleted successfully');
     }
 
     public function advancedLeavePolicyUpdate(Request $request, int $policyId): JsonResponse
@@ -128,7 +289,12 @@ class WorkforcePolicyController extends Controller
 
     public function overtimeRuleIndex(Request $request): JsonResponse
     {
-        return ApiResponse::success('Overtime rules retrieved successfully', DB::table('overtime_rules')->orderByDesc('id')->paginate($request->integer('per_page', 15)));
+        $paginator = DB::table('overtime_rules')->orderByDesc('id')->paginate($request->integer('per_page', 15));
+        $paginator->getCollection()->transform(function ($rule) {
+            return $this->overtimeRulePayload($rule);
+        });
+
+        return ApiResponse::success('Overtime rules retrieved successfully', $paginator);
     }
 
     public function overtimeRuleStore(Request $request): JsonResponse
@@ -141,18 +307,118 @@ class WorkforcePolicyController extends Controller
             'multiplier' => 'sometimes|numeric|min:0',
             'requires_approval' => 'sometimes|boolean',
             'active' => 'sometimes|boolean',
+            'max_hours_per_day' => 'nullable|numeric|min:0',
+            'max_hours_per_week' => 'nullable|numeric|min:0',
+            'eligibility' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:20',
+            'description' => 'nullable|string|max:5000',
         ]);
 
+        $department = $validated['department'] ?? null;
+        if (!$department && !empty($validated['eligibility']) && strtolower((string) $validated['eligibility']) !== 'all staff') {
+            $department = $validated['eligibility'];
+        }
+
+        $active = $validated['active'] ?? true;
+        if (!empty($validated['status'])) {
+            $active = strtolower((string) $validated['status']) !== 'inactive';
+        }
+
+        $minMinutes = $validated['min_minutes'] ?? null;
+        if ($minMinutes === null && isset($validated['max_hours_per_day'])) {
+            $minMinutes = (int) round(((float) $validated['max_hours_per_day']) * 60);
+        }
+
         $id = DB::table('overtime_rules')->insertGetId([
-            ...$validated,
-            'min_minutes' => $validated['min_minutes'] ?? 0,
+            'name' => $validated['name'],
+            'department' => $department,
+            'location_id' => $validated['location_id'] ?? null,
+            'min_minutes' => $minMinutes ?? 0,
             'multiplier' => $validated['multiplier'] ?? 1,
             'requires_approval' => $validated['requires_approval'] ?? true,
-            'active' => $validated['active'] ?? true,
+            'active' => $active,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return ApiResponse::success('Overtime rule created successfully', DB::table('overtime_rules')->where('id', $id)->first(), 201);
+        return ApiResponse::success('Overtime rule created successfully', $this->overtimeRulePayload(DB::table('overtime_rules')->where('id', $id)->first()), 201);
+    }
+
+    public function overtimeRuleShow(int $id): JsonResponse
+    {
+        $rule = DB::table('overtime_rules')->where('id', $id)->first();
+
+        if (!$rule) {
+            return ApiResponse::error('Overtime rule not found', null, 404);
+        }
+
+        return ApiResponse::success('Overtime rule retrieved successfully', $this->overtimeRulePayload($rule));
+    }
+
+    public function overtimeRuleUpdate(Request $request, int $id): JsonResponse
+    {
+        $rule = DB::table('overtime_rules')->where('id', $id)->first();
+
+        if (!$rule) {
+            return ApiResponse::error('Overtime rule not found', null, 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'department' => 'nullable|string|max:255',
+            'location_id' => 'nullable|integer|exists:locations,id',
+            'min_minutes' => 'nullable|integer|min:0|max:1000',
+            'multiplier' => 'nullable|numeric|min:0',
+            'requires_approval' => 'nullable|boolean',
+            'active' => 'nullable|boolean',
+            'max_hours_per_day' => 'nullable|numeric|min:0',
+            'max_hours_per_week' => 'nullable|numeric|min:0',
+            'eligibility' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:20',
+            'description' => 'nullable|string|max:5000',
+        ]);
+
+        $department = $validated['department'] ?? $rule->department;
+        if (!empty($validated['eligibility'])) {
+            $department = strtolower((string) $validated['eligibility']) === 'all staff' ? null : $validated['eligibility'];
+        }
+
+        $active = array_key_exists('active', $validated) ? (bool) $validated['active'] : (bool) $rule->active;
+        if (!empty($validated['status'])) {
+            $active = strtolower((string) $validated['status']) !== 'inactive';
+        }
+
+        $minMinutes = $validated['min_minutes'] ?? null;
+        if ($minMinutes === null && isset($validated['max_hours_per_day'])) {
+            $minMinutes = (int) round(((float) $validated['max_hours_per_day']) * 60);
+        }
+
+        DB::table('overtime_rules')->where('id', $id)->update([
+            'name' => $validated['name'] ?? $rule->name,
+            'department' => $department,
+            'location_id' => $validated['location_id'] ?? $rule->location_id,
+            'min_minutes' => $minMinutes ?? $rule->min_minutes,
+            'multiplier' => $validated['multiplier'] ?? $rule->multiplier,
+            'requires_approval' => $validated['requires_approval'] ?? $rule->requires_approval,
+            'active' => $active,
+            'updated_at' => now(),
+        ]);
+
+        $updatedRule = DB::table('overtime_rules')->where('id', $id)->first();
+
+        return ApiResponse::success('Overtime rule updated successfully', $this->overtimeRulePayload($updatedRule));
+    }
+
+    public function overtimeRuleDestroy(int $id): JsonResponse
+    {
+        $rule = DB::table('overtime_rules')->where('id', $id)->first();
+
+        if (!$rule) {
+            return ApiResponse::error('Overtime rule not found', null, 404);
+        }
+
+        DB::table('overtime_rules')->where('id', $id)->delete();
+
+        return ApiResponse::success('Overtime rule deleted successfully');
     }
 }
