@@ -1632,6 +1632,19 @@ curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/my/reimbursemen
   }'
 ```
 
+### My Reimbursements - Update
+```bash
+curl -X PUT "https://moccasin-crab-693879.hostingersite.com/api/my/reimbursements/{id}" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "title": "Business Trip Expenses Updated",
+    "amount": 600000,
+    "category": "travel"
+  }'
+```
+
 ### My Reimbursements - Submit
 ```bash
 curl -X POST "https://moccasin-crab-693879.hostingersite.com/api/my/reimbursements/{id}/submit" \

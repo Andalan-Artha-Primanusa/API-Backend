@@ -167,6 +167,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         // Reimbursements
         Route::get('/reimbursements', [ReimbursementController::class, 'myReimbursements']);
         Route::post('/reimbursements', [ReimbursementController::class, 'createMyReimbursement']);
+        Route::put('/reimbursements/{id}', [ReimbursementController::class, 'update']);
         Route::post('/reimbursements/{id}/submit', [ReimbursementController::class, 'submit']);
 
         // Payroll
