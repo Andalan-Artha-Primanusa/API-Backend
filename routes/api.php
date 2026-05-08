@@ -133,6 +133,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::delete('promotions/{id}', [PromotionController::class, 'destroy']);
 
     Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+        // Backward-compatible single-endpoint approval (accepts JSON { id })
+        Route::match(['get', 'post', 'put'], '/overtime/approval', [OvertimeController::class, 'approveByBody']);
         Route::post('promotions/{id}/report/approve', [PromotionController::class, 'approveReport']);
         Route::post('promotions/{id}/report/reject', [PromotionController::class, 'rejectReport']);
     });
@@ -253,6 +255,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/today', [AttendanceController::class, 'today']);
         Route::get('/intelligence', [AttendanceController::class, 'intelligence']);
         Route::get('/overtime', [AttendanceController::class, 'overtime']);
+        // Backward-compatible reporting route: /api/attendance/reports
+        Route::get('/reports', [ReportingController::class, 'attendanceAnalytics']);
     });
 
     // MANAGER / HR / ADMIN (Role based grouped endpoints)

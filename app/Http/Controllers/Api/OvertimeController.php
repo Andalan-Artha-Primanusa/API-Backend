@@ -344,4 +344,23 @@ class OvertimeController extends Controller
 
         return ApiResponse::success('Evidence rejected', $evidence->fresh(['uploader', 'reviewer']));
     }
+
+    /**
+     * POST /overtime/approval - Backward-compatible endpoint accepting JSON payload { id }
+     * This helper extracts `id` from the request body and delegates to `approve()`.
+     */
+    public function approveByBody(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => 'sometimes|integer',
+        ]);
+
+        $id = $validated['id'] ?? $request->query('id');
+
+        if (!$id) {
+            return ApiResponse::error('id is required', ['id' => ['The id field is required.']], 422);
+        }
+
+        return $this->approve($request, (int) $id);
+    }
 }

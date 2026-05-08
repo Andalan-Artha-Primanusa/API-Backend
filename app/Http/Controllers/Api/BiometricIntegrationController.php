@@ -51,7 +51,7 @@ class BiometricIntegrationController extends Controller
             'check_out' => 'nullable|date|after_or_equal:check_in',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'status' => 'sometimes|string|in:on_time,late,absent,present',
+            'status' => 'sometimes|string|in:on_time,late,absent',
             'payload' => 'nullable|array',
         ]);
 

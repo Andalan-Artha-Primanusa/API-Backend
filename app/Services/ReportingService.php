@@ -46,9 +46,13 @@ class ReportingService
 
         $activeEmployeeCount = Employee::active()->count();
 
+        // Some parts of the app use 'on_time' while reporting expects 'present'.
+        // Treat both as present for analytics.
+        $presentStatuses = ['present', 'on_time'];
+
         $summary = [
             'total_working_days' => $this->calculateWorkingDays($startDate, $endDate),
-            'present_count' => $attendanceData->where('status', 'present')->count(),
+            'present_count' => $attendanceData->whereIn('status', $presentStatuses)->count(),
             'absent_count' => $attendanceData->where('status', 'absent')->count(),
             'late_count' => $attendanceData->where('status', 'late')->count(),
             'permission_count' => $attendanceData->where('status', 'permission')->count(),
@@ -199,8 +203,10 @@ class ReportingService
         $today = Carbon::today();
         $data = Attendance::whereDate('date', $today)->get();
 
+        $presentStatuses = ['present', 'on_time'];
+
         return [
-            'present' => $data->where('status', 'present')->count(),
+            'present' => $data->whereIn('status', $presentStatuses)->count(),
             'absent' => $data->where('status', 'absent')->count(),
             'late' => $data->where('status', 'late')->count(),
             'permission' => $data->where('status', 'permission')->count(),
@@ -278,10 +284,12 @@ class ReportingService
             $employee = $user?->employee;
             $profile = $user?->profile;
 
+            $presentStatuses = ['present', 'on_time'];
+
             return [
                 'employee_id' => $employee?->id,
                 'name' => $profile?->full_name ?? $user?->name ?? 'Unknown',
-                'present' => $records->where('status', 'present')->count(),
+                'present' => $records->whereIn('status', $presentStatuses)->count(),
                 'absent' => $records->where('status', 'absent')->count(),
                 'late' => $records->where('status', 'late')->count(),
                 'permission' => $records->where('status', 'permission')->count(),
@@ -296,9 +304,11 @@ class ReportingService
         while ($start <= $end) {
             $data = Attendance::whereDate('date', $start)->get();
 
+            $presentStatuses = ['present', 'on_time'];
+
             $trends[] = [
                 'date' => $start->toDateString(),
-                'present' => $data->where('status', 'present')->count(),
+                'present' => $data->whereIn('status', $presentStatuses)->count(),
                 'absent' => $data->where('status', 'absent')->count(),
             ];
 
