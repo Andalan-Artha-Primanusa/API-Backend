@@ -152,16 +152,31 @@ class AttendanceService
 
         // 🔥 AUTO-CREATE OVERTIME REQUEST
         $overtimeRequest = null;
-        if ($now->gt($checkOutTime)) {
-            $overtimeMinutes = $now->diffInMinutes($checkOutTime);
+        $schedule = $employee->workSchedule;
+        $now = now();
+        
+        // Use attendance date + scheduled checkout time for comparison
+        $attendanceDate = $attendance->date;
+        $scheduledCheckoutDateTime = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $attendanceDate->format('Y-m-d') . ' ' . $schedule->check_out_time
+        );
+        
+        // Get actual checkout time
+        $actualCheckoutDateTime = now();
+        
+        \Log::info('OVERTIME CALCULATION', [
+            'scheduled' => $scheduledCheckoutDateTime->toDateTimeString(),
+            'actual' => $actualCheckoutDateTime->toDateTimeString(),
+            'is_greater' => $actualCheckoutDateTime->gt($scheduledCheckoutDateTime),
+        ]);
+        
+        if ($actualCheckoutDateTime->gt($scheduledCheckoutDateTime)) {
+            $overtimeMinutes = $actualCheckoutDateTime->diffInMinutes($scheduledCheckoutDateTime);
             
-            \Log::info('OVERTIME DEBUG', [
+            \Log::info('OVERTIME DETECTED', [
                 'employee_id' => $employee->id,
-                'now' => $now->toDateTimeString(),
-                'checkOutTime' => $checkOutTime->toDateTimeString(),
-                'overtimeMinutes' => $overtimeMinutes,
-                'condition_gt' => $now->gt($checkOutTime),
-                'condition_minutes_ge_1' => $overtimeMinutes >= 1,
+                'overtime_minutes' => $overtimeMinutes,
             ]);
 
             if ($overtimeMinutes >= 1) {
@@ -169,15 +184,15 @@ class AttendanceService
                     $overtimeRequest = \App\Models\OvertimeRequest::create([
                         'employee_id' => $employee->id,
                         'attendance_id' => $attendance->id,
-                        'date' => now()->toDateString(),
+                        'date' => $attendanceDate,
                         'scheduled_checkout' => $schedule->check_out_time,
-                        'actual_checkout' => $now->format('H:i:s'),
+                        'actual_checkout' => $actualCheckoutDateTime->format('H:i:s'),
                         'overtime_minutes' => $overtimeMinutes,
                         'status' => 'pending',
                     ]);
-                    \Log::info('OVERTIME CREATED', ['overtime_request_id' => $overtimeRequest->id]);
+                    \Log::info('✅ OVERTIME CREATED', ['id' => $overtimeRequest->id, 'minutes' => $overtimeMinutes]);
                 } catch (\Exception $e) {
-                    \Log::error('OVERTIME CREATE ERROR', ['error' => $e->getMessage()]);
+                    \Log::error('❌ OVERTIME CREATE ERROR', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
                 }
             }
         }
