@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Storage;
 
 class OvertimeEvidence extends Model
 {
+    protected $table = 'overtime_evidences';
+    
     protected $fillable = [
         'overtime_request_id',
         'uploaded_by',

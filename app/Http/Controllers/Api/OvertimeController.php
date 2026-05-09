@@ -70,14 +70,20 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $query = OvertimeRequest::with(['employee.user:id,name,email', 'attendance', 'approver:id,name', 'evidences'])
-            ->latest('date');
+        try {
+            $query = OvertimeRequest::with(['employee', 'attendance', 'approver'])
+                ->latest('date');
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            $data = $query->get();
+            return ApiResponse::success('Overtime requests', $data);
+        } catch (\Exception $e) {
+            \Log::error('OvertimeController@index ERROR', ['error' => $e->getMessage()]);
+            return ApiResponse::error('Failed to fetch overtime requests', null, 500);
         }
-
-        return ApiResponse::success('Overtime requests', $query->get());
     }
 
     /**
@@ -91,12 +97,17 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $requests = OvertimeRequest::where('status', 'pending')
-            ->with(['employee.user:id,name,email', 'attendance', 'approver:id,name', 'evidences'])
-            ->latest('date')
-            ->get();
+        try {
+            $requests = OvertimeRequest::where('status', 'pending')
+                ->with(['employee', 'attendance', 'approver'])
+                ->latest('date')
+                ->get();
 
-        return ApiResponse::success('Pending overtime requests', $requests);
+            return ApiResponse::success('Pending overtime requests', $requests);
+        } catch (\Exception $e) {
+            \Log::error('OvertimeController@pending ERROR', ['error' => $e->getMessage()]);
+            return ApiResponse::error('Failed to fetch pending overtime requests', null, 500);
+        }
     }
 
     /**
