@@ -49,9 +49,12 @@ class EmployeeController extends Controller
      */
     public function store(StoreEmployeeRequest $request): JsonResponse
     {
-        $employee = $this->employeeService->create($request->validated());
-
-        return ApiResponse::success('Employee created successfully', $employee, 201);
+        try {
+            $employee = $this->employeeService->create($request->validated());
+            return ApiResponse::success('Employee created successfully', $employee, 201);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 422);
+        }
     }
 
     /**
@@ -76,9 +79,12 @@ class EmployeeController extends Controller
      */
     public function update(UpdateEmployeeRequest $request, $id): JsonResponse
     {
-        $employee = $this->employeeService->update($id, $request->validated());
-
-        return ApiResponse::success('Employee updated successfully', $employee);
+        try {
+            $employee = $this->employeeService->update($id, $request->validated());
+            return ApiResponse::success('Employee updated successfully', $employee);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 422);
+        }
     }
 
     /**

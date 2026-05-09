@@ -154,17 +154,31 @@ class AttendanceService
         $overtimeRequest = null;
         if ($now->gt($checkOutTime)) {
             $overtimeMinutes = $now->diffInMinutes($checkOutTime);
+            
+            \Log::info('OVERTIME DEBUG', [
+                'employee_id' => $employee->id,
+                'now' => $now->toDateTimeString(),
+                'checkOutTime' => $checkOutTime->toDateTimeString(),
+                'overtimeMinutes' => $overtimeMinutes,
+                'condition_gt' => $now->gt($checkOutTime),
+                'condition_minutes_ge_1' => $overtimeMinutes >= 1,
+            ]);
 
             if ($overtimeMinutes >= 1) {
-                $overtimeRequest = \App\Models\OvertimeRequest::create([
-                    'employee_id' => $employee->id,
-                    'attendance_id' => $attendance->id,
-                    'date' => now()->toDateString(),
-                    'scheduled_checkout' => $schedule->check_out_time,
-                    'actual_checkout' => $now->format('H:i:s'),
-                    'overtime_minutes' => $overtimeMinutes,
-                    'status' => 'pending',
-                ]);
+                try {
+                    $overtimeRequest = \App\Models\OvertimeRequest::create([
+                        'employee_id' => $employee->id,
+                        'attendance_id' => $attendance->id,
+                        'date' => now()->toDateString(),
+                        'scheduled_checkout' => $schedule->check_out_time,
+                        'actual_checkout' => $now->format('H:i:s'),
+                        'overtime_minutes' => $overtimeMinutes,
+                        'status' => 'pending',
+                    ]);
+                    \Log::info('OVERTIME CREATED', ['overtime_request_id' => $overtimeRequest->id]);
+                } catch (\Exception $e) {
+                    \Log::error('OVERTIME CREATE ERROR', ['error' => $e->getMessage()]);
+                }
             }
         }
 

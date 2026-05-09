@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\WorkSchedule;
+use App\Models\Location;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
@@ -51,17 +53,47 @@ class EmployeeService
 
     /**
      * Create a new employee record.
+     * Validates that work_schedule_id and location_id exist.
      */
     public function create(array $data): Employee
     {
+        // Validate work schedule
+        if (isset($data['work_schedule_id']) && $data['work_schedule_id']) {
+            if (!WorkSchedule::find($data['work_schedule_id'])) {
+                throw new \DomainException('Work schedule not found with ID: ' . $data['work_schedule_id']);
+            }
+        }
+
+        // Validate location
+        if (isset($data['location_id']) && $data['location_id']) {
+            if (!Location::find($data['location_id'])) {
+                throw new \DomainException('Location not found with ID: ' . $data['location_id']);
+            }
+        }
+
         return Employee::create($data)->load(['user.profile', 'manager.profile']);
     }
 
     /**
      * Update an existing employee record.
+     * Validates that work_schedule_id and location_id exist.
      */
     public function update(int|string $id, array $data): Employee
     {
+        // Validate work schedule
+        if (isset($data['work_schedule_id']) && $data['work_schedule_id']) {
+            if (!WorkSchedule::find($data['work_schedule_id'])) {
+                throw new \DomainException('Work schedule not found with ID: ' . $data['work_schedule_id']);
+            }
+        }
+
+        // Validate location
+        if (isset($data['location_id']) && $data['location_id']) {
+            if (!Location::find($data['location_id'])) {
+                throw new \DomainException('Location not found with ID: ' . $data['location_id']);
+            }
+        }
+
         $employee = Employee::findOrFail($id);
         $employee->update($data);
 

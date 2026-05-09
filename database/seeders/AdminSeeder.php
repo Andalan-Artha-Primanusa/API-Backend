@@ -90,9 +90,13 @@ class AdminSeeder extends Seeder
                 return;
             }
 
+            // Get first available work schedule and location
+            $workSchedule = WorkSchedule::first();
+            $location = Location::first();
+
             // Process each account
             foreach ($this->accounts as $accountConfig) {
-                $this->seedAccount($accountConfig, $roles);
+                $this->seedAccount($accountConfig, $roles, $workSchedule, $location);
             }
 
             if (app()->isLocal()) {
@@ -105,7 +109,7 @@ class AdminSeeder extends Seeder
     /**
      * Seed a single account with its role and employee data
      */
-    private function seedAccount(array $config, $roles): void
+    private function seedAccount(array $config, $roles, $workSchedule, $location): void
     {
         // Get password from env or use default (with validation)
         $password = $this->getPassword(
@@ -128,7 +132,7 @@ class AdminSeeder extends Seeder
         }
 
         // Create employee record if not exists
-        Employee::firstOrCreate(
+        Employee::updateOrCreate(
             ['user_id' => $user->id],
             [
                 'employee_code' => $config['employee_code'],
@@ -136,6 +140,8 @@ class AdminSeeder extends Seeder
                 'department'    => $config['department'],
                 'hire_date'     => now(),
                 'salary'        => $config['salary'],
+                'work_schedule_id' => $workSchedule?->id,
+                'location_id'   => $location?->id,
             ]
         );
     }
