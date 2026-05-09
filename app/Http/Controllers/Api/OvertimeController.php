@@ -262,17 +262,7 @@ class OvertimeController extends Controller
      */
     public function downloadEvidence(Request $request, int $id)
     {
-        $user = $request->user();
-
         $evidence = OvertimeEvidence::with('overtimeRequest.employee')->findOrFail($id);
-        $overtimeRequest = $evidence->overtimeRequest;
-
-        $isOwner = $user->employee && $overtimeRequest && (int) $user->employee->id === (int) $overtimeRequest->employee_id;
-        $canManage = $user->isAdmin() || $user->isHR() || $user->isManager();
-
-        if (!$isOwner && !$canManage) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
 
         if (!$evidence->file_path || !Storage::disk('public')->exists($evidence->file_path)) {
             return ApiResponse::error('File not found', null, 404);

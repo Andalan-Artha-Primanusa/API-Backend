@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\URL;
 
 class OvertimeEvidence extends Model
 {
@@ -52,6 +53,8 @@ class OvertimeEvidence extends Model
             return null;
         }
 
-        return route('overtime.evidences.file', ['id' => $this->id]);
+        return URL::temporarySignedRoute('overtime.evidences.file', now()->addMinutes(15), [
+            'id' => $this->id,
+        ]);
     }
 }
