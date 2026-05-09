@@ -52,6 +52,6 @@ class OvertimeEvidence extends Model
             return null;
         }
 
-        return rtrim(config('app.url'), '/') . '/api/storage/' . ltrim($this->file_path, '/');
+        return route('overtime.evidences.file', ['id' => $this->id]);
     }
 }

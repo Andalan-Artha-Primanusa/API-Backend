@@ -9,6 +9,7 @@ use App\Models\OvertimeEvidence;
 use App\Models\UserNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class OvertimeController extends Controller
 {
@@ -254,6 +255,30 @@ class OvertimeController extends Controller
             ->get();
 
         return ApiResponse::success('My overtime evidences', $evidences);
+    }
+
+    /**
+     * GET /overtime/evidences/{id}/file - Download overtime evidence file
+     */
+    public function downloadEvidence(Request $request, int $id)
+    {
+        $user = $request->user();
+
+        $evidence = OvertimeEvidence::with('overtimeRequest.employee')->findOrFail($id);
+        $overtimeRequest = $evidence->overtimeRequest;
+
+        $isOwner = $user->employee && $overtimeRequest && (int) $user->employee->id === (int) $overtimeRequest->employee_id;
+        $canManage = $user->isAdmin() || $user->isHR() || $user->isManager();
+
+        if (!$isOwner && !$canManage) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        if (!$evidence->file_path || !Storage::disk('public')->exists($evidence->file_path)) {
+            return ApiResponse::error('File not found', null, 404);
+        }
+
+        return Storage::disk('public')->download($evidence->file_path, $evidence->file_name ?: basename($evidence->file_path));
     }
 
     /**

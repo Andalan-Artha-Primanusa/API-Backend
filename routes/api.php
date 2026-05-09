@@ -152,6 +152,9 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/overtime/evidences/{id}/file', [OvertimeController::class, 'downloadEvidence'])
+        ->whereNumber('id')
+        ->name('overtime.evidences.file');
 
     /*
     |--------------------------------------------------------------------------
