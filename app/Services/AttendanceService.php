@@ -156,18 +156,11 @@ class AttendanceService
         // Parse scheduled checkout time from today
         $scheduledCheckoutTime = \Carbon\Carbon::parse($schedule->check_out_time, config('app.timezone'));
         $actualCheckoutTime = now();
-        
-        // Compare only time part (ignore date)
-        $scheduledHour = (int)$scheduledCheckoutTime->format('H');
-        $scheduledMinute = (int)$scheduledCheckoutTime->format('i');
-        $actualHour = (int)$actualCheckoutTime->format('H');
-        $actualMinute = (int)$actualCheckoutTime->format('i');
-        
-        $scheduledTotalMinutes = ($scheduledHour * 60) + $scheduledMinute;
-        $actualTotalMinutes = ($actualHour * 60) + $actualMinute;
-        
-        if ($actualTotalMinutes > $scheduledTotalMinutes) {
-            $overtimeMinutes = $actualTotalMinutes - $scheduledTotalMinutes;
+
+        $overtimeSeconds = $scheduledCheckoutTime->diffInSeconds($actualCheckoutTime, false);
+
+        if ($overtimeSeconds > 0) {
+            $overtimeMinutes = (int) ceil($overtimeSeconds / 60);
             
             \Log::info('OVERTIME DETECTED', [
                 'employee_id' => $employee->id,
