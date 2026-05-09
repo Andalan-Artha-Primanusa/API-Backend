@@ -260,7 +260,7 @@ class AttendanceController extends Controller
             // Optimized query with eager loading
             $attendance = Attendance::with([
                 'user:id,name,email',
-                'user.profile:user_id,phone,address,department',
+                'user.profile:user_id,phone,address',
                 'user.employee:id,user_id,employee_code,department_id,position_id',
                 'user.employee.department:id,name',
                 'user.employee.position:id,name',
