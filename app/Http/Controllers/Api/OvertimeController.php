@@ -121,7 +121,7 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $overtimeRequest = OvertimeRequest::with('employee.user', 'evidences')->findOrFail($id);
+        $overtimeRequest = OvertimeRequest::with('employee.user')->findOrFail($id);
 
         if ($overtimeRequest->status !== 'pending') {
             return ApiResponse::error('Request already processed', null, 422);
@@ -186,7 +186,7 @@ class OvertimeController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Overtime request rejected', $overtimeRequest->fresh(['employee.user', 'approver', 'evidences']));
+        return ApiResponse::success('Overtime request rejected', $overtimeRequest->fresh(['employee.user', 'approver']));
     }
 
     /**
