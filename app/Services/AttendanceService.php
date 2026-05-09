@@ -180,6 +180,7 @@ class AttendanceService
     public function getHistory(User $user): LengthAwarePaginator
     {
         return Attendance::with('user.profile')
+            ->with(['user.employee.department', 'user.employee.position'])
             ->where('user_id', $user->id)
             ->latest('date')
             ->paginate(15);
@@ -190,7 +191,7 @@ class AttendanceService
      */
     public function getToday(User $user): ?Attendance
     {
-        return Attendance::with('user.profile')
+        return Attendance::with(['user.profile', 'user.employee.department', 'user.employee.position'])
             ->where('user_id', $user->id)
             ->where('date', now()->toDateString())
             ->first();
@@ -201,7 +202,7 @@ class AttendanceService
      */
     public function getAll(): LengthAwarePaginator
     {
-        return Attendance::with('user.profile')
+        return Attendance::with(['user.profile', 'user.employee.department', 'user.employee.position'])
             ->latest('date')
             ->paginate(15);
     }
@@ -229,6 +230,7 @@ class AttendanceService
 
         $fromDate = now()->subDays(max(1, $days - 1))->startOfDay();
         $records = Attendance::where('user_id', $user->id)
+            ->with(['user.profile', 'user.employee.department', 'user.employee.position'])
             ->where('date', '>=', $fromDate->toDateString())
             ->orderBy('date')
             ->get();
@@ -266,6 +268,7 @@ class AttendanceService
 
         $fromDate = now()->subDays(max(1, $days - 1))->startOfDay();
         $records = Attendance::where('user_id', $userId)
+            ->with(['user.profile', 'user.employee.department', 'user.employee.position'])
             ->where('date', '>=', $fromDate->toDateString())
             ->orderBy('date')
             ->get();

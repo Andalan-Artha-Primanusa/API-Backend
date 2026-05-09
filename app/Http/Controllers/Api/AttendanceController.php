@@ -207,7 +207,13 @@ class AttendanceController extends Controller
             $sortOrder = $validated['sort_order'] ?? 'desc';
 
             // Optimized query with eager loading
-            $query = Attendance::with(['user:id,name,email', 'user.profile:user_id,phone,address'])
+            $query = Attendance::with([
+                'user:id,name,email',
+                'user.profile:user_id,phone,address',
+                'user.employee:id,user_id,employee_code,department_id,position_id',
+                'user.employee.department:id,name',
+                'user.employee.position:id,name',
+            ])
                 ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at']);
 
             // Apply filters
@@ -254,7 +260,10 @@ class AttendanceController extends Controller
             // Optimized query with eager loading
             $attendance = Attendance::with([
                 'user:id,name,email',
-                'user.profile:user_id,phone,address,department'
+                'user.profile:user_id,phone,address,department',
+                'user.employee:id,user_id,employee_code,department_id,position_id',
+                'user.employee.department:id,name',
+                'user.employee.position:id,name',
             ])
             ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at'])
             ->findOrFail($id);

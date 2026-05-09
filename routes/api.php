@@ -135,6 +135,13 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
         // Backward-compatible single-endpoint approval (accepts JSON { id })
         Route::match(['get', 'post', 'put'], '/overtime/approval', [OvertimeController::class, 'approveByBody']);
+        Route::get('/overtime/requests', [OvertimeController::class, 'index']);
+        Route::get('/overtime/requests/pending', [OvertimeController::class, 'pending']);
+        Route::put('/overtime/requests/{id}/approve', [OvertimeController::class, 'approve'])->whereNumber('id');
+        Route::put('/overtime/requests/{id}/reject', [OvertimeController::class, 'reject'])->whereNumber('id');
+        Route::get('/overtime/evidences/request/{id}', [OvertimeController::class, 'overtimeEvidences'])->whereNumber('id');
+        Route::put('/overtime/evidences/{id}/approve', [OvertimeController::class, 'approveEvidence'])->whereNumber('id');
+        Route::put('/overtime/evidences/{id}/reject', [OvertimeController::class, 'rejectEvidence'])->whereNumber('id');
         Route::post('promotions/{id}/report/approve', [PromotionController::class, 'approveReport']);
         Route::post('promotions/{id}/report/reject', [PromotionController::class, 'rejectReport']);
     });
@@ -257,6 +264,12 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/overtime', [AttendanceController::class, 'overtime']);
         // Backward-compatible reporting route: /api/attendance/reports
         Route::get('/reports', [ReportingController::class, 'attendanceAnalytics']);
+
+        Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+            Route::get('/all', [AttendanceController::class, 'all']);
+            Route::get('/{id}', [AttendanceController::class, 'show'])->whereNumber('id');
+            Route::delete('/{id}', [AttendanceController::class, 'destroy'])->whereNumber('id');
+        });
     });
 
     // MANAGER / HR / ADMIN (Role based grouped endpoints)
