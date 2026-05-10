@@ -207,62 +207,89 @@ class KpiPeriodController extends Controller
     {
         try {
             $employee = $this->getAuthenticatedEmployee();
-            $period = KpiPeriod::findOrFail($id);
+            $period = KpiPeriod::with('items')->findOrFail($id);
 
             if ($period->employee_id !== $employee->id) {
                 return ApiResponse::error('Forbidden', 'Not your KPI period', 403);
             }
+
+            $validated = $request->validate([
+                'item_id' => 'nullable|exists:kpi_items,id',
+            ]);
+
+            // Submit single item if item_id provided
+            if (!empty($validated['item_id'])) {
+                $item = $period->items->firstWhere('id', (int) $validated['item_id']);
+
+                if (!$item) {
+                    return ApiResponse::error('Not found', 'KPI item not found in this period', 404);
+                }
+
+                if ($item->status !== 'draft') {
+                    return ApiResponse::error('Already submitted', 'Item is not in draft status', 400);
+                }
+
+                $item->status = 'submitted';
+                $item->save();
+
+                $this->syncPeriodStatus($period);
+
+                return ApiResponse::success('KPI item submitted', $period->fresh(['employee.user', 'items']));
+            }
+
+            // Submit all items if no item_id (legacy behavior)
             if ($period->status !== 'draft') {
-                return ApiResponse::error('Already submitted', null, 400);
+                return ApiResponse::error('Already submitted', 'Period is not in draft status', 400);
             }
 
             $period->items()->where('status', 'draft')->update(['status' => 'submitted']);
-                    $period = KpiPeriod::with('items')->findOrFail($id);
+            $period->update(['status' => 'submitted']);
+            $period->calculateOverallScore();
 
-                    $validated = $request->validate([
-                        'item_id' => 'nullable|exists:kpi_items,id',
-                    ]);
-
-            return ApiResponse::success('KPI period submitted', $period->fresh(['items']));
+            return ApiResponse::success('KPI period submitted', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', null, 404);
-
-                    if (!empty($validated['item_id'])) {
-                        $item = $period->items->firstWhere('id', (int) $validated['item_id']);
-
-                        if (!$item) {
-                            return ApiResponse::error('Not found', 'KPI item not found in this period', 404);
-                        }
-
-                        if ($item->status !== 'draft') {
-                            return ApiResponse::error('Already submitted', null, 400);
-                        }
-
-                        $item->status = 'submitted';
-                        $item->save();
-
-                        $this->syncPeriodStatus($period);
-
-                        return ApiResponse::success('KPI item submitted', $period->fresh(['employee.user', 'items']));
-                    }
-
-                    if ($period->status !== 'draft') {
-                        return ApiResponse::error('Already submitted', null, 400);
+            return ApiResponse::error('Not found', 'KPI period not found', 404);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to submit KPI period', null, 500);
         }
     }
 
-                    $period->update(['status' => 'submitted']);
+    public function approve(Request $request, int $id): JsonResponse
     {
         try {
-            $period = KpiPeriod::findOrFail($id);
+            $period = KpiPeriod::with('items')->findOrFail($id);
 
-            if ($period->status !== 'submitted') {
-                return ApiResponse::error('KPI must be submitted first', null, 400);
+            $validated = $request->validate([
+                'item_id' => 'nullable|exists:kpi_items,id',
+            ]);
+
+            // Approve single item if item_id provided
+            if (!empty($validated['item_id'])) {
+                $item = $period->items->firstWhere('id', (int) $validated['item_id']);
+
+                if (!$item) {
+                    return ApiResponse::error('Not found', 'KPI item not found in this period', 404);
+                }
+
+                if ($item->status !== 'submitted') {
+                    return ApiResponse::error('Invalid status', 'KPI item must be submitted first', 400);
+                }
+
+                $item->calculateScore();
+                $item->status = 'approved';
+                $item->save();
+
+                $this->syncPeriodStatus($period);
+
+                return ApiResponse::success('KPI item approved', $period->fresh(['employee.user', 'items']));
             }
 
-            $items = $period->items;
+            // Approve all items if no item_id (legacy behavior)
+            if ($period->status !== 'submitted') {
+                return ApiResponse::error('Invalid status', 'KPI period must be submitted first', 400);
+            }
 
-            foreach ($items as $item) {
+            foreach ($period->items as $item) {
                 $item->calculateScore();
                 $item->status = 'approved';
                 $item->save();
@@ -274,9 +301,9 @@ class KpiPeriodController extends Controller
 
             return ApiResponse::success('KPI period approved', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', null, 404);
+            return ApiResponse::error('Not found', 'KPI period not found', 404);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to approve', null, 500);
+            return ApiResponse::error('Failed to approve KPI period', null, 500);
         }
     }
 
@@ -305,49 +332,23 @@ class KpiPeriodController extends Controller
                 ->latest()
                 ->get();
 
-                        $period = KpiPeriod::with('items')->findOrFail($id);
-
-                        $validated = $request->validate([
-                            'item_id' => 'nullable|exists:kpi_items,id',
-                        ]);
-
-                        if (!empty($validated['item_id'])) {
-                            $item = $period->items->firstWhere('id', (int) $validated['item_id']);
-
-                            if (!$item) {
-                                return ApiResponse::error('Not found', 'KPI item not found in this period', 404);
-                            }
-
-                            if ($item->status !== 'submitted') {
-                                return ApiResponse::error('KPI item must be submitted first', null, 400);
-                            }
-
-                            $item->calculateScore();
-                            $item->status = 'approved';
-                            $item->save();
-
-                            $this->syncPeriodStatus($period);
-
-                            return ApiResponse::success('KPI item approved', $period->fresh(['employee.user', 'items']));
-                        }
+            $periods->each(fn($p) => $p->calculateOverallScore());
 
             return ApiResponse::success('My KPI periods', $periods);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch', null, 500);
+            return ApiResponse::error('Failed to fetch KPI periods', null, 500);
         }
     }
 
-                        if ($items->contains(fn($item) => $item->status === 'draft')) {
-                            return ApiResponse::error('All KPI items must be submitted first', null, 400);
-                        }
-
     public function myUpdateItems(Request $request, int $id): JsonResponse
+    {
         try {
-                            $item->calculateScore();
             $employee = $this->getAuthenticatedEmployee();
             $period = KpiPeriod::with('items')->findOrFail($id);
 
-                        $this->syncPeriodStatus($period);
+            if ($period->employee_id !== $employee->id) {
+                return ApiResponse::error('Forbidden', 'Not your KPI period', 403);
+            }
 
             if ($period->status !== 'draft') {
                 return ApiResponse::error('Cannot edit non-draft KPI period', null, 400);
@@ -385,32 +386,6 @@ class KpiPeriodController extends Controller
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to update KPI period items', null, 500);
         }
-    }
-
-    private function syncPeriodStatus(KpiPeriod $period): void
-    {
-        $period->loadMissing('items');
-
-        if ($period->items->isEmpty()) {
-            $period->status = 'draft';
-            $period->calculateOverallScore();
-            $period->save();
-            return;
-        }
-
-        $allApproved = $period->items->every(fn($item) => $item->status === 'approved');
-        $hasInReview = $period->items->contains(fn($item) => in_array($item->status, ['submitted', 'approved'], true));
-
-        if ($allApproved) {
-            $period->status = 'approved';
-        } elseif ($hasInReview) {
-            $period->status = 'submitted';
-        } else {
-            $period->status = 'draft';
-        }
-
-        $period->calculateOverallScore();
-        $period->save();
     }
 
     public function mySubmit(Request $request, int $id): JsonResponse
