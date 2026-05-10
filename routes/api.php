@@ -182,6 +182,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
         // KPI Periods (ESS)
         Route::get('/kpi-periods', [KpiPeriodController::class, 'myKpiPeriods']);
+        Route::put('/kpi-periods/{id}/items', [KpiPeriodController::class, 'myUpdateItems']);
         Route::post('/kpi-periods/{id}/submit', [KpiPeriodController::class, 'mySubmit']);
 
         // Reimbursements
