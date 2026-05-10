@@ -737,35 +737,6 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         });
     });
 
-        Route::prefix('admin')->group(function () {
-            Route::get('/audit-logs', [AuditLogController::class, 'index']);
-            Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
-
-            // RBAC Management
-            Route::get('/roles', [RoleController::class, 'index']);
-            Route::get('/roles/{id}', [RoleController::class, 'show']);
-            Route::post('/roles', [RoleController::class, 'store']);
-            Route::put('/roles/{id}', [RoleController::class, 'update']);
-            Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
-            Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
-            Route::delete('/roles/{id}/remove-permission/{permissionId}', [RoleController::class, 'removePermission']);
-            Route::get('/roles/{id}/can-modify', [RoleController::class, 'canModify']);
-            Route::get('/roles/{id}/can-assign', [RoleController::class, 'canAssign']);
-            Route::get('/permissions', [PermissionController::class, 'index']);
-            Route::get('/permissions/{id}', [PermissionController::class, 'show']);
-            Route::get('/users', [UserController::class, 'index']);
-            Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
-            Route::delete('/users/{id}/remove-role/{roleId}', [UserController::class, 'removeRole']);
-
-            // Data Import
-            Route::prefix('import')->group(function () {
-                Route::post('/users', [DataImportController::class, 'importUsers']);
-                Route::post('/employees', [DataImportController::class, 'importEmployees']);
-                Route::get('/template', [DataImportController::class, 'getImportTemplate']);
-            });
-        });
-    });
-
 });
 
 // Helper for storage link on restricted hosting
