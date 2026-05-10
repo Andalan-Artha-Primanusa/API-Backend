@@ -232,6 +232,8 @@ class KpiPeriodController extends Controller
                 $item->status = 'submitted';
                 $item->save();
 
+                // Reload period with fresh items from DB
+                $period = $period->fresh(['items']);
                 $this->syncPeriodStatus($period);
 
                 return ApiResponse::success('KPI item submitted', $period->fresh(['employee.user', 'items']));
@@ -279,6 +281,8 @@ class KpiPeriodController extends Controller
                 $item->status = 'approved';
                 $item->save();
 
+                // Reload period with fresh items from DB
+                $period = $period->fresh(['items']);
                 $this->syncPeriodStatus($period);
 
                 return ApiResponse::success('KPI item approved', $period->fresh(['employee.user', 'items']));
@@ -391,5 +395,31 @@ class KpiPeriodController extends Controller
     public function mySubmit(Request $request, int $id): JsonResponse
     {
         return $this->submit($request, $id);
+    }
+
+    private function syncPeriodStatus(KpiPeriod $period): void
+    {
+        $period->loadMissing('items');
+
+        if ($period->items->isEmpty()) {
+            $period->status = 'draft';
+            $period->calculateOverallScore();
+            $period->save();
+            return;
+        }
+
+        $allApproved = $period->items->every(fn($item) => $item->status === 'approved');
+        $anySubmitted = $period->items->contains(fn($item) => in_array($item->status, ['submitted', 'approved'], true));
+
+        if ($allApproved) {
+            $period->status = 'approved';
+        } elseif ($anySubmitted) {
+            $period->status = 'submitted';
+        } else {
+            $period->status = 'draft';
+        }
+
+        $period->calculateOverallScore();
+        $period->save();
     }
 }
