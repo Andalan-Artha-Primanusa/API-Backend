@@ -79,7 +79,7 @@ class KpiController extends Controller
                 [
                     'achievement' => 0,
                     'score'       => 0,
-                    'status'      => 'draft',
+                    'status'      => 'assigned',
                 ]
             ));
 
@@ -222,8 +222,8 @@ class KpiController extends Controller
 
             $kpi = Kpi::findOrFail($id);
 
-            if ($kpi->status !== 'draft' && $kpi->status !== 'submitted') {
-                return ApiResponse::error('Invalid status', 'KPI cannot be approved in current status', 400);
+            if ($kpi->status !== 'submitted') {
+                return ApiResponse::error('Invalid status', 'Only submitted KPIs can be approved', 400);
             }
 
             $kpi->update(['status' => 'approved']);
@@ -267,7 +267,86 @@ class KpiController extends Controller
     }
 
     /**
-     * Submit KPI for approval by employee.
+     * Accept assigned KPI (assigned → active).
+     */
+    public function accept(Request $request, int $id): JsonResponse
+    {
+        try {
+            if ($id <= 0) {
+                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+            }
+
+            $employee = $this->getAuthenticatedEmployee();
+            $kpi = Kpi::findOrFail($id);
+
+            if ($kpi->employee_id !== $employee->id) {
+                return ApiResponse::error('Forbidden', 'You cannot accept this KPI', 403);
+            }
+
+            if ($kpi->status !== 'assigned') {
+                return ApiResponse::error('Invalid status', 'Only assigned KPIs can be accepted', 400);
+            }
+
+            $kpi->update(['status' => 'active']);
+
+            return ApiResponse::success('KPI accepted successfully', $kpi->fresh(self::KPI_RELATIONS));
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return ApiResponse::error('Not found', 'KPI record not found', 404);
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Invalid request', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to accept KPI', null, 500);
+        }
+    }
+
+    /**
+     * Update KPI progress (achievement).
+     */
+    public function updateProgress(Request $request, int $id): JsonResponse
+    {
+        try {
+            if ($id <= 0) {
+                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+            }
+
+            $employee = $this->getAuthenticatedEmployee();
+            $kpi = Kpi::findOrFail($id);
+
+            if ($kpi->employee_id !== $employee->id) {
+                return ApiResponse::error('Forbidden', 'You cannot update this KPI', 403);
+            }
+
+            if (!in_array($kpi->status, ['active', 'submitted'])) {
+                return ApiResponse::error('Invalid status', 'Only active or submitted KPIs can be updated', 400);
+            }
+
+            $validated = $request->validate([
+                'achievement' => 'required|numeric|min:0',
+            ]);
+
+            $kpi->achievement = $validated['achievement'];
+
+            // Auto-calculate score
+            if ($kpi->target > 0) {
+                $kpi->score = ($kpi->achievement / $kpi->target) * 100;
+            }
+
+            $kpi->save();
+
+            return ApiResponse::success('KPI progress updated', $kpi->fresh(self::KPI_RELATIONS));
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return ApiResponse::error('Not found', 'KPI record not found', 404);
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Invalid request', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to update KPI progress', null, 500);
+        }
+    }
+
+    /**
+     * Submit KPI for approval by employee (active → submitted).
      */
     public function submit(Request $request, int $id): JsonResponse
     {
@@ -284,9 +363,9 @@ class KpiController extends Controller
                 return ApiResponse::error('Forbidden', 'You cannot submit this KPI', 403);
             }
 
-            // Validation: must be in draft status
-            if ($kpi->status !== 'draft') {
-                return ApiResponse::error('Invalid status', 'KPI is already submitted or processed', 400);
+            // Validation: must be in active status
+            if ($kpi->status !== 'active') {
+                return ApiResponse::error('Invalid status', 'Only active KPIs can be submitted', 400);
             }
 
             $kpi->update(['status' => 'submitted']);

@@ -176,6 +176,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/profile', [UserProfileController::class, 'me']);
         // KPI (Legacy)
         Route::get('/kpi', [KpiController::class, 'myKpi']);
+        Route::post('/kpi/{id}/accept', [KpiController::class, 'accept']);
+        Route::put('/kpi/{id}/progress', [KpiController::class, 'updateProgress']);
         Route::post('/kpi/{id}/submit', [KpiController::class, 'submit']);
 
         // KPI Periods (ESS)
