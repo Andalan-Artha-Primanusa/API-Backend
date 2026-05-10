@@ -343,15 +343,11 @@ class KpiPeriodController extends Controller
     public function myUpdateItems(Request $request, int $id): JsonResponse
     {
         try {
-            $user = $request->user();
+            $employee = $this->getAuthenticatedEmployee();
             $period = KpiPeriod::with('items')->findOrFail($id);
 
-            // Only regular employees must own the period; HR/admins can update on behalf
-            if (!($user->isAdmin() || $user->isHR())) {
-                $employee = $this->getAuthenticatedEmployee();
-                if ($period->employee_id !== $employee->id) {
-                    return ApiResponse::error('Forbidden', 'Not your KPI period', 403);
-                }
+            if ($period->employee_id !== $employee->id) {
+                return ApiResponse::error('Forbidden', 'Not your KPI period', 403);
             }
 
             if ($period->status !== 'draft') {
