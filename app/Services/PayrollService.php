@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\OvertimeRequest;
 use Illuminate\Support\Facades\DB;
 
 class PayrollService
@@ -21,7 +22,12 @@ class PayrollService
             throw new \DomainException('Salary employee belum di set');
         }
 
-        $bruto = $gaji + $allowance + $bonus;
+        // =========================
+        // 🔥 OVERTIME CALCULATION
+        // =========================
+        $overtimePay = $this->calculateOvertimePay($employee, $period, $gaji);
+
+        $bruto = $gaji + $allowance + $bonus + $overtimePay;
 
         $bpjs_kesehatan = $gaji * 0.01;
         $bpjs_ketenagakerjaan = ($gaji * 0.02) + ($gaji * 0.01);
@@ -47,6 +53,7 @@ class PayrollService
             'basic_salary' => $gaji,
             'allowance' => $allowance,
             'bonus' => $bonus,
+            'overtime_pay' => $overtimePay,
             'bpjs_kesehatan' => $bpjs_kesehatan,
             'bpjs_ketenagakerjaan' => $bpjs_ketenagakerjaan,
             'pph21' => $pph21,
@@ -54,6 +61,40 @@ class PayrollService
             'take_home_pay' => $take_home_pay,
             'status' => 'draft'
         ]);
+    }
+
+    /**
+     * Calculate overtime pay for an employee in a given period.
+     */
+    private function calculateOvertimePay(Employee $employee, string $period, float $monthlySalary): float
+    {
+        [$year, $month] = explode('-', $period);
+        $startDate = "{$year}-{$month}-01";
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        $approvedOvertimes = OvertimeRequest::with('overtimeRule')
+            ->where('employee_id', $employee->id)
+            ->where('status', 'approved')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get();
+
+        if ($approvedOvertimes->isEmpty()) {
+            return 0;
+        }
+
+        $workingDaysPerMonth = 22;
+        $hoursPerDay = 8;
+        $hourlyRate = $monthlySalary / $workingDaysPerMonth / $hoursPerDay;
+
+        $totalPay = 0;
+
+        foreach ($approvedOvertimes as $ot) {
+            $multiplier = $ot->overtimeRule?->multiplier ?? 1.5;
+            $hours = $ot->overtime_minutes / 60;
+            $totalPay += $hours * $hourlyRate * $multiplier;
+        }
+
+        return round($totalPay, 2);
     }
 
     /**

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\User;
+use App\Models\OvertimeRule;
+use App\Models\ShiftSwapRequest;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -38,6 +40,11 @@ class AttendanceService
         }
 
         // =========================
+        // 🔥 SHIFT SWAP CHECK
+        // =========================
+        $swapSchedule = $this->resolveSwapSchedule($employee);
+
+        // =========================
         // 🔥 VALIDASI LOCATION
         // =========================
         if (!$employee->location) {
@@ -62,11 +69,10 @@ class AttendanceService
         // =========================
         // 🔥 VALIDASI SCHEDULE
         // =========================
-        if (!$employee->workSchedule) {
+        $schedule = $swapSchedule ?? $employee->workSchedule;
+        if (!$schedule) {
             throw new \DomainException('No work schedule assigned.');
         }
-
-        $schedule = $employee->workSchedule;
 
         $now = now();
         $checkInTime = now()->setTimeFromTimeString($schedule->check_in_time);
@@ -135,11 +141,19 @@ class AttendanceService
 
         $employee = $user->employee;
 
-        if (!$employee || !$employee->workSchedule) {
-            throw new \DomainException('No work schedule assigned.');
+        if (!$employee) {
+            throw new \DomainException('Employee data not found.');
         }
 
-        $schedule = $employee->workSchedule;
+        // =========================
+        // 🔥 SHIFT SWAP CHECK
+        // =========================
+        $swapSchedule = $this->resolveSwapSchedule($employee);
+
+        $schedule = $swapSchedule ?? $employee->workSchedule;
+        if (!$schedule) {
+            throw new \DomainException('No work schedule assigned.');
+        }
 
         $now = now();
         $checkOutTime = now()->setTimeFromTimeString($schedule->check_out_time);
@@ -150,10 +164,11 @@ class AttendanceService
 
         $attendance->update(['check_out' => now()]);
 
-        // 🔥 AUTO-CREATE OVERTIME REQUEST
+        // =========================
+        // 🔥 AUTO-CREATE OVERTIME REQUEST with rule lookup
+        // =========================
         $overtimeRequest = null;
         
-        // Parse scheduled checkout time from today
         $scheduledCheckoutTime = \Carbon\Carbon::parse($schedule->check_out_time, config('app.timezone'));
         $actualCheckoutTime = now();
 
@@ -161,26 +176,35 @@ class AttendanceService
 
         if ($overtimeSeconds > 0) {
             $overtimeMinutes = (int) ceil($overtimeSeconds / 60);
-            
-            \Log::info('OVERTIME DETECTED', [
-                'employee_id' => $employee->id,
-                'scheduled_time' => $schedule->check_out_time,
-                'actual_time' => $actualCheckoutTime->format('H:i:s'),
-                'overtime_minutes' => $overtimeMinutes,
-            ]);
 
-            if ($overtimeMinutes >= 1) {
+            // Lookup matching overtime rule
+            $overtimeRule = OvertimeRule::where('active', true)
+                ->where(function ($q) use ($employee) {
+                    $q->whereNull('department')
+                      ->orWhere('department', $employee->department);
+                })
+                ->where(function ($q) use ($employee) {
+                    $q->whereNull('location_id')
+                      ->orWhere('location_id', $employee->location_id);
+                })
+                ->orderByDesc('min_minutes')
+                ->first();
+
+            $minMinutes = $overtimeRule ? $overtimeRule->min_minutes : 1;
+
+            if ($overtimeMinutes >= $minMinutes) {
                 try {
                     $overtimeRequest = \App\Models\OvertimeRequest::create([
                         'employee_id' => $employee->id,
                         'attendance_id' => $attendance->id,
+                        'overtime_rule_id' => $overtimeRule?->id,
                         'date' => $attendance->date,
                         'scheduled_checkout' => $schedule->check_out_time,
                         'actual_checkout' => $actualCheckoutTime->format('H:i:s'),
                         'overtime_minutes' => $overtimeMinutes,
-                        'status' => 'pending',
+                        'status' => $overtimeRule && !$overtimeRule->requires_approval ? 'approved' : 'pending',
                     ]);
-                    \Log::info('✅ OVERTIME CREATED', ['id' => $overtimeRequest->id, 'minutes' => $overtimeMinutes]);
+                    \Log::info('✅ OVERTIME CREATED', ['id' => $overtimeRequest->id, 'minutes' => $overtimeMinutes, 'rule_id' => $overtimeRule?->id]);
                 } catch (\Exception $e) {
                     \Log::error('❌ OVERTIME ERROR', ['error' => $e->getMessage()]);
                 }
@@ -306,6 +330,32 @@ class AttendanceService
             'window_days' => $days,
             'summary' => $summary,
         ];
+    }
+
+    /**
+     * Resolve the effective work schedule considering any approved shift swap for today.
+     */
+    private function resolveSwapSchedule($employee)
+    {
+        $swap = ShiftSwapRequest::where(function ($q) use ($employee) {
+                $q->where('requester_employee_id', $employee->id)
+                  ->orWhere('target_employee_id', $employee->id);
+            })
+            ->where('swap_date', now()->toDateString())
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$swap) {
+            return null;
+        }
+
+        $partnerId = $swap->requester_employee_id === $employee->id
+            ? $swap->target_employee_id
+            : $swap->requester_employee_id;
+
+        $partner = \App\Models\Employee::with('workSchedule')->find($partnerId);
+
+        return $partner?->workSchedule;
     }
 
     /**

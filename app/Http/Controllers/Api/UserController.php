@@ -78,4 +78,33 @@ class UserController extends Controller
 
         return ApiResponse::success('User list', $users);
     }
+
+    public function removeRole(Request $request, $id, $roleId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasPermission('user.assign_role')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $targetUser = User::findOrFail($id);
+
+        if ($targetUser->isSuperAdmin()) {
+            return ApiResponse::error('Cannot modify Super Admin roles', null, 403);
+        }
+
+        $role = Role::findOrFail($roleId);
+
+        // Prevent removing super_admin role if it were somehow assigned
+        if ($role->name === User::ROLE_SUPER_ADMIN && !$user->isSuperAdmin()) {
+            return ApiResponse::error('Cannot remove super_admin role', null, 403);
+        }
+
+        $targetUser->roles()->detach($role->id);
+
+        return ApiResponse::success(
+            'Role removed successfully',
+            $targetUser->load('roles')
+        );
+    }
 }

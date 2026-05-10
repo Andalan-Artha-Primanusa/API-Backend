@@ -91,6 +91,21 @@ class Employee extends Model
     {
         return $this->hasMany(\App\Models\HrServiceRequest::class);
     }
+
+    public function overtimeRequests(): HasMany
+    {
+        return $this->hasMany(OvertimeRequest::class);
+    }
+
+    public function shiftSwapRequests(): HasMany
+    {
+        return $this->hasMany(\App\Models\ShiftSwapRequest::class, 'requester_employee_id');
+    }
+
+    public function shiftSwapTargets(): HasMany
+    {
+        return $this->hasMany(\App\Models\ShiftSwapRequest::class, 'target_employee_id');
+    }
     public function scopeActive($query)
     {
         return $query->where('status', self::STATUS_ACTIVE);

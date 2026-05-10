@@ -21,6 +21,21 @@ class LeaveTypeController extends Controller
         return ApiResponse::success('Leave types retrieved successfully', $types);
     }
 
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $type = LeaveType::find($id);
+        if (!$type) {
+            return ApiResponse::error('Leave type not found', null, 404);
+        }
+
+        return ApiResponse::success('Leave type retrieved successfully', $type);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();

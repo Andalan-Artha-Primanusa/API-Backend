@@ -22,4 +22,17 @@ class PermissionController extends Controller
 
         return ApiResponse::success('Permission list', $permissions);
     }
+
+    public function show(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasPermission('permission.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $permission = Permission::findOrFail($id);
+
+        return ApiResponse::success('Permission detail', $permission);
+    }
 }

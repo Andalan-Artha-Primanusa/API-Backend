@@ -354,7 +354,7 @@ class PayrollController extends Controller
         $earnings = $details->where('type', 'allowance')->values();
         $deductions = $details->where('type', 'deduction')->values();
 
-        $grossPay = (float) $payroll->basic_salary + (float) $payroll->allowance + (float) $payroll->bonus;
+        $grossPay = (float) $payroll->basic_salary + (float) $payroll->allowance + (float) $payroll->bonus + (float) $payroll->overtime_pay;
         $netEarnings = $grossPay + $earnings->sum('amount');
         $netDeductions = (float) $payroll->total_deduction + $deductions->sum('amount');
 
@@ -374,6 +374,7 @@ class PayrollController extends Controller
                 'basic_salary' => (float) $payroll->basic_salary,
                 'allowance' => (float) $payroll->allowance,
                 'bonus' => (float) $payroll->bonus,
+                'overtime_pay' => (float) $payroll->overtime_pay,
                 'gross_pay' => $grossPay,
                 'additional_allowances' => $earnings->sum('amount'),
                 'additional_deductions' => $deductions->sum('amount'),
@@ -482,21 +483,23 @@ class PayrollController extends Controller
             return ApiResponse::error('No payroll data found for the selected period', null, 404);
         }
 
-        $headers = ['No', 'Employee Code', 'Name', 'Department', 'Position', 'Bank', 'Account Number', 'Account Name', 'Basic Salary', 'Allowance', 'Bonus', 'BPJS Kesehatan', 'BPJS Ketenagakerjaan', 'PPh 21', 'Total Deduction', 'Take Home Pay', 'Status'];
+        $headers = ['No', 'Employee Code', 'Name', 'Department', 'Position', 'Bank', 'Account Number', 'Account Name', 'Basic Salary', 'Allowance', 'Bonus', 'Overtime Pay', 'BPJS Kesehatan', 'BPJS Ketenagakerjaan', 'PPh 21', 'Total Deduction', 'Take Home Pay', 'Status'];
         $lines = [implode(',', $headers)];
-        $totalBasic = $totalAllowance = $totalBonus = $totalDeduction = $totalNet = 0;
+        $totalBasic = $totalAllowance = $totalBonus = $totalOvertime = $totalDeduction = $totalNet = 0;
 
         foreach ($payrolls as $index => $payroll) {
             $profile = $payroll->employee?->user?->profile;
             $basic = (float) $payroll->basic_salary;
             $allowance = (float) $payroll->allowance;
             $bonus = (float) $payroll->bonus;
+            $overtime = (float) $payroll->overtime_pay;
             $deduction = (float) $payroll->total_deduction;
             $net = (float) $payroll->take_home_pay;
 
             $totalBasic += $basic;
             $totalAllowance += $allowance;
             $totalBonus += $bonus;
+            $totalOvertime += $overtime;
             $totalDeduction += $deduction;
             $totalNet += $net;
 
@@ -512,6 +515,7 @@ class PayrollController extends Controller
                 number_format($basic, 2, '.', ''),
                 number_format($allowance, 2, '.', ''),
                 number_format($bonus, 2, '.', ''),
+                number_format($overtime, 2, '.', ''),
                 number_format((float) $payroll->bpjs_kesehatan, 2, '.', ''),
                 number_format((float) $payroll->bpjs_ketenagakerjaan, 2, '.', ''),
                 number_format((float) $payroll->pph21, 2, '.', ''),
@@ -521,7 +525,7 @@ class PayrollController extends Controller
             ]);
         }
 
-        $lines[] = implode(',', ['', '', '', '', '', '', '', '', 'TOTAL', number_format($totalBasic, 2, '.', ''), number_format($totalAllowance, 2, '.', ''), number_format($totalBonus, 2, '.', ''), '', '', '', number_format($totalDeduction, 2, '.', ''), number_format($totalNet, 2, '.', ''), '']);
+        $lines[] = implode(',', ['', '', '', '', '', '', '', '', 'TOTAL', number_format($totalBasic, 2, '.', ''), number_format($totalAllowance, 2, '.', ''), number_format($totalBonus, 2, '.', ''), number_format($totalOvertime, 2, '.', ''), '', '', '', number_format($totalDeduction, 2, '.', ''), number_format($totalNet, 2, '.', ''), '']);
 
         $filename = 'payroll-summary-' . str_replace(['/', '\\', ' ', '-'], '', $period) . '.csv';
         $content = implode("\n", $lines) . "\n";

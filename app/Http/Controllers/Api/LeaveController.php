@@ -89,7 +89,7 @@ class LeaveController extends Controller
 
     public function show(Request $request, $id): JsonResponse
     {
-        $leave = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role'])->findOrFail($id);
+        $leave = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType'])->findOrFail($id);
 
         $user = $request->user();
 

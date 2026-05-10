@@ -23,6 +23,23 @@ class LeavePolicyController extends Controller
         return ApiResponse::success('Leave policies retrieved successfully', $policies);
     }
 
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $policy = LeavePolicy::find($id);
+
+        if (!$policy) {
+            return ApiResponse::error('Leave policy not found', null, 404);
+        }
+
+        return ApiResponse::success('Leave policy retrieved successfully', $policy);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();

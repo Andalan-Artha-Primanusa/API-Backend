@@ -56,6 +56,7 @@ use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\NotificationSettingController;
 use App\Http\Controllers\Api\OvertimeController;
+use App\Http\Controllers\Api\KpiPeriodController;
 // PROGRESSIVE TAX (PPh21 Progresif)
 Route::post('tax/progressive/calculate', function (\Illuminate\Http\Request $request) {
     $validated = $request->validate([
@@ -173,9 +174,13 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::prefix('my')->group(function () {
         // Profile
         Route::get('/profile', [UserProfileController::class, 'me']);
-        // KPI
+        // KPI (Legacy)
         Route::get('/kpi', [KpiController::class, 'myKpi']);
         Route::post('/kpi/{id}/submit', [KpiController::class, 'submit']);
+
+        // KPI Periods (ESS)
+        Route::get('/kpi-periods', [KpiPeriodController::class, 'myKpiPeriods']);
+        Route::post('/kpi-periods/{id}/submit', [KpiPeriodController::class, 'mySubmit']);
 
         // Reimbursements
         Route::get('/reimbursements', [ReimbursementController::class, 'myReimbursements']);
@@ -312,6 +317,16 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/{id}/approve', [KpiController::class, 'approve']);
         });
 
+        // KPI PERIOD MANAGEMENT (Period-based KPI)
+        Route::prefix('kpi-periods')->group(function () {
+            Route::get('/', [KpiPeriodController::class, 'index']);
+            Route::post('/', [KpiPeriodController::class, 'store']);
+            Route::get('/{id}', [KpiPeriodController::class, 'show']);
+            Route::put('/{id}/items', [KpiPeriodController::class, 'updateItems']);
+            Route::put('/{id}/approve', [KpiPeriodController::class, 'approve']);
+            Route::delete('/{id}', [KpiPeriodController::class, 'destroy']);
+        });
+
         // REIMBURSEMENT MANAGEMENT
         Route::prefix('reimbursements')->group(function () {
             Route::get('/', [ReimbursementController::class, 'index']);
@@ -340,6 +355,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
         Route::prefix('leave-types')->group(function () {
             Route::get('/', [LeaveTypeController::class, 'index']);
+            Route::get('/{id}', [LeaveTypeController::class, 'show']);
             Route::post('/', [LeaveTypeController::class, 'store']);
             Route::put('/{id}', [LeaveTypeController::class, 'update']);
             Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
@@ -347,6 +363,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
 
         Route::prefix('leave-policies')->group(function () {
             Route::get('/', [LeavePolicyController::class, 'index']);
+            Route::get('/{id}', [LeavePolicyController::class, 'show']);
             Route::post('/', [LeavePolicyController::class, 'store']);
             Route::put('/{id}', [LeavePolicyController::class, 'update']);
             Route::delete('/{id}', [LeavePolicyController::class, 'destroy']);
@@ -669,7 +686,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         });
     });
 
-    Route::middleware('role:super_admin')->group(function () {
+    Route::middleware('role:admin,hr,super_admin')->group(function () {
         Route::apiResource('locations', LocationController::class);
 
         Route::apiResource('departments', DepartmentController::class);
@@ -695,14 +712,52 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/audit-logs', [AuditLogController::class, 'index']);
             Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
 
-            // RBAC Management - SUPER ADMIN ONLY
+            // RBAC Management
             Route::get('/roles', [RoleController::class, 'index']);
+            Route::get('/roles/{id}', [RoleController::class, 'show']);
+            Route::post('/roles', [RoleController::class, 'store']);
+            Route::put('/roles/{id}', [RoleController::class, 'update']);
+            Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+            Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+            Route::delete('/roles/{id}/remove-permission/{permissionId}', [RoleController::class, 'removePermission']);
+            Route::get('/roles/{id}/can-modify', [RoleController::class, 'canModify']);
+            Route::get('/roles/{id}/can-assign', [RoleController::class, 'canAssign']);
             Route::get('/permissions', [PermissionController::class, 'index']);
+            Route::get('/permissions/{id}', [PermissionController::class, 'show']);
             Route::get('/users', [UserController::class, 'index']);
             Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
-            Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+            Route::delete('/users/{id}/remove-role/{roleId}', [UserController::class, 'removeRole']);
 
-            // Data Import - SUPER ADMIN ONLY
+            // Data Import
+            Route::prefix('import')->group(function () {
+                Route::post('/users', [DataImportController::class, 'importUsers']);
+                Route::post('/employees', [DataImportController::class, 'importEmployees']);
+                Route::get('/template', [DataImportController::class, 'getImportTemplate']);
+            });
+        });
+    });
+
+        Route::prefix('admin')->group(function () {
+            Route::get('/audit-logs', [AuditLogController::class, 'index']);
+            Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
+
+            // RBAC Management
+            Route::get('/roles', [RoleController::class, 'index']);
+            Route::get('/roles/{id}', [RoleController::class, 'show']);
+            Route::post('/roles', [RoleController::class, 'store']);
+            Route::put('/roles/{id}', [RoleController::class, 'update']);
+            Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+            Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+            Route::delete('/roles/{id}/remove-permission/{permissionId}', [RoleController::class, 'removePermission']);
+            Route::get('/roles/{id}/can-modify', [RoleController::class, 'canModify']);
+            Route::get('/roles/{id}/can-assign', [RoleController::class, 'canAssign']);
+            Route::get('/permissions', [PermissionController::class, 'index']);
+            Route::get('/permissions/{id}', [PermissionController::class, 'show']);
+            Route::get('/users', [UserController::class, 'index']);
+            Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
+            Route::delete('/users/{id}/remove-role/{roleId}', [UserController::class, 'removeRole']);
+
+            // Data Import
             Route::prefix('import')->group(function () {
                 Route::post('/users', [DataImportController::class, 'importUsers']);
                 Route::post('/employees', [DataImportController::class, 'importEmployees']);

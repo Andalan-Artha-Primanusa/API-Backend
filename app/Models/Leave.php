@@ -12,6 +12,7 @@ class Leave extends Model
     protected $fillable = [
         'user_id',
         'employee_id',
+        'leave_type_id',
         'start_date',
         'end_date',
         'total_days',
@@ -72,6 +73,11 @@ class Leave extends Model
     public function balance(): BelongsTo
     {
         return $this->belongsTo(EmployeeLeaveBalance::class, 'employee_id', 'employee_id');
+    }
+
+    public function leaveType(): BelongsTo
+    {
+        return $this->belongsTo(LeaveType::class);
     }
 
     // =========================================================================

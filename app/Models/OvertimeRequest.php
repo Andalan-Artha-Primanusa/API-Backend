@@ -10,6 +10,7 @@ class OvertimeRequest extends Model
     protected $fillable = [
         'employee_id',
         'attendance_id',
+        'overtime_rule_id',
         'date',
         'scheduled_checkout',
         'actual_checkout',
@@ -50,5 +51,10 @@ class OvertimeRequest extends Model
     public function approvedEvidences()
     {
         return $this->evidences()->where('status', 'approved');
+    }
+
+    public function overtimeRule(): BelongsTo
+    {
+        return $this->belongsTo(OvertimeRule::class);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Leave;
+use App\Models\LeaveType;
 use App\Models\ApprovalFlow;
 use App\Models\User;
 use App\Models\EmployeeLeaveBalance;
@@ -34,10 +35,23 @@ class LeaveService
         }
 
         $totalDays = Leave::calculateDays($data['start_date'], $data['end_date']);
-        $leaveType = $data['type'];
+        $leaveTypeId = $data['leave_type_id'] ?? null;
+        $leaveTypeCode = $data['type'] ?? null;
 
-        return DB::transaction(function () use ($user, $data, $flow, $employee, $totalDays, $leaveType) {
-            if ($leaveType === Leave::TYPE_ANNUAL) {
+        if ($leaveTypeId) {
+            $leaveTypeModel = LeaveType::find($leaveTypeId);
+            if (!$leaveTypeModel) {
+                throw new \RuntimeException('Selected leave type not found.');
+            }
+            $leaveTypeCode = $leaveTypeModel->code;
+        }
+
+        if (!$leaveTypeCode) {
+            throw new \RuntimeException('Leave type is required.');
+        }
+
+        return DB::transaction(function () use ($user, $data, $flow, $employee, $totalDays, $leaveTypeCode, $leaveTypeId) {
+            if ($leaveTypeCode === Leave::TYPE_ANNUAL) {
                 $balance = $this->getOrCreateAnnualBalance($employee->id, (int) date('Y', strtotime($data['start_date'])));
 
                 if ($balance->availableDays() < $totalDays) {
@@ -50,15 +64,16 @@ class LeaveService
             return Leave::create([
                 'user_id'          => $user->id,
                 'employee_id'      => $employee->id,
+                'leave_type_id'    => $leaveTypeId,
                 'start_date'       => $data['start_date'],
                 'end_date'         => $data['end_date'],
                 'total_days'       => $totalDays,
-                'type'             => $leaveType,
+                'type'             => $leaveTypeCode,
                 'reason'           => $data['reason'] ?? null,
                 'status'           => LeaveStatus::Pending,
                 'approval_flow_id' => $flow->id,
                 'current_step'     => 1,
-            ])->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']);
+            ])->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType']);
         });
     }
 
@@ -72,7 +87,7 @@ class LeaveService
      */
     public function getLeavesByRole(User $user): LengthAwarePaginator
     {
-        $query = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']);
+        $query = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType']);
 
         // Admin/HR/SuperAdmin — see all (no filter)
         if ($user->isAdmin() || $user->isHR()) {
