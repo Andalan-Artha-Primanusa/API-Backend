@@ -264,7 +264,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     Route::get('/{module}/{moduleId}', [ApprovalFlowController::class, 'history']);
 });
 
-    Route::middleware('role:admin,hr,super_admin')->prefix('compliance')->group(function () {
+    Route::middleware('role:admin,hr,manager,super_admin')->prefix('compliance')->group(function () {
         Route::get('/overview', [ComplianceController::class, 'overview']);
         Route::get('/audit-summary', [ComplianceController::class, 'auditSummary']);
         Route::get('/expiring-documents', [ComplianceController::class, 'expiringDocuments']);
@@ -642,8 +642,8 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         });
     });
 
-    // PAYROLL (HR / Admin)
-    Route::middleware('role:admin,hr,super_admin')->group(function () {
+    // PAYROLL (HR / Admin / Manager)
+    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
         Route::prefix('payroll')->group(function () {
             Route::get('/', [PayrollController::class, 'index']);
             Route::post('/', [PayrollController::class, 'store']);
@@ -668,8 +668,8 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         });
     });
 
-    // MASTER DATA & SYSTEM SETTINGS (Super Admin & Admin/HR)
-    Route::middleware('role:admin,hr,super_admin')->group(function () {
+    // MASTER DATA & SYSTEM SETTINGS (Super Admin & Admin/HR/Manager)
+    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
         Route::prefix('admin/notifications')->group(function () {
             Route::get('/summary', [NotificationController::class, 'summary']);
             Route::post('/broadcast', [NotificationController::class, 'broadcast']);
@@ -702,7 +702,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         });
     });
 
-    Route::middleware('role:admin,hr,super_admin')->group(function () {
+    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
         Route::apiResource('locations', LocationController::class);
 
         Route::apiResource('departments', DepartmentController::class);

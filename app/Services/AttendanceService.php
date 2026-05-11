@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\User;
+use App\Models\OvertimeRequest;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -171,7 +172,7 @@ class AttendanceService
 
             if ($overtimeMinutes >= 1) {
                 try {
-                    $overtimeRequest = \App\Models\OvertimeRequest::create([
+                    $overtimeRequest = OvertimeRequest::create([
                         'employee_id' => $employee->id,
                         'attendance_id' => $attendance->id,
                         'date' => $attendance->date,
@@ -180,6 +181,14 @@ class AttendanceService
                         'overtime_minutes' => $overtimeMinutes,
                         'status' => 'pending',
                     ]);
+
+                    try {
+                        $approvalService = app(ApprovalFlowService::class);
+                        $approvalService->applyToModel('overtime', $overtimeRequest);
+                    } catch (\RuntimeException $e) {
+                        // No approval flow configured, continue without flow
+                    }
+
                     \Log::info('✅ OVERTIME CREATED', ['id' => $overtimeRequest->id, 'minutes' => $overtimeMinutes]);
                 } catch (\Exception $e) {
                     \Log::error('❌ OVERTIME ERROR', ['error' => $e->getMessage()]);

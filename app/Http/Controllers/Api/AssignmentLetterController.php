@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
+use App\Models\ApprovalFlowHistory;
 use App\Models\AssignmentLetter;
 use App\Models\ApprovalFlow;
 use App\Models\EmployeeDocument;
@@ -44,7 +45,7 @@ class AssignmentLetterController
             return ApiResponse::error('Forbidden: only admin/HR can create letters for other users', null, 403);
         }
 
-        $flow = ApprovalFlow::where('module', 'assignment_letter')->first();
+        $flow = ApprovalFlow::where('module', 'assignment_letter')->with('steps')->first();
         if (!$flow) {
             return ApiResponse::error('Approval flow for assignment letter not configured', null, 500);
         }
@@ -55,7 +56,22 @@ class AssignmentLetterController
             'current_step' => 1,
             'status' => 'pending',
         ]);
-        return ApiResponse::success('Assignment letter submitted', $letter, 201);
+
+        $firstStep = $flow->steps->where('step_order', 1)->first();
+        if ($firstStep) {
+            ApprovalFlowHistory::create([
+                'module' => 'assignment_letter',
+                'module_id' => $letter->id,
+                'approval_flow_id' => $flow->id,
+                'step_order' => 1,
+                'role_id' => $firstStep->role_id,
+                'user_id' => $firstStep->user_id,
+                'action' => 'pending',
+                'acted_at' => now(),
+            ]);
+        }
+
+        return ApiResponse::success('Assignment letter submitted', $letter->fresh(), 201);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -71,7 +87,7 @@ class AssignmentLetterController
     public function approve(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $letter = AssignmentLetter::with('approvalFlow.steps.role')->findOrFail($id);
+        $letter = AssignmentLetter::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
         if ($letter->status !== 'pending') {
             return ApiResponse::error('Assignment letter already processed', null, 400);
         }
@@ -82,9 +98,34 @@ class AssignmentLetterController
         if (!$user->hasRole($step->role->name)) {
             return ApiResponse::error('It is not your turn to approve', null, 403);
         }
+
+        ApprovalFlowHistory::create([
+            'module' => 'assignment_letter',
+            'module_id' => $letter->id,
+            'approval_flow_id' => $letter->approval_flow_id,
+            'step_order' => $step->step_order,
+            'role_id' => $step->role_id,
+            'user_id' => $user->id,
+            'action' => 'approved',
+            'note' => $request->note,
+            'acted_at' => now(),
+        ]);
+
         $nextStep = $letter->approvalFlow->steps->where('step_order', $letter->current_step + 1)->first();
         if ($nextStep) {
             $letter->update(['current_step' => $letter->current_step + 1]);
+
+            ApprovalFlowHistory::create([
+                'module' => 'assignment_letter',
+                'module_id' => $letter->id,
+                'approval_flow_id' => $letter->approval_flow_id,
+                'step_order' => $nextStep->step_order,
+                'role_id' => $nextStep->role_id,
+                'user_id' => $nextStep->user_id,
+                'action' => 'pending',
+                'acted_at' => now(),
+            ]);
+
             return ApiResponse::success('Assignment letter advanced to next approval step', $letter->fresh(['approvalFlow.steps.role', 'approver.profile']));
         }
         $letter->update([
@@ -98,7 +139,7 @@ class AssignmentLetterController
     public function reject(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $letter = AssignmentLetter::with('approvalFlow.steps.role')->findOrFail($id);
+        $letter = AssignmentLetter::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
         if ($letter->status !== 'pending') {
             return ApiResponse::error('Assignment letter already processed', null, 400);
         }
@@ -109,6 +150,19 @@ class AssignmentLetterController
         if (!$user->hasRole($step->role->name)) {
             return ApiResponse::error('It is not your turn to approve', null, 403);
         }
+
+        ApprovalFlowHistory::create([
+            'module' => 'assignment_letter',
+            'module_id' => $letter->id,
+            'approval_flow_id' => $letter->approval_flow_id,
+            'step_order' => $step->step_order,
+            'role_id' => $step->role_id,
+            'user_id' => $user->id,
+            'action' => 'rejected',
+            'note' => $request->note,
+            'acted_at' => now(),
+        ]);
+
         $letter->update(['status' => 'rejected']);
         return ApiResponse::success('Assignment letter rejected', $letter->fresh(['approvalFlow.steps.role', 'approver.profile']));
     }
