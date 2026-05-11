@@ -15,7 +15,7 @@ return new class extends Migration
             }
 
             if (!Schema::hasColumn('leaves', 'type')) {
-                $table->enum('type', ['annual', 'sick', 'unpaid'])
+                $table->string('type', 50)
                       ->default('annual')
                       ->after('total_days');
             }

@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\Leave;
 use App\Models\Payroll;
 use App\Models\OvertimeRequest;
+use App\Enums\LeaveStatus;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PayrollService
 {
@@ -27,7 +30,14 @@ class PayrollService
         // =========================
         $overtimePay = $this->calculateOvertimePay($employee, $period, $gaji);
 
-        $bruto = $gaji + $allowance + $bonus + $overtimePay;
+        // =========================
+        // 🏖️ PAID LEAVE CALCULATION
+        // =========================
+        $paidLeaveData = $this->calculatePaidLeave($employee, $period, $gaji);
+        $paidLeaveDays = $paidLeaveData['days'];
+        $paidLeaveAmount = $paidLeaveData['amount'];
+
+        $bruto = $gaji + $allowance + $bonus + $overtimePay + $paidLeaveAmount;
 
         $bpjs_kesehatan = $gaji * 0.01;
         $bpjs_ketenagakerjaan = ($gaji * 0.02) + ($gaji * 0.01);
@@ -54,6 +64,8 @@ class PayrollService
             'allowance' => $allowance,
             'bonus' => $bonus,
             'overtime_pay' => $overtimePay,
+            'paid_leave_days' => $paidLeaveDays,
+            'paid_leave_amount' => $paidLeaveAmount,
             'bpjs_kesehatan' => $bpjs_kesehatan,
             'bpjs_ketenagakerjaan' => $bpjs_ketenagakerjaan,
             'pph21' => $pph21,
@@ -95,6 +107,63 @@ class PayrollService
         }
 
         return round($totalPay, 2);
+    }
+
+    /**
+     * Calculate paid leave days and amount for an employee in a given period.
+     *
+     * @return array{days: float, amount: float}
+     */
+    private function calculatePaidLeave(Employee $employee, string $period, float $monthlySalary): array
+    {
+        [$year, $month] = explode('-', $period);
+        $startDate = "{$year}-{$month}-01";
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        $approvedLeaves = Leave::with('leaveType')
+            ->where('employee_id', $employee->id)
+            ->where('status', LeaveStatus::Approved)
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate)
+                         ->where('end_date', '>=', $endDate);
+                  });
+            })
+            ->get()
+            ->filter(fn(Leave $leave) => $leave->leaveType?->is_paid);
+
+        if ($approvedLeaves->isEmpty()) {
+            return ['days' => 0, 'amount' => 0];
+        }
+
+        $periodStart = Carbon::parse($startDate);
+        $periodEnd = Carbon::parse($endDate);
+        $totalDays = 0;
+
+        foreach ($approvedLeaves as $leave) {
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            $overlapStart = $leaveStart->max($periodStart);
+            $overlapEnd = $leaveEnd->min($periodEnd);
+
+            if ($overlapStart <= $overlapEnd) {
+                $totalDays += $overlapStart->diffInDays($overlapEnd) + 1;
+            }
+        }
+
+        if ($totalDays === 0) {
+            return ['days' => 0, 'amount' => 0];
+        }
+
+        $workingDaysPerMonth = 22;
+        $dailyRate = $monthlySalary / $workingDaysPerMonth;
+
+        return [
+            'days' => $totalDays,
+            'amount' => round($dailyRate * $totalDays, 2),
+        ];
     }
 
     /**

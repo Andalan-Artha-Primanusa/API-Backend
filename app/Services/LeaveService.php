@@ -114,7 +114,7 @@ class LeaveService
      * @throws \RuntimeException for system configuration issues
      * @return array{leave: Leave, final: bool, action: string, current_step?: int, next_role?: string}
      */
-    public function processApproval(Leave $leave, User $approver, string $action): array
+    public function processApproval(Leave $leave, User $approver, string $action, ?string $note = null): array
     {
         if (!$leave->isPending()) {
             throw new \DomainException('Leave request has already been processed.');
@@ -158,7 +158,12 @@ class LeaveService
         // Rejection — immediately finalize
         if ($action === 'rejected') {
             $this->releaseAnnualLeave($leave);
-            $leave->update(['status' => LeaveStatus::Rejected]);
+            $leave->update([
+                'status' => LeaveStatus::Rejected,
+                'approved_by' => $approver->id,
+                'approved_at' => now(),
+                'approval_note' => $note,
+            ]);
 
             return [
                 'leave'  => $leave->fresh(),

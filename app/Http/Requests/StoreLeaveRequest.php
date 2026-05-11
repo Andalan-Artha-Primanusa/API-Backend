@@ -17,7 +17,7 @@ class StoreLeaveRequest extends FormRequest
             'start_date'    => ['required', 'date', 'after_or_equal:today'],
             'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
             'leave_type_id' => ['nullable', 'integer', 'exists:leave_types,id'],
-            'type'          => ['nullable', 'string', 'in:annual,sick,unpaid,marriage,maternity,paternity,compassionate,special'],
+            'type'          => ['nullable', 'string', 'max:50'],
             'reason'        => ['nullable', 'string', 'max:1000'],
         ];
     }

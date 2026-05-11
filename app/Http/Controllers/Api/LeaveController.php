@@ -217,7 +217,8 @@ class LeaveController extends Controller
             $result = $this->leaveService->processApproval(
                 $leave,
                 $request->user(),
-                'approved'
+                'approved',
+                $request->note
             );
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
@@ -239,18 +240,25 @@ class LeaveController extends Controller
         if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $leave = Leave::findOrFail($id);
 
         $request->validate([
             'note' => 'required|string|max:500'
         ]);
 
+        $leave = Leave::with('flow.steps.role')->findOrFail($id);
+
         if (!$leave->isPending()) {
             return ApiResponse::error('Leave is not pending', null, 400);
         }
 
-        $leave->reject($request->user()->id, $request->note);
+        try {
+            $result = $this->leaveService->processApproval($leave, $request->user(), 'rejected', $request->note);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 500);
+        }
 
-        return ApiResponse::success('Leave rejected successfully', $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
+        return ApiResponse::success('Leave rejected successfully', $result['leave']->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
     }
 }
