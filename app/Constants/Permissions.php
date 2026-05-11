@@ -327,7 +327,7 @@ class Permissions
             'manager' => array_merge(
                 ['employee.view', 'employee.update'],
                 array_keys(self::LEAVE),
-                ['attendance.view_all'],
+                ['attendance.view_all', 'attendance.view_own'],
                 ['overtime.approve'],
                 ['kpi.view', 'kpi.approve'],
                 ['performance.review.view', 'performance.review.approve'],

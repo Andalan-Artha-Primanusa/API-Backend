@@ -623,15 +623,15 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     |--------------------------------------------------------------------------
     */
 
-    // ATTENDANCE (Admin/HR/Super Admin ONLY)
-    Route::middleware('role:admin,hr,super_admin')->prefix('attendance')->group(function () {
+    // ATTENDANCE (Admin/Manager/HR)
+    Route::middleware('role:admin,manager,hr,super_admin')->prefix('attendance')->group(function () {
         Route::get('/all', [AttendanceController::class, 'all']);
         Route::get('/{id}', [AttendanceController::class, 'show']);
         Route::delete('/{id}', [AttendanceController::class, 'destroy']);
     });
 
-    // EMPLOYEE MANAGEMENT (Admin/HR/Super Admin ONLY)
-    Route::middleware('role:admin,hr,super_admin')->group(function () {
+    // EMPLOYEE MANAGEMENT (Admin/Manager/HR)
+    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
         Route::apiResource('employees', EmployeeController::class);
 
         Route::prefix('employees')->group(function () {

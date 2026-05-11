@@ -8,6 +8,7 @@ use App\Models\ApprovalFlow;
 use App\Models\User;
 use App\Models\EmployeeLeaveBalance;
 use App\Models\LeavePolicy;
+use App\Models\ApprovalFlowHistory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Enums\LeaveStatus;
@@ -61,7 +62,7 @@ class LeaveService
                 $balance->increment('pending_days', $totalDays);
             }
 
-            return Leave::create([
+            $leave = Leave::create([
                 'user_id'          => $user->id,
                 'employee_id'      => $employee->id,
                 'leave_type_id'    => $leaveTypeId,
@@ -73,7 +74,23 @@ class LeaveService
                 'status'           => LeaveStatus::Pending,
                 'approval_flow_id' => $flow->id,
                 'current_step'     => 1,
-            ])->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType']);
+            ]);
+
+            $firstStep = $flow->steps->where('step_order', 1)->first();
+            if ($firstStep) {
+                ApprovalFlowHistory::create([
+                    'module' => 'leave',
+                    'module_id' => $leave->id,
+                    'approval_flow_id' => $flow->id,
+                    'step_order' => 1,
+                    'role_id' => $firstStep->role_id,
+                    'user_id' => $firstStep->user_id,
+                    'action' => 'pending',
+                    'acted_at' => now(),
+                ]);
+            }
+
+            return $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType']);
         });
     }
 
@@ -130,6 +147,8 @@ class LeaveService
             ]);
             $this->finalizeAnnualLeave($leave);
 
+            $this->recordHistory($leave, $approver, 'approved', null);
+
             return [
                 'leave' => $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
                 'final' => true,
@@ -165,6 +184,8 @@ class LeaveService
                 'approval_note' => $note,
             ]);
 
+            $this->recordHistory($leave, $approver, 'rejected', $note);
+
             return [
                 'leave'  => $leave->fresh(),
                 'final'  => true,
@@ -179,7 +200,10 @@ class LeaveService
 
         if ($nextStep) {
             $leave->update(['current_step' => $leave->current_step + 1]);
-            $leave->refresh(); // Fix: refresh to get the updated current_step
+            $leave->refresh();
+
+            $this->recordHistory($leave, $approver, 'approved', $note, $step);
+            $this->recordPendingHistory($leave, $nextStep);
 
             return [
                 'leave'        => $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
@@ -198,11 +222,52 @@ class LeaveService
         ]);
         $this->finalizeAnnualLeave($leave);
 
+        $this->recordHistory($leave, $approver, 'approved', $note, $step);
+
         return [
             'leave'  => $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
             'final'  => true,
             'action' => 'approved',
         ];
+    }
+
+    private function recordHistory(Leave $leave, User $approver, string $action, ?string $note, $step = null): void
+    {
+        if (!$leave->flow) {
+            return;
+        }
+
+        $currentStep = $step ?? $leave->flow->steps->where('step_order', $leave->current_step)->first();
+
+        if (!$currentStep) {
+            return;
+        }
+
+        ApprovalFlowHistory::create([
+            'module' => 'leave',
+            'module_id' => $leave->id,
+            'approval_flow_id' => $leave->flow->id,
+            'step_order' => $currentStep->step_order,
+            'role_id' => $currentStep->role_id,
+            'user_id' => $approver->id,
+            'action' => $action,
+            'note' => $note,
+            'acted_at' => now(),
+        ]);
+    }
+
+    private function recordPendingHistory(Leave $leave, $step): void
+    {
+        ApprovalFlowHistory::create([
+            'module' => 'leave',
+            'module_id' => $leave->id,
+            'approval_flow_id' => $leave->flow->id,
+            'step_order' => $step->step_order,
+            'role_id' => $step->role_id,
+            'user_id' => $step->user_id,
+            'action' => 'pending',
+            'acted_at' => now(),
+        ]);
     }
 
     public function getLeaveBalance(User $user): array
