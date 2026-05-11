@@ -25,6 +25,8 @@ class Reimbursement extends Model
         'approved_by',
         'approval_note',
         'receipt_path',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
@@ -51,6 +53,12 @@ class Reimbursement extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    // 🔥 Approval flow
+    public function approvalFlow()
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 
     /*

@@ -15,6 +15,8 @@ class TrainingEnrollment extends Model
         'certificate_path',
         'completed_at',
         'notes',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
@@ -30,5 +32,10 @@ class TrainingEnrollment extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function approvalFlow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 }

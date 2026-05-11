@@ -20,6 +20,8 @@ class OvertimeRequest extends Model
         'reject_reason',
         'approved_by',
         'approved_at',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
@@ -56,5 +58,10 @@ class OvertimeRequest extends Model
     public function overtimeRule(): BelongsTo
     {
         return $this->belongsTo(OvertimeRule::class);
+    }
+
+    public function approvalFlow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 }

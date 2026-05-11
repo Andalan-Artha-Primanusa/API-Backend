@@ -22,94 +22,44 @@ class ApprovalFlowSeeder extends Seeder
             return;
         }
 
-        // Create or find the leave approval flow
-        $flow = ApprovalFlow::firstOrCreate(
-            ['module' => 'leave'],
-            ['name' => 'Leave Approval Flow']
-        );
+        $flows = [
+            'leave'                => 'Leave Approval Flow',
+            'assignment_letter'    => 'Assignment Letter Approval Flow',
+            'overtime'             => 'Overtime Approval Flow',
+            'training'             => 'Training Enrollment Approval Flow',
+            'reimbursement'        => 'Reimbursement Approval Flow',
+            'promotion'            => 'Promotion Approval Flow',
+            'asset_assignment'     => 'Asset Assignment Approval Flow',
+            'benefit_assignment'   => 'Benefit Assignment Approval Flow',
+            'shift_swap'           => 'Shift Swap Approval Flow',
+            'document'             => 'Employee Document Approval Flow',
+        ];
 
-        // Step 1 → Manager (idempotent)
-        ApprovalStep::firstOrCreate(
-            [
-                'approval_flow_id' => $flow->id,
-                'step_order' => 1,
-            ],
-            [
-                'role_id' => $manager->id,
-            ]
-        );
+        foreach ($flows as $module => $name) {
+            $flow = ApprovalFlow::firstOrCreate(
+                ['module' => $module],
+                ['name' => $name]
+            );
 
-        // Step 2 → HR (idempotent)
-        ApprovalStep::firstOrCreate(
-            [
-                'approval_flow_id' => $flow->id,
-                'step_order' => 2,
-            ],
-            [
-                'role_id' => $hr->id,
-            ]
-        );
+            // Step 1 → Manager
+            ApprovalStep::firstOrCreate(
+                [
+                    'approval_flow_id' => $flow->id,
+                    'step_order' => 1,
+                ],
+                ['role_id' => $manager->id]
+            );
 
-        $this->command?->info('Approval Flow for Leave seeded successfully.');
+            // Step 2 → HR
+            ApprovalStep::firstOrCreate(
+                [
+                    'approval_flow_id' => $flow->id,
+                    'step_order' => 2,
+                ],
+                ['role_id' => $hr->id]
+            );
 
-        // ==============================
-        // Assignment Letter Approval Flow
-        // ==============================
-        $letterFlow = ApprovalFlow::firstOrCreate(
-            ['module' => 'assignment_letter'],
-            ['name' => 'Assignment Letter Approval Flow']
-        );
-
-        ApprovalStep::firstOrCreate(
-            [
-                'approval_flow_id' => $letterFlow->id,
-                'step_order' => 1,
-            ],
-            [
-                'role_id' => $manager->id,
-            ]
-        );
-
-        ApprovalStep::firstOrCreate(
-            [
-                'approval_flow_id' => $letterFlow->id,
-                'step_order' => 2,
-            ],
-            [
-                'role_id' => $hr->id,
-            ]
-        );
-
-        $this->command?->info('Approval Flow for Assignment Letter seeded successfully.');
-
-        // ==============================
-        // Overtime Approval Flow
-        // ==============================
-        $overtimeFlow = ApprovalFlow::firstOrCreate(
-            ['module' => 'overtime'],
-            ['name' => 'Overtime Approval Flow']
-        );
-
-        ApprovalStep::firstOrCreate(
-            [
-                'approval_flow_id' => $overtimeFlow->id,
-                'step_order' => 1,
-            ],
-            [
-                'role_id' => $manager->id,
-            ]
-        );
-
-        ApprovalStep::firstOrCreate(
-            [
-                'approval_flow_id' => $overtimeFlow->id,
-                'step_order' => 2,
-            ],
-            [
-                'role_id' => $hr->id,
-            ]
-        );
-
-        $this->command?->info('Approval Flow for Overtime seeded successfully.');
+            $this->command?->info("Approval Flow for {$name} seeded successfully.");
+        }
     }
 }

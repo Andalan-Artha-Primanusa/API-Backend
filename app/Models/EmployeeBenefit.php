@@ -19,12 +19,15 @@ class EmployeeBenefit extends Model
         'status',
         'notes',
         'assigned_by',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
         'effective_from' => 'date',
         'effective_to' => 'date',
         'custom_amount' => 'decimal:2',
+        'current_step' => 'integer',
     ];
 
     public function employee(): BelongsTo
@@ -40,5 +43,10 @@ class EmployeeBenefit extends Model
     public function assigner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function approvalFlow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class);
     }
 }

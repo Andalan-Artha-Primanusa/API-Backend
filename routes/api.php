@@ -250,14 +250,19 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         });
     });
 
-    // Approval Flows - SUPER ADMIN ONLY (system-critical configuration)
-    Route::middleware('role:super_admin')->prefix('approval-flows')->group(function () {
-        Route::get('/', [ApprovalFlowController::class, 'index']);
-        Route::post('/', [ApprovalFlowController::class, 'store']);
-        Route::get('/{id}', [ApprovalFlowController::class, 'show']);
-        Route::put('/{id}', [ApprovalFlowController::class, 'update']);
-        Route::delete('/{id}', [ApprovalFlowController::class, 'destroy']);
-    });
+// Approval Flows - SUPER ADMIN ONLY (system-critical configuration)
+Route::middleware('role:super_admin')->prefix('approval-flows')->group(function () {
+    Route::get('/', [ApprovalFlowController::class, 'index']);
+    Route::post('/', [ApprovalFlowController::class, 'store']);
+    Route::get('/{id}', [ApprovalFlowController::class, 'show']);
+    Route::put('/{id}', [ApprovalFlowController::class, 'update']);
+    Route::delete('/{id}', [ApprovalFlowController::class, 'destroy']);
+});
+
+// Approval History - authenticated users can view history
+Route::middleware('auth:sanctum')->prefix('approval-history')->group(function () {
+    Route::get('/{module}/{moduleId}', [ApprovalFlowController::class, 'history']);
+});
 
     Route::middleware('role:admin,hr,super_admin')->prefix('compliance')->group(function () {
         Route::get('/overview', [ComplianceController::class, 'overview']);
@@ -405,6 +410,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::delete('/{id}', [AssetController::class, 'destroy']);
             Route::post('/{id}/assign', [AssetController::class, 'assign']);
             Route::put('/assignments/{assignmentId}/return', [AssetController::class, 'returnAsset']);
+            Route::put('/assignments/{assignmentId}/approve', [AssetController::class, 'approveAssignment']);
+            Route::put('/assignments/{assignmentId}/reject', [AssetController::class, 'rejectAssignment']);
         });
 
         Route::prefix('documents')->group(function () {
@@ -416,6 +423,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/{id}', [EmployeeDocumentController::class, 'update']);
             Route::delete('/{id}', [EmployeeDocumentController::class, 'destroy']);
             Route::put('/{id}/review', [EmployeeDocumentController::class, 'review']);
+            Route::put('/{id}/approve', [EmployeeDocumentController::class, 'approveDocument']);
+            Route::put('/{id}/reject', [EmployeeDocumentController::class, 'rejectDocument']);
         });
 
         Route::prefix('requests')->group(function () {
@@ -467,6 +476,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::put('/{id}', [BenefitController::class, 'update']);
             Route::delete('/{id}', [BenefitController::class, 'destroy']);
             Route::post('/{id}/assign', [BenefitController::class, 'assignToEmployee']);
+            Route::put('/assignments/{assignmentId}/approve', [BenefitController::class, 'approveBenefitAssignment']);
+            Route::put('/assignments/{assignmentId}/reject', [BenefitController::class, 'rejectBenefitAssignment']);
         });
 
         Route::prefix('performance')->group(function () {
@@ -559,6 +570,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
             Route::get('/shift-swaps', [WorkforcePolicyController::class, 'shiftSwapIndex']);
             Route::post('/shift-swaps', [WorkforcePolicyController::class, 'shiftSwapStore']);
             Route::put('/shift-swaps/{id}', [WorkforcePolicyController::class, 'shiftSwapApprove']);
+            Route::put('/shift-swaps/{id}/approve', [WorkforcePolicyController::class, 'shiftSwapApproveAction']);
+            Route::put('/shift-swaps/{id}/reject', [WorkforcePolicyController::class, 'shiftSwapRejectAction']);
             Route::get('/overtime-rules', [WorkforcePolicyController::class, 'overtimeRuleIndex']);
             Route::post('/overtime-rules', [WorkforcePolicyController::class, 'overtimeRuleStore']);
             Route::get('/overtime-rules/{id}', [WorkforcePolicyController::class, 'overtimeRuleShow']);

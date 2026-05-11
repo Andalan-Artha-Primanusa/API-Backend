@@ -29,6 +29,8 @@ class EmployeeDocument extends Model
         'reviewed_at',
         'review_notes',
         'is_confidential',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
@@ -55,6 +57,11 @@ class EmployeeDocument extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function approvalFlow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 
     public function getFileUrlAttribute(): ?string

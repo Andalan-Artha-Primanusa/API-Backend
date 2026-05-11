@@ -8,6 +8,7 @@ use App\Models\Asset as InventoryAsset;
 use App\Models\AssetAssignment as InventoryAssetAssignment;
 use App\Models\Employee;
 use App\Models\UserNotification;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -192,6 +193,14 @@ class AssetController extends Controller
 
         $asset->update(['status' => 'assigned']);
 
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $approvalService->applyToModel('asset_assignment', $assignment);
+            $assignment->refresh();
+        } catch (\RuntimeException $e) {
+            // No approval flow configured — fall back to direct assignment
+        }
+
         $employee = Employee::with('user')->find($validated['employee_id']);
         if ($employee?->user) {
             UserNotification::create([
@@ -209,7 +218,65 @@ class AssetController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Asset assigned successfully', $assignment->load('asset', 'employee.user.profile', 'assignedBy:id,name,email'), 201);
+        return ApiResponse::success('Asset assigned successfully', $assignment->load('asset', 'employee.user.profile', 'assignedBy:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user'), 201);
+    }
+
+    public function approveAssignment(Request $request, int $assignmentId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $assignment = InventoryAssetAssignment::with('approvalFlow.steps.role', 'approvalFlow.steps.user', 'asset')->findOrFail($assignmentId);
+
+        if (!$assignment->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this assignment', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($assignment, $user, 'approved', $request->note);
+
+            if ($result['final']) {
+                $assignment->asset->update(['status' => 'assigned']);
+            }
+
+            return ApiResponse::success('Asset assignment approved', $result['model']->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
+    }
+
+    public function rejectAssignment(Request $request, int $assignmentId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $assignment = InventoryAssetAssignment::with('approvalFlow.steps.role', 'approvalFlow.steps.user', 'asset')->findOrFail($assignmentId);
+
+        if (!$assignment->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this assignment', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($assignment, $user, 'rejected', $request->note ?? $request->input('note'));
+
+            $assignment->asset->update(['status' => 'available']);
+
+            return ApiResponse::success('Asset assignment rejected', $result['model']->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
     }
 
     public function returnAsset(Request $request, int $assignmentId): JsonResponse
@@ -317,13 +384,15 @@ class AssetController extends Controller
 
         $validated = $request->validate([
             'per_page' => 'sometimes|integer|min:1|max:100',
-            'status'   => 'sometimes|string|in:assigned,returned',
+            'status'   => 'sometimes|string|in:assigned,returned,pending,approved,rejected',
         ]);
 
         $query = InventoryAssetAssignment::with([
             'asset',
             'employee.user:id,name,email',
             'assignedBy:id,name,email',
+            'approvalFlow.steps.role',
+            'approvalFlow.steps.user',
         ])->latest();
 
         if (!empty($validated['status'])) {

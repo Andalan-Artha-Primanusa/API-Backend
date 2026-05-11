@@ -7,6 +7,7 @@ use App\Helpers\ApiResponse;
 use App\Models\OvertimeRequest;
 use App\Models\OvertimeEvidence;
 use App\Models\UserNotification;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -122,8 +123,51 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $overtimeRequest = OvertimeRequest::with('employee.user')->findOrFail($id);
+        $overtimeRequest = OvertimeRequest::with('employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
 
+        // Apply approval flow on first approval if not yet configured
+        if (!$overtimeRequest->approval_flow_id && $overtimeRequest->status === 'pending') {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $approvalService->applyToModel('overtime', $overtimeRequest);
+                $overtimeRequest->refresh();
+            } catch (\RuntimeException $e) {
+                // No approval flow configured, continue with simple approval
+            }
+        }
+
+        // Use approval flow if configured
+        if ($overtimeRequest->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($overtimeRequest, $user, 'approved', $request->note);
+
+                $overtimeRequest = $result['model'];
+                $overtimeRequest->load(['employee.user', 'approver', 'evidences', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+
+                if ($result['final']) {
+                    // Send notification
+                    if ($overtimeRequest->employee && $overtimeRequest->employee->user) {
+                        UserNotification::create([
+                            'user_id' => $overtimeRequest->employee->user->id,
+                            'title' => 'Lembur Disetujui',
+                            'message' => 'Pengajuan lembur Anda tanggal ' . $overtimeRequest->date->format('d M Y') . ' telah disetujui sepenuhnya.',
+                            'type' => 'overtime',
+                            'is_read' => false,
+                        ]);
+                    }
+                    return ApiResponse::success('Overtime fully approved', $overtimeRequest);
+                }
+
+                return ApiResponse::success('Approved - menunggu persetujuan ' . ($result['next_role'] ?? 'berikutnya'), $overtimeRequest);
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step approval
         if ($overtimeRequest->status !== 'pending') {
             return ApiResponse::error('Request already processed', null, 422);
         }
@@ -163,8 +207,37 @@ class OvertimeController extends Controller
             'reject_reason' => 'sometimes|string|max:500',
         ]);
 
-        $overtimeRequest = OvertimeRequest::with('employee.user')->findOrFail($id);
+        $overtimeRequest = OvertimeRequest::with('employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
 
+        // Use approval flow if configured
+        if ($overtimeRequest->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($overtimeRequest, $user, 'rejected', $validated['reject_reason'] ?? null);
+
+                $overtimeRequest = $result['model'];
+                $overtimeRequest->load(['employee.user', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+
+                // Send notification
+                if ($overtimeRequest->employee && $overtimeRequest->employee->user) {
+                    UserNotification::create([
+                        'user_id' => $overtimeRequest->employee->user->id,
+                        'title' => 'Lembur Ditolak',
+                        'message' => 'Pengajuan lembur Anda tanggal ' . $overtimeRequest->date->format('d M Y') . ' telah ditolak.',
+                        'type' => 'overtime',
+                        'is_read' => false,
+                    ]);
+                }
+
+                return ApiResponse::success('Overtime rejected', $overtimeRequest);
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step rejection
         if ($overtimeRequest->status !== 'pending') {
             return ApiResponse::error('Request already processed', null, 422);
         }

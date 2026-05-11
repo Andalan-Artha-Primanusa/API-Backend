@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Benefit;
 use App\Models\Employee;
 use App\Models\EmployeeBenefit;
+use App\Services\ApprovalFlowService;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -152,7 +153,59 @@ class BenefitController extends Controller
             'assigned_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Benefit assigned successfully', $assignment->load(['benefit', 'employee.user.profile', 'assigner:id,name,email']), 201);
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $approvalService->applyToModel('benefit_assignment', $assignment);
+            $assignment->refresh();
+        } catch (\RuntimeException $e) {
+            // No approval flow configured — fall back to direct assignment
+        }
+
+        return ApiResponse::success('Benefit assigned successfully', $assignment->load(['benefit', 'employee.user.profile', 'assigner:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']), 201);
+    }
+
+    public function approveBenefitAssignment(Request $request, int $assignmentId): JsonResponse
+    {
+        $this->authorizeManage($request);
+
+        $assignment = EmployeeBenefit::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($assignmentId);
+
+        if (!$assignment->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this benefit assignment', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($assignment, $request->user(), 'approved', $request->note);
+
+            return ApiResponse::success('Benefit assignment approved', $result['model']->fresh(['benefit', 'employee.user.profile', 'assigner:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
+    }
+
+    public function rejectBenefitAssignment(Request $request, int $assignmentId): JsonResponse
+    {
+        $this->authorizeManage($request);
+
+        $assignment = EmployeeBenefit::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($assignmentId);
+
+        if (!$assignment->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this benefit assignment', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($assignment, $request->user(), 'rejected', $request->note ?? $request->input('note'));
+
+            return ApiResponse::success('Benefit assignment rejected', $result['model']->fresh(['benefit', 'employee.user.profile', 'assigner:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
     }
 
     public function employeeBenefits(Request $request, int $employeeId): JsonResponse

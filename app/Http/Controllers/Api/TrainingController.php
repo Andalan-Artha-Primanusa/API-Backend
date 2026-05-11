@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\TrainingEnrollment;
 use App\Models\TrainingProgram;
 use App\Models\UserNotification;
+use App\Services\ApprovalFlowService;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -344,7 +345,15 @@ class TrainingController extends Controller
             'status' => 'pending',
         ]);
 
-        return ApiResponse::success('Successfully requested enrollment in training program. Waiting for approval.', $enrollment, 201);
+        // Apply approval flow
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $approvalService->applyToModel('training', $enrollment);
+        } catch (\RuntimeException $e) {
+            // If no approval flow configured, keep simple approval
+        }
+
+        return ApiResponse::success('Successfully requested enrollment in training program. Waiting for approval.', $enrollment->fresh(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']), 201);
     }
 
     public function approveEnrollment(Request $request, int $id): JsonResponse
@@ -355,12 +364,48 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+        $enrollment = TrainingEnrollment::with('program', 'employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->find($id);
 
         if (!$enrollment) {
             return ApiResponse::error('Training enrollment not found', null, 404);
         }
 
+        // Use approval flow if configured
+        if ($enrollment->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($enrollment, $user, 'approved', $request->note);
+
+                $enrollment = $result['model'];
+                $enrollment->load(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+
+                if ($result['final']) {
+                    $enrollment->update(['status' => 'enrolled']);
+
+                    if ($enrollment->employee?->user) {
+                        UserNotification::create([
+                            'user_id' => $enrollment->employee->user_id,
+                            'sender_user_id' => $user->id,
+                            'title' => 'Training Approved',
+                            'message' => 'Your request to join training: ' . $enrollment->program->title . ' has been fully approved.',
+                            'type' => 'training.approved',
+                            'category' => 'training',
+                            'data' => ['training_program_id' => $enrollment->training_program_id],
+                        ]);
+                    }
+
+                    return ApiResponse::success('Training enrollment fully approved', $enrollment);
+                }
+
+                return ApiResponse::success('Disetujui - menunggu persetujuan ' . ($result['next_role'] ?? 'berikutnya'), $enrollment);
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step approval
         if ($enrollment->status !== 'pending') {
             return ApiResponse::error('Only pending enrollments can be approved', null, 400);
         }
@@ -392,12 +437,42 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+        $enrollment = TrainingEnrollment::with('program', 'employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->find($id);
 
         if (!$enrollment) {
             return ApiResponse::error('Training enrollment not found', null, 404);
         }
 
+        // Use approval flow if configured
+        if ($enrollment->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($enrollment, $user, 'rejected', $request->note);
+
+                $enrollment = $result['model'];
+                $enrollment->load(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+
+                if ($enrollment->employee?->user) {
+                    UserNotification::create([
+                        'user_id' => $enrollment->employee->user_id,
+                        'sender_user_id' => $user->id,
+                        'title' => 'Training Rejected',
+                        'message' => 'Your request to join training: ' . $enrollment->program->title . ' has been rejected.',
+                        'type' => 'training.rejected',
+                        'category' => 'training',
+                        'data' => ['training_program_id' => $enrollment->training_program_id],
+                    ]);
+                }
+
+                return ApiResponse::success('Training enrollment rejected', $enrollment);
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step rejection
         if ($enrollment->status !== 'pending') {
             return ApiResponse::error('Only pending enrollments can be rejected', null, 400);
         }

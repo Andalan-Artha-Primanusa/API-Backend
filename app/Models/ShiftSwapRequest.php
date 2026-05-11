@@ -17,6 +17,8 @@ class ShiftSwapRequest extends Model
         'reason',
         'approved_by',
         'approved_at',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
@@ -37,5 +39,10 @@ class ShiftSwapRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function approvalFlow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 }

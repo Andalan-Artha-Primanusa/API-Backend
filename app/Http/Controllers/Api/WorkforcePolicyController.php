@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\ShiftSwapRequest;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -264,6 +266,16 @@ class WorkforcePolicyController extends Controller
             'updated_at' => now(),
         ]);
 
+        try {
+            $swap = ShiftSwapRequest::find($id);
+            if ($swap) {
+                $approvalService = app(ApprovalFlowService::class);
+                $approvalService->applyToModel('shift_swap', $swap);
+            }
+        } catch (\RuntimeException $e) {
+            // No approval flow configured — fall back to direct pending status
+        }
+
         return ApiResponse::success('Shift swap request created successfully', DB::table('shift_swap_requests')->where('id', $id)->first(), 201);
     }
 
@@ -285,6 +297,44 @@ class WorkforcePolicyController extends Controller
         ]);
 
         return ApiResponse::success('Shift swap request updated successfully', DB::table('shift_swap_requests')->where('id', $id)->first());
+    }
+
+    public function shiftSwapApproveAction(Request $request, int $id): JsonResponse
+    {
+        $swap = ShiftSwapRequest::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+
+        if (!$swap->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this request', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($swap, $request->user(), 'approved', $request->note);
+            return ApiResponse::success('Shift swap approved', $result['model']->fresh());
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
+    }
+
+    public function shiftSwapRejectAction(Request $request, int $id): JsonResponse
+    {
+        $swap = ShiftSwapRequest::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+
+        if (!$swap->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this request', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($swap, $request->user(), 'rejected', $request->note ?? $request->input('note'));
+            return ApiResponse::success('Shift swap rejected', $result['model']->fresh());
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
     }
 
     public function overtimeRuleIndex(Request $request): JsonResponse

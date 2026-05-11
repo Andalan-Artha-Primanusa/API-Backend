@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\UserNotification;
+use App\Services\ApprovalFlowService;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -177,6 +178,14 @@ class EmployeeDocumentController extends Controller
             'is_confidential' => $validated['is_confidential'] ?? false,
         ]);
 
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $approvalService->applyToModel('document', $document);
+            $document->refresh();
+        } catch (\RuntimeException $e) {
+            // No approval flow configured — fall back to direct pending
+        }
+
         UserNotification::create([
             'user_id' => $employee->user_id,
             'sender_user_id' => $user->id,
@@ -288,10 +297,39 @@ class EmployeeDocumentController extends Controller
             'review_notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $document = EmployeeDocument::with('employee.user')->find($id);
+        $document = EmployeeDocument::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->find($id);
 
         if (!$document) {
             return ApiResponse::error('Document not found', null, 404);
+        }
+
+        if ($document->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $action = $validated['status'] === 'approved' ? 'approved' : 'rejected';
+                $result = $approvalService->processApproval($document, $request->user(), $action, $validated['review_notes'] ?? null);
+
+                if ($document->employee?->user) {
+                    UserNotification::create([
+                        'user_id' => $document->employee->user_id,
+                        'sender_user_id' => $request->user()->id,
+                        'title' => 'Document reviewed',
+                        'message' => 'Your document "' . $document->title . '" has been reviewed.',
+                        'type' => 'document.reviewed',
+                        'category' => 'document_management',
+                        'data' => [
+                            'document_id' => $document->id,
+                            'status' => $result['model']->status,
+                        ],
+                    ]);
+                }
+
+                return ApiResponse::success('Employee document reviewed successfully', $result['model']->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 400);
+            }
         }
 
         $document->update([
@@ -317,6 +355,78 @@ class EmployeeDocumentController extends Controller
         }
 
         return ApiResponse::success('Employee document reviewed successfully', $document->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+    }
+
+    public function approveDocument(Request $request, int $id): JsonResponse
+    {
+        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $document = EmployeeDocument::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+
+        if (!$document->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this document', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($document, $request->user(), 'approved', $request->note);
+
+            if ($document->employee?->user) {
+                UserNotification::create([
+                    'user_id' => $document->employee->user_id,
+                    'sender_user_id' => $request->user()->id,
+                    'title' => 'Document approved',
+                    'message' => 'Your document "' . $document->title . '" has been approved.',
+                    'type' => 'document.approved',
+                    'category' => 'document_management',
+                    'data' => ['document_id' => $document->id, 'status' => $result['model']->status],
+                ]);
+            }
+
+            return ApiResponse::success('Document approved', $result['model']->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
+    }
+
+    public function rejectDocument(Request $request, int $id): JsonResponse
+    {
+        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $document = EmployeeDocument::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+
+        if (!$document->approval_flow_id) {
+            return ApiResponse::error('No approval flow configured for this document', null, 400);
+        }
+
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $result = $approvalService->processApproval($document, $request->user(), 'rejected', $request->note ?? $request->input('note'));
+
+            if ($document->employee?->user) {
+                UserNotification::create([
+                    'user_id' => $document->employee->user_id,
+                    'sender_user_id' => $request->user()->id,
+                    'title' => 'Document rejected',
+                    'message' => 'Your document "' . $document->title . '" has been rejected.',
+                    'type' => 'document.rejected',
+                    'category' => 'document_management',
+                    'data' => ['document_id' => $document->id, 'status' => $result['model']->status],
+                ]);
+            }
+
+            return ApiResponse::success('Document rejected', $result['model']->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
+        }
     }
 
     public function expiring(Request $request): JsonResponse
@@ -379,19 +489,19 @@ class EmployeeDocumentController extends Controller
 
         return $document->employee?->user_id === $user->id;
     }
-public function download($filename)
-{
-    // 🔥 pakai disk('public') BUKAN manual "public/..."
-    $path = "employee-documents/1/" . $filename;
 
-    if (!Storage::disk('public')->exists($path)) {
-        return response()->json([
-            'message' => 'File tidak ditemukan',
-            'debug_path' => $path,
-            'files' => Storage::disk('public')->files('employee-documents/1')
-        ], 404);
+    public function download($filename)
+    {
+        $path = "employee-documents/1/" . $filename;
+
+        if (!Storage::disk('public')->exists($path)) {
+            return response()->json([
+                'message' => 'File tidak ditemukan',
+                'debug_path' => $path,
+                'files' => Storage::disk('public')->files('employee-documents/1')
+            ], 404);
+        }
+
+        return Storage::disk('public')->download($path);
     }
-
-    return Storage::disk('public')->download($path);
-}
 }

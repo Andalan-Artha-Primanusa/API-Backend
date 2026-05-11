@@ -16,11 +16,14 @@ class AssetAssignment extends Model
         'status',
         'assignment_note',
         'return_note',
+        'approval_flow_id',
+        'current_step',
     ];
 
     protected $casts = [
         'assigned_at' => 'datetime',
         'returned_at' => 'datetime',
+        'current_step' => 'integer',
     ];
 
     public function asset(): BelongsTo
@@ -36,5 +39,10 @@ class AssetAssignment extends Model
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function approvalFlow(): BelongsTo
+    {
+        return $this->belongsTo(ApprovalFlow::class);
     }
 }

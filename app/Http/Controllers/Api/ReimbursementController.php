@@ -8,6 +8,7 @@ use App\Models\Reimbursement;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\StoreReimbursementRequest;
 use App\Traits\HasEmployee;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 
 class ReimbursementController extends Controller
@@ -116,15 +117,37 @@ class ReimbursementController extends Controller
         if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $reimbursement = Reimbursement::findOrFail($id);
+        $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
 
+        // Use approval flow if configured
+        if ($reimbursement->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($reimbursement, $user, 'approved', $request->note);
+
+                $reimbursement = $result['model'];
+                $reimbursement->load(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+
+                if ($result['final']) {
+                    return ApiResponse::success('Reimbursement fully approved', $reimbursement);
+                }
+
+                return ApiResponse::success('Approved - proceeding to next step (' . ($result['next_role'] ?? 'next approver') . ')', $reimbursement);
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step approval
         if (!$reimbursement->isSubmitted()) {
             return ApiResponse::error('Only submitted reimbursements can be approved', null, 400);
         }
 
         $reimbursement->approve($user->id, $request->note);
 
-        return ApiResponse::success('Reimbursement approved', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        return ApiResponse::success('Reimbursement approved', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
     }
 
     public function reject(Request $request, $id): JsonResponse
@@ -134,8 +157,23 @@ class ReimbursementController extends Controller
         if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $reimbursement = Reimbursement::findOrFail($id);
+        $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
 
+        // Use approval flow if configured
+        if ($reimbursement->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($reimbursement, $user, 'rejected', $request->note ?? $request->input('note'));
+
+                return ApiResponse::success('Reimbursement rejected', $result['model']->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step rejection
         if (!$reimbursement->isSubmitted()) {
             return ApiResponse::error('Only submitted reimbursements can be rejected', null, 400);
         }
@@ -146,7 +184,7 @@ class ReimbursementController extends Controller
 
         $reimbursement->reject($user->id, $request->note);
 
-        return ApiResponse::success('Reimbursement rejected', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        return ApiResponse::success('Reimbursement rejected', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
     }
 
     public function markAsPaid(Request $request, $id): JsonResponse
@@ -244,7 +282,15 @@ class ReimbursementController extends Controller
 
         $reimbursement->submit();
 
-        return ApiResponse::success('Reimbursement submitted', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        // Apply approval flow
+        try {
+            $approvalService = app(ApprovalFlowService::class);
+            $approvalService->applyToModel('reimbursement', $reimbursement);
+        } catch (\RuntimeException $e) {
+            // If no approval flow configured, keep simple approval
+        }
+
+        return ApiResponse::success('Reimbursement submitted', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
     }
 
     public function createMyReimbursement(StoreReimbursementRequest $request): JsonResponse

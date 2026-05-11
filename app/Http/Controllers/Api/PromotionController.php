@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ApiResponse;
 use App\Models\Employee;
 use App\Models\EmployeeLifecycleEvent;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,8 +81,17 @@ class PromotionController
             ]);
 
             $event->load(['employee.user', 'initiator.user']);
+
+            // Apply approval flow
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $approvalService->applyToModel('promotion', $event);
+            } catch (\RuntimeException $e) {
+                // If no approval flow configured, keep simple approval
+            }
+
             DB::commit();
-            return ApiResponse::success('Pengajuan promosi berhasil dibuat', $event, 201);
+            return ApiResponse::success('Pengajuan promosi berhasil dibuat', $event->fresh(['employee.user', 'initiator.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user']), 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponse::error('Gagal membuat pengajuan promosi', $e->getMessage(), 500);
@@ -91,16 +101,41 @@ class PromotionController
     public function approve(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+        $event = EmployeeLifecycleEvent::with('employee', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if ($event->status !== 'pending') {
-            return ApiResponse::error('Promotion already processed', null, 400);
-        }
         if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
             return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        // Use approval flow if configured
+        if ($event->approval_flow_id) {
+            try {
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($event, $user, 'approved', $request->notes);
+
+                $event = $result['model'];
+                $event->load(['employee.user', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+
+                if ($result['final']) {
+                    // Apply promotion changes to employee record
+                    $this->applyPromotionChanges($event);
+                    return ApiResponse::success('Promosi disetujui sepenuhnya', $event);
+                }
+
+                return ApiResponse::success('Disetujui - menunggu persetujuan ' . ($result['next_role'] ?? 'berikutnya'), $event);
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step approval
+        if ($event->status !== 'pending') {
+            return ApiResponse::error('Promotion already processed', null, 400);
         }
         if (!$event->employee) {
             return ApiResponse::error('Employee not found', null, 404);
@@ -108,18 +143,7 @@ class PromotionController
 
         DB::beginTransaction();
         try {
-            $remarks = json_decode($event->remarks, true) ?? [];
-
-            $employee = $event->employee;
-
-            DB::table('employees')
-                ->where('id', $employee->id)
-                ->update([
-                    'position' => $event->to_value,
-                    'department' => !empty($remarks['new_department']) ? $remarks['new_department'] : $employee->department,
-                    'salary' => !empty($remarks['new_salary']) ? $remarks['new_salary'] : $employee->salary,
-                    'updated_at' => now(),
-                ]);
+            $this->applyPromotionChanges($event);
 
             $event->update([
                 'status' => 'approved',
@@ -139,16 +163,35 @@ class PromotionController
     public function reject(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $event = EmployeeLifecycleEvent::findOrFail($id);
+        $event = EmployeeLifecycleEvent::with('employee', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if ($event->status !== 'pending') {
-            return ApiResponse::error('Promotion already processed', null, 400);
-        }
         if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
             return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        // Use approval flow if configured
+        if ($event->approval_flow_id) {
+            try {
+                $validated = $request->validate([
+                    'remarks' => 'nullable|string|max:500',
+                ]);
+                $approvalService = app(ApprovalFlowService::class);
+                $result = $approvalService->processApproval($event, $user, 'rejected', $validated['remarks'] ?? null);
+
+                return ApiResponse::success('Promosi ditolak', $result['model']->fresh(['employee.user', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
+                return ApiResponse::error($e->getMessage(), null, 500);
+            }
+        }
+
+        // Fallback: simple single-step rejection
+        if ($event->status !== 'pending') {
+            return ApiResponse::error('Promotion already processed', null, 400);
         }
 
         $validated = $request->validate([
@@ -163,6 +206,28 @@ class PromotionController
         ]);
 
         return ApiResponse::success('Promosi ditolak', $event);
+    }
+
+    /**
+     * Apply promotion changes to employee record.
+     */
+    private function applyPromotionChanges(EmployeeLifecycleEvent $event): void
+    {
+        $remarks = json_decode($event->remarks, true) ?? [];
+        $employee = $event->employee;
+
+        if (!$employee) {
+            return;
+        }
+
+        DB::table('employees')
+            ->where('id', $employee->id)
+            ->update([
+                'position' => $event->to_value,
+                'department' => !empty($remarks['new_department']) ? $remarks['new_department'] : $employee->department,
+                'salary' => !empty($remarks['new_salary']) ? $remarks['new_salary'] : $employee->salary,
+                'updated_at' => now(),
+            ]);
     }
 
     public function destroy(Request $request, int $id): JsonResponse
