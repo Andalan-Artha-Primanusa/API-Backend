@@ -51,7 +51,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -83,7 +83,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -110,7 +110,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

@@ -23,7 +23,17 @@ class PromotionController
         ])
         ->where('event_type', 'promotion');
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin()) {
+            // Admin/HR/SuperAdmin: see all
+        } elseif ($user->isManager()) {
+            $employeeId = $user->employee?->id;
+            $subordinateIds = Employee::where('manager_id', $employeeId)->pluck('id');
+            $query->where(function ($q) use ($employeeId, $subordinateIds) {
+                $q->whereIn('employee_id', $subordinateIds)
+                  ->orWhere('employee_id', $employeeId)
+                  ->orWhere('initiated_by_id', $employeeId);
+            });
+        } else {
             $employeeId = $user->employee?->id;
             $query->where(function ($q) use ($employeeId) {
                 $q->where('employee_id', $employeeId)
@@ -106,7 +116,7 @@ class PromotionController
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager()) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -168,7 +178,7 @@ class PromotionController
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager()) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -238,7 +248,7 @@ class PromotionController
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager()) {
             return ApiResponse::error('Forbidden', null, 403);
         }
         if ($event->status !== 'pending') {
@@ -262,8 +272,8 @@ class PromotionController
         ])
         ->where('event_type', 'promotion');
 
-        if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin()) {
-            // Admin/HR can see all promotions
+        if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->isManager()) {
+            // Admin/HR/Manager can see all promotions
         } else {
             // Regular user: see promotions where they are the employee OR they initiated it
             $employeeId = $employee ? $employee->id : 0;
@@ -328,7 +338,7 @@ class PromotionController
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager()) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -358,7 +368,7 @@ class PromotionController
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager()) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 

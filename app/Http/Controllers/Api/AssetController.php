@@ -18,7 +18,7 @@ class AssetController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -89,7 +89,7 @@ class AssetController extends Controller
         }
 
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             $employee = $user->employee;
             $hasAssignment = $asset->assignments->contains(fn ($assignment) => $assignment->employee_id === $employee?->id && $assignment->status === 'assigned');
 
@@ -225,7 +225,7 @@ class AssetController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -255,7 +255,7 @@ class AssetController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -378,7 +378,7 @@ class AssetController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

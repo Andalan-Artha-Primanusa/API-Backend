@@ -13,7 +13,7 @@ class LeaveTypeController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -24,7 +24,7 @@ class LeaveTypeController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

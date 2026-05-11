@@ -247,7 +247,7 @@ class BenefitController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             abort(403, 'No permission');
         }
     }

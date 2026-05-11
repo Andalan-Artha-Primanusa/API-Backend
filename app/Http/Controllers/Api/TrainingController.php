@@ -64,7 +64,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -109,7 +109,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -126,7 +126,7 @@ class TrainingController extends Controller
             'mode' => 'sometimes|string|in:online,offline,hybrid',
             'start_date' => 'sometimes|nullable|date',
             'end_date' => 'sometimes|nullable|date|after_or_equal:start_date',
-            'budget' => 'sometimes|numeric|min:0',
+            'budget' => 'sometimes|nullable|numeric|min:0',
             'status' => 'sometimes|string|in:draft,active,completed,cancelled',
         ]);
 
@@ -139,7 +139,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

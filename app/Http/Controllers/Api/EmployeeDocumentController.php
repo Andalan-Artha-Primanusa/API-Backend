@@ -112,7 +112,7 @@ class EmployeeDocumentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -288,7 +288,7 @@ class EmployeeDocumentController extends Controller
 
     public function review(Request $request, int $id): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -359,7 +359,7 @@ class EmployeeDocumentController extends Controller
 
     public function approveDocument(Request $request, int $id): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -395,7 +395,7 @@ class EmployeeDocumentController extends Controller
 
     public function rejectDocument(Request $request, int $id): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -431,7 +431,7 @@ class EmployeeDocumentController extends Controller
 
     public function expiring(Request $request): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -483,7 +483,7 @@ class EmployeeDocumentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isAdmin() || $user->isHR()) {
+        if ($user->isAdmin() || $user->isHR() || $user->isManager()) {
             return true;
         }
 

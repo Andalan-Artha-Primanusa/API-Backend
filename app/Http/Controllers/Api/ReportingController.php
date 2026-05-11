@@ -139,7 +139,7 @@ class ReportingController extends Controller
         $user = $request->user();
 
         // Only HR, Admin, and Super Admin can access reports
-        if (!($user->isHR() || $user->isAdmin() || $user->hasRole('super_admin'))) {
+        if (!($user->isHR() || $user->isAdmin() || $user->hasRole('super_admin') || $user->isManager())) {
             abort(403, 'Unauthorized to access reporting');
         }
     }
