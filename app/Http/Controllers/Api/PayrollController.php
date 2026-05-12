@@ -25,7 +25,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR()))  {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager()))  {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
     
@@ -58,7 +58,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR()))  {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager()))  {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -98,7 +98,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR()))  {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager()))  {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -161,7 +161,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -297,7 +297,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR()))  {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager()))  {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -321,7 +321,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR()))  {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager()))  {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -394,7 +394,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -465,7 +465,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 

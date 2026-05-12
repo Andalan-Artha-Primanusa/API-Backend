@@ -337,7 +337,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
 
         // REIMBURSEMENT MANAGEMENT
         Route::prefix('reimbursements')->group(function () {
-            Route::get('/', [ReimbursementController::class, 'index']);
+                Route::get('/', [ReimbursementController::class, 'index']);
             Route::post('/', [ReimbursementController::class, 'store']);
             Route::get('/pending', [ReimbursementController::class, 'pending']);
             Route::get('/statistics', [ReimbursementController::class, 'statistics']);
@@ -359,22 +359,6 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
 
         Route::prefix('attendance')->group(function () {
             Route::get('/employee/{userId}/intelligence', [AttendanceController::class, 'employeeIntelligence']);
-        });
-
-        Route::prefix('leave-types')->group(function () {
-            Route::get('/', [LeaveTypeController::class, 'index']);
-            Route::get('/{id}', [LeaveTypeController::class, 'show']);
-            Route::post('/', [LeaveTypeController::class, 'store']);
-            Route::put('/{id}', [LeaveTypeController::class, 'update']);
-            Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
-        });
-
-        Route::prefix('leave-policies')->group(function () {
-            Route::get('/', [LeavePolicyController::class, 'index']);
-            Route::get('/{id}', [LeavePolicyController::class, 'show']);
-            Route::post('/', [LeavePolicyController::class, 'store']);
-            Route::put('/{id}', [LeavePolicyController::class, 'update']);
-            Route::delete('/{id}', [LeavePolicyController::class, 'destroy']);
         });
 
         Route::prefix('training')->group(function () {
@@ -617,6 +601,23 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         Route::delete('/{id}', [LeaveController::class, 'destroy']);
     });
 
+    // 📖 Leave Reference Data - accessible to all authenticated users for ESS leave creation
+    Route::prefix('leave-types')->group(function () {
+        Route::get('/', [LeaveTypeController::class, 'index']);
+        Route::get('/{id}', [LeaveTypeController::class, 'show']);
+        Route::post('/', [LeaveTypeController::class, 'store']);
+        Route::put('/{id}', [LeaveTypeController::class, 'update']);
+        Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
+    });
+
+    Route::prefix('leave-policies')->group(function () {
+        Route::get('/', [LeavePolicyController::class, 'index']);
+        Route::get('/{id}', [LeavePolicyController::class, 'show']);
+        Route::post('/', [LeavePolicyController::class, 'store']);
+        Route::put('/{id}', [LeavePolicyController::class, 'update']);
+        Route::delete('/{id}', [LeavePolicyController::class, 'destroy']);
+    });
+
     /*
     |--------------------------------------------------------------------------
     | HR / MANAGER / ADMIN ROUTES
@@ -701,6 +702,16 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::post('/', [NotificationController::class, 'store']);
         });
     });
+
+    // MENU PERMISSIONS (accessible to admin/hr who can manage roles)
+    Route::middleware('role:admin,super_admin')->prefix('admin/menus')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\MenuController::class, 'definitions']);
+        Route::post('/assign-role', [\App\Http\Controllers\Api\MenuController::class, 'assignRole']);
+        Route::delete('/{menuKey}/roles/{roleId}', [\App\Http\Controllers\Api\MenuController::class, 'removeRole']);
+    });
+
+    // USER MENUS (accessible to all authenticated users)
+    Route::get('/user/menus', [\App\Http\Controllers\Api\MenuController::class, 'userMenus']);
 
     Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
         Route::apiResource('locations', LocationController::class);

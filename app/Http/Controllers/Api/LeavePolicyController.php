@@ -12,25 +12,15 @@ class LeavePolicyController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $policies = LeavePolicy::latest('year')->get();
+        // 📖 READ-ONLY reference data - all authenticated users can view
+        $policies = LeavePolicy::where('active', true)->latest('year')->get();
 
         return ApiResponse::success('Leave policies retrieved successfully', $policies);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $user = $request->user();
-
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
+        // 📖 READ-ONLY reference data - all authenticated users can view
         $policy = LeavePolicy::find($id);
 
         if (!$policy) {

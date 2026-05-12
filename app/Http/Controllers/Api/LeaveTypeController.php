@@ -12,22 +12,14 @@ class LeaveTypeController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->isManager())) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
-        $types = LeaveType::latest()->get();
+        // 📖 READ-ONLY reference data - all authenticated users can view
+        $types = LeaveType::where('is_active', true)->latest()->get();
         return ApiResponse::success('Leave types retrieved successfully', $types);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->isManager())) {
-            return ApiResponse::error('Forbidden', 'No permission', 403);
-        }
-
+        // 📖 READ-ONLY reference data - all authenticated users can view
         $type = LeaveType::find($id);
         if (!$type) {
             return ApiResponse::error('Leave type not found', null, 404);
