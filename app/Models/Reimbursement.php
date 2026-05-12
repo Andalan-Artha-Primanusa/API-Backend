@@ -13,6 +13,7 @@ class Reimbursement extends Model
 
     protected $fillable = [
         'employee_id',
+        'payroll_id',
         'title',
         'description',
         'amount',
@@ -47,6 +48,12 @@ class Reimbursement extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    // 🔥 Linked payroll
+    public function payroll()
+    {
+        return $this->belongsTo(Payroll::class);
     }
 
     // 🔥 Approved by user

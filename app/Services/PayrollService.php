@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Leave;
 use App\Models\Payroll;
+use App\Models\Reimbursement;
 use App\Models\OvertimeRequest;
 use App\Enums\LeaveStatus;
 use Illuminate\Support\Facades\DB;
@@ -13,76 +15,141 @@ use Carbon\Carbon;
 class PayrollService
 {
     /**
-     * Calculate and generate payroll for a single employee
+     * Calculate and generate payroll for a single employee.
      *
      * @throws \DomainException
      */
-    public function calculateAndCreate(Employee $employee, string $period, float $allowance = 0, float $bonus = 0): Payroll
-    {
-        $gaji = $employee->salary;
+    public function calculateAndCreate(
+        Employee $employee,
+        string $period,
+        float $allowance = 0,
+        float $bonus = 0
+    ): Payroll {
+        $gaji = (float) $employee->salary;
 
         if (!$gaji) {
             throw new \DomainException('Salary employee belum di set');
         }
 
-        // =========================
-        // 🔥 OVERTIME CALCULATION
-        // =========================
-        $overtimePay = $this->calculateOvertimePay($employee, $period, $gaji);
+        // ── Earnings components ─────────────────────────────────────────
+        $overtimePay        = $this->calculateOvertimePay($employee, $period, $gaji);
+        $paidLeaveData      = $this->calculatePaidLeave($employee, $period, $gaji);
+        $paidLeaveDays      = $paidLeaveData['days'];
+        $paidLeaveAmount    = $paidLeaveData['amount'];
+        $reimbData          = $this->calculateReimbursement($employee, $period);
+        $reimbursementAmount = $reimbData['amount'];
+        $reimbIds            = $reimbData['ids'];
 
-        // =========================
-        // 🏖️ PAID LEAVE CALCULATION
-        // =========================
-        $paidLeaveData = $this->calculatePaidLeave($employee, $period, $gaji);
-        $paidLeaveDays = $paidLeaveData['days'];
-        $paidLeaveAmount = $paidLeaveData['amount'];
+        $bruto = $gaji + $allowance + $bonus + $overtimePay + $paidLeaveAmount + $reimbursementAmount;
 
-        $bruto = $gaji + $allowance + $bonus + $overtimePay + $paidLeaveAmount;
+        // ── Deduction components ─────────────────────────────────────────
+        $lateData      = $this->calculateLateDeduction($employee, $period, $gaji);
+        $lateDays      = $lateData['days'];
+        $lateDeduction = $lateData['deduction'];
 
-        $bpjs_kesehatan = $gaji * 0.01;
-        $bpjs_ketenagakerjaan = ($gaji * 0.02) + ($gaji * 0.01);
+        $bpjs_kesehatan       = $gaji * 0.01;
+        $bpjs_ketenagakerjaan = $gaji * 0.03; // JHT 2% + JP 1%
 
-        $netto_tahun = ($bruto * 12) * 0.95;
-        $ptkp = 54000000;
-        $pkp = max(0, $netto_tahun - $ptkp);
+        // PPh21 progresif (biaya jabatan 5%)
+        $netto_tahun  = ($bruto * 12) * 0.95;
+        $ptkp         = 54_000_000;
+        $pkp          = max(0, $netto_tahun - $ptkp);
 
-        if ($pkp <= 60000000) {
+        if ($pkp <= 60_000_000) {
             $pph21_tahun = $pkp * 0.05;
         } else {
-            $pph21_tahun = (60000000 * 0.05) + (($pkp - 60000000) * 0.15);
+            $pph21_tahun = (60_000_000 * 0.05) + (($pkp - 60_000_000) * 0.15);
         }
 
-        $pph21 = $pph21_tahun / 12;
+        $pph21          = $pph21_tahun / 12;
+        $total_deduction = $bpjs_kesehatan + $bpjs_ketenagakerjaan + $pph21 + $lateDeduction;
+        $take_home_pay   = $bruto - $total_deduction;
 
-        $total_deduction = $bpjs_kesehatan + $bpjs_ketenagakerjaan + $pph21;
-        $take_home_pay = $bruto - $total_deduction;
+        // ── Persist ──────────────────────────────────────────────────────
+        return DB::transaction(function () use (
+            $employee, $period, $gaji, $allowance, $bonus,
+            $overtimePay, $paidLeaveDays, $paidLeaveAmount,
+            $lateDays, $lateDeduction,
+            $reimbursementAmount, $reimbIds,
+            $bpjs_kesehatan, $bpjs_ketenagakerjaan, $pph21,
+            $total_deduction, $take_home_pay
+        ) {
+            $payroll = Payroll::create([
+                'employee_id'          => $employee->id,
+                'period'               => $period,
+                'basic_salary'         => $gaji,
+                'allowance'            => $allowance,
+                'bonus'                => $bonus,
+                'overtime_pay'         => $overtimePay,
+                'paid_leave_days'      => $paidLeaveDays,
+                'paid_leave_amount'    => $paidLeaveAmount,
+                'late_days'            => $lateDays,
+                'late_deduction'       => $lateDeduction,
+                'reimbursement_amount' => $reimbursementAmount,
+                'bpjs_kesehatan'       => $bpjs_kesehatan,
+                'bpjs_ketenagakerjaan' => $bpjs_ketenagakerjaan,
+                'pph21'                => $pph21,
+                'total_deduction'      => $total_deduction,
+                'take_home_pay'        => $take_home_pay,
+                'status'               => 'draft',
+            ]);
 
-        return Payroll::create([
-            'employee_id' => $employee->id,
-            'period' => $period,
-            'basic_salary' => $gaji,
-            'allowance' => $allowance,
-            'bonus' => $bonus,
-            'overtime_pay' => $overtimePay,
-            'paid_leave_days' => $paidLeaveDays,
-            'paid_leave_amount' => $paidLeaveAmount,
-            'bpjs_kesehatan' => $bpjs_kesehatan,
-            'bpjs_ketenagakerjaan' => $bpjs_ketenagakerjaan,
-            'pph21' => $pph21,
-            'total_deduction' => $total_deduction,
-            'take_home_pay' => $take_home_pay,
-            'status' => 'draft'
-        ]);
+            // Link approved reimbursements to this payroll
+            if (!empty($reimbIds)) {
+                Reimbursement::whereIn('id', $reimbIds)
+                    ->update(['payroll_id' => $payroll->id]);
+            }
+
+            return $payroll;
+        });
     }
 
     /**
-     * Calculate overtime pay for an employee in a given period.
+     * Generate payrolls for all ACTIVE employees for a given period.
+     */
+    public function generateMonthlyBulk(string $period): array
+    {
+        $employees = Employee::whereNotNull('salary')
+            ->where('status', 'active')
+            ->get();
+
+        $result = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($employees as $employee) {
+                $exists = Payroll::where('employee_id', $employee->id)
+                    ->where('period', $period)
+                    ->exists();
+
+                if ($exists) {
+                    continue;
+                }
+
+                $payroll  = $this->calculateAndCreate($employee, $period);
+                $result[] = $payroll;
+            }
+
+            DB::commit();
+            return $result;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE CALCULATION HELPERS
+    // =========================================================================
+
+    /**
+     * Calculate overtime pay from approved OvertimeRequests in the period.
      */
     private function calculateOvertimePay(Employee $employee, string $period, float $monthlySalary): float
     {
         [$year, $month] = explode('-', $period);
         $startDate = "{$year}-{$month}-01";
-        $endDate = date('Y-m-t', strtotime($startDate));
+        $endDate   = date('Y-m-t', strtotime($startDate));
 
         $approvedOvertimes = OvertimeRequest::with('overtimeRule')
             ->where('employee_id', $employee->id)
@@ -91,26 +158,23 @@ class PayrollService
             ->get();
 
         if ($approvedOvertimes->isEmpty()) {
-            return 0;
+            return 0.0;
         }
 
-        $workingDaysPerMonth = 22;
-        $hoursPerDay = 8;
-        $hourlyRate = $monthlySalary / $workingDaysPerMonth / $hoursPerDay;
-
-        $totalPay = 0;
+        $hourlyRate = $monthlySalary / 22 / 8;
+        $totalPay   = 0.0;
 
         foreach ($approvedOvertimes as $ot) {
-            $multiplier = $ot->overtimeRule?->multiplier ?? 1.5;
-            $hours = $ot->overtime_minutes / 60;
-            $totalPay += $hours * $hourlyRate * $multiplier;
+            $multiplier  = $ot->overtimeRule?->multiplier ?? 1.5;
+            $hours       = $ot->overtime_minutes / 60;
+            $totalPay   += $hours * $hourlyRate * $multiplier;
         }
 
         return round($totalPay, 2);
     }
 
     /**
-     * Calculate paid leave days and amount for an employee in a given period.
+     * Calculate paid leave amount from approved paid-leave requests in the period.
      *
      * @return array{days: float, amount: float}
      */
@@ -118,7 +182,7 @@ class PayrollService
     {
         [$year, $month] = explode('-', $period);
         $startDate = "{$year}-{$month}-01";
-        $endDate = date('Y-m-t', strtotime($startDate));
+        $endDate   = date('Y-m-t', strtotime($startDate));
 
         $approvedLeaves = Leave::with('leaveType')
             ->where('employee_id', $employee->id)
@@ -135,18 +199,18 @@ class PayrollService
             ->filter(fn(Leave $leave) => $leave->leaveType?->is_paid);
 
         if ($approvedLeaves->isEmpty()) {
-            return ['days' => 0, 'amount' => 0];
+            return ['days' => 0, 'amount' => 0.0];
         }
 
         $periodStart = Carbon::parse($startDate);
-        $periodEnd = Carbon::parse($endDate);
-        $totalDays = 0;
+        $periodEnd   = Carbon::parse($endDate);
+        $totalDays   = 0;
 
         foreach ($approvedLeaves as $leave) {
-            $leaveStart = Carbon::parse($leave->start_date);
-            $leaveEnd = Carbon::parse($leave->end_date);
+            $leaveStart   = Carbon::parse($leave->start_date);
+            $leaveEnd     = Carbon::parse($leave->end_date);
             $overlapStart = $leaveStart->max($periodStart);
-            $overlapEnd = $leaveEnd->min($periodEnd);
+            $overlapEnd   = $leaveEnd->min($periodEnd);
 
             if ($overlapStart <= $overlapEnd) {
                 $totalDays += $overlapStart->diffInDays($overlapEnd) + 1;
@@ -154,47 +218,94 @@ class PayrollService
         }
 
         if ($totalDays === 0) {
-            return ['days' => 0, 'amount' => 0];
+            return ['days' => 0, 'amount' => 0.0];
         }
 
-        $workingDaysPerMonth = 22;
-        $dailyRate = $monthlySalary / $workingDaysPerMonth;
+        $dailyRate = $monthlySalary / 22;
 
         return [
-            'days' => $totalDays,
+            'days'   => $totalDays,
             'amount' => round($dailyRate * $totalDays, 2),
         ];
     }
 
     /**
-     * Generate payrolls for all active employees for a given period
-     * 
-     * @throws \Exception
+     * Calculate late attendance deduction using per-minute rate formula.
+     * Formula: total_late_minutes × (monthly_salary / 22 / 8 / 60)
+     *
+     * @return array{days: int, deduction: float}
      */
-    public function generateMonthlyBulk(string $period): array
+    private function calculateLateDeduction(Employee $employee, string $period, float $monthlySalary): array
     {
-        $employees = Employee::whereNotNull('salary')->get();
-        $result = [];
+        [$year, $month] = explode('-', $period);
+        $startDate = "{$year}-{$month}-01";
+        $endDate   = date('Y-m-t', strtotime($startDate));
 
-        DB::beginTransaction();
+        $employee->loadMissing('workSchedule');
 
-        try {
-            foreach ($employees as $employee) {
-                $exists = Payroll::where('employee_id', $employee->id)
-                    ->where('period', $period)
-                    ->exists();
+        if (!$employee->user_id || !$employee->workSchedule) {
+            return ['days' => 0, 'deduction' => 0.0];
+        }
 
-                if ($exists) continue;
+        $lateAttendances = Attendance::where('user_id', $employee->user_id)
+            ->where('status', 'late')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get();
 
-                $payroll = $this->calculateAndCreate($employee, $period);
-                $result[] = $payroll;
+        if ($lateAttendances->isEmpty()) {
+            return ['days' => 0, 'deduction' => 0.0];
+        }
+
+        $perMinuteRate    = $monthlySalary / 22 / 8 / 60;
+        $totalLateMinutes = 0;
+        $schedCheckIn     = $employee->workSchedule->check_in_time; // "08:00:00"
+
+        foreach ($lateAttendances as $att) {
+            if (!$att->check_in) {
+                continue;
             }
 
-            DB::commit();
-            return $result;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
+            $scheduledCheckIn = Carbon::parse($att->date . ' ' . $schedCheckIn);
+            $actualCheckIn    = Carbon::parse($att->check_in);
+
+            $lateMinutes = $actualCheckIn->gt($scheduledCheckIn)
+                ? (int) $scheduledCheckIn->diffInMinutes($actualCheckIn)
+                : 0;
+
+            $totalLateMinutes += $lateMinutes;
         }
+
+        return [
+            'days'      => $lateAttendances->count(),
+            'deduction' => round($perMinuteRate * $totalLateMinutes, 2),
+        ];
+    }
+
+    /**
+     * Calculate reimbursement amount from approved reimbursements in the period
+     * that have not yet been assigned to a payroll.
+     *
+     * @return array{amount: float, ids: int[]}
+     */
+    private function calculateReimbursement(Employee $employee, string $period): array
+    {
+        [$year, $month] = explode('-', $period);
+        $startDate = "{$year}-{$month}-01";
+        $endDate   = date('Y-m-t', strtotime($startDate));
+
+        $reimbursements = Reimbursement::where('employee_id', $employee->id)
+            ->where('status', 'approved')
+            ->whereNull('payroll_id') // not yet included in any payroll
+            ->whereBetween('expense_date', [$startDate, $endDate])
+            ->get();
+
+        if ($reimbursements->isEmpty()) {
+            return ['amount' => 0.0, 'ids' => []];
+        }
+
+        return [
+            'amount' => round((float) $reimbursements->sum('amount'), 2),
+            'ids'    => $reimbursements->pluck('id')->toArray(),
+        ];
     }
 }

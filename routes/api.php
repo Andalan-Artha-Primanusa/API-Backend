@@ -649,6 +649,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::get('/', [PayrollController::class, 'index']);
             Route::post('/', [PayrollController::class, 'store']);
             Route::post('/generate/monthly', [PayrollController::class, 'generateMonthly']);
+            Route::post('/bulk-pay', [PayrollController::class, 'bulkPay']);          // NEW
             Route::get('/export/bca-klikpay', [PayrollController::class, 'exportBcaKlikPay']);
             Route::get('/export/summary', [PayrollController::class, 'exportPayrollSummaryCsv']);
             Route::get('/{id}', [PayrollController::class, 'show']);
@@ -657,9 +658,13 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::get('/{id}/export-pdf', [PayrollController::class, 'exportSlipPdf']);
             Route::put('/{id}', [PayrollController::class, 'update']);
             Route::delete('/{id}', [PayrollController::class, 'destroy']);
-            Route::post('/{id}/approve', [PayrollController::class, 'approve']);
+            Route::post('/{id}/approve', [PayrollController::class, 'approve']);         // backward-compat
+            Route::post('/{id}/manager-approve', [PayrollController::class, 'managerApprove']); // NEW
+            Route::post('/{id}/hr-approve', [PayrollController::class, 'hrApprove']);   // NEW
+            Route::post('/{id}/reject', [PayrollController::class, 'reject']);           // NEW
             Route::post('/{id}/pay', [PayrollController::class, 'pay']);
         });
+
 
         Route::prefix('payroll-details')->group(function () {
             Route::get('/{payroll_id}', [PayrollDetailController::class, 'index']);
