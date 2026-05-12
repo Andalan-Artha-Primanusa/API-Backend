@@ -20,7 +20,7 @@ class RoleController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $roles = Role::with('permissions')
+        $roles = Role::withCount('permissions')
             ->where('name', '!=', User::ROLE_SUPER_ADMIN)
             ->get();
 
