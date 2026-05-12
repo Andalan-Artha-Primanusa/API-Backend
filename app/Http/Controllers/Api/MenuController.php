@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class MenuController
 {
-    private const MENU_DEFINITIONS = [
+    public const MENU_DEFINITIONS = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'path' => '/dashboard'],
         ['key' => 'employee-dashboard', 'label' => 'Dashboard Saya', 'path' => '/employee-dashboard'],
         ['key' => 'employees', 'label' => 'Manajemen Karyawan', 'path' => '/employees'],
