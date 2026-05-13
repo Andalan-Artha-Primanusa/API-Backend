@@ -174,6 +174,17 @@ class LeaveService
             throw new \DomainException('It is not your turn to approve this request.');
         }
 
+        if (!is_null($step->user_id) && $step->user_id !== $approver->id) {
+            throw new \DomainException('This request is assigned to a specific approver.');
+        }
+
+        if ($step->role->name === 'manager') {
+            $subordinates = $approver->teamMembers()->pluck('user_id');
+            if (!$subordinates->contains($leave->user_id)) {
+                throw new \DomainException('You can only approve requests for your direct subordinates.');
+            }
+        }
+
         // Rejection — immediately finalize
         if ($action === 'rejected') {
             $this->releaseAnnualLeave($leave);

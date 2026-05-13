@@ -66,15 +66,29 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSuperAdmin() && !$user->hasPermission('user.view')) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('user.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $users = User::with([
+        $query = User::with([
             'roles.permissions',
             'profile',
             'employee.manager.profile',
-        ])->paginate(15);
+        ]);
+
+        if ($request->has('role')) {
+            $roleParam = $request->role;
+            $query->whereHas('roles', function ($q) use ($roleParam) {
+                if (is_numeric($roleParam)) {
+                    $q->where('roles.id', $roleParam);
+                } else {
+                    $q->where('roles.name', $roleParam);
+                }
+            });
+        }
+
+        $perPage = $request->get('per_page', 15);
+        $users = $query->paginate($perPage);
 
         return ApiResponse::success('User list', $users);
     }

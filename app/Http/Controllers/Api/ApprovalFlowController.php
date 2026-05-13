@@ -57,6 +57,7 @@ class ApprovalFlowController extends Controller
             $flow = ApprovalFlow::create([
                 'name' => $validated['name'],
                 'module' => $validated['module'],
+                'is_active' => true,
             ]);
 
             foreach ($validated['steps'] as $step) {

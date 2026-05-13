@@ -8,6 +8,7 @@ use App\Http\Requests\StoreLeaveRequest;
 use App\Http\Requests\ApproveLeaveRequest;
 use App\Models\Leave;
 use App\Models\LeavePolicy;
+use App\Models\ApprovalFlow;
 use App\Services\LeaveService;
 use App\Traits\HasEmployee;
 use App\Enums\LeaveStatus;
@@ -188,16 +189,54 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        $query = Leave::with(['user.profile', 'employee.user.profile'])
+        $query = Leave::with(['user.profile', 'employee.user.profile', 'flow.steps.role'])
             ->where('status', LeaveStatus::Pending);
 
-        // Scope by role: managers see only subordinates' pending leaves
-        if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
-            $subordinateUserIds = $user->teamMembers()->pluck('user_id');
-            $query->whereIn('user_id', $subordinateUserIds);
-        } elseif (!$user->isAdmin() && !$user->isHR()) {
-            $query->where('user_id', $user->id);
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            // Admin / Super Admin melihat semua pending leaves
+            $leaves = $query->latest()->get();
+            return ApiResponse::success('Pending leaves', $leaves);
         }
+
+        // Cari flow aktif untuk modul leave
+        $flow = ApprovalFlow::where('module', 'leave')
+            ->where('is_active', true)
+            ->with('steps.role')
+            ->first();
+
+        if (!$flow || !$flow->steps) {
+            return ApiResponse::success('Pending leaves', []);
+        }
+
+        // Filter steps di mana user saat ini berhak melakukan approval
+        $validSteps = $flow->steps->filter(function ($step) use ($user) {
+            if (!$step->role) {
+                return false;
+            }
+            $hasRole = $user->hasRole($step->role->name);
+            $userMatches = is_null($step->user_id) || $step->user_id === $user->id;
+            return $hasRole && $userMatches;
+        });
+
+        if ($validSteps->isEmpty()) {
+            return ApiResponse::success('Pending leaves', []);
+        }
+
+        // Terapkan filter visibilitas berdasarkan current_step dan batasan subordinate jika manager
+        $query->where('approval_flow_id', $flow->id)
+            ->where(function ($q) use ($validSteps, $user) {
+                $subordinateUserIds = $user->teamMembers()->pluck('user_id');
+
+                foreach ($validSteps as $step) {
+                    $q->orWhere(function ($sq) use ($step, $subordinateUserIds) {
+                        $sq->where('current_step', $step->step_order);
+                        // Jika role yang ditugaskan untuk step ini adalah manager, batasi ke subordinate
+                        if ($step->role->name === 'manager') {
+                            $sq->whereIn('user_id', $subordinateUserIds);
+                        }
+                    });
+                }
+            });
 
         $leaves = $query->latest()->get();
 
