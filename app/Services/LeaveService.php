@@ -288,15 +288,28 @@ class LeaveService
         }
 
         $year = (int) date('Y');
-        $policy = LeavePolicy::where('year', $year)->first() ?? LeavePolicy::firstOrCreate(
-            ['year' => $year],
-            ['annual_allowance' => 12, 'carry_over_allowance' => 0, 'max_pending_days' => 30, 'active' => true]
-        );
+        // Prioritaskan kebijakan aktif terbaru untuk tahun ini agar mencerminkan konfigurasi terkini admin
+        $policy = LeavePolicy::where('year', $year)->where('active', true)->latest()->first()
+            ?? LeavePolicy::where('year', $year)->latest()->first()
+            ?? LeavePolicy::firstOrCreate(
+                ['year' => $year],
+                ['annual_allowance' => 12, 'carry_over_allowance' => 0, 'max_pending_days' => 30, 'active' => true]
+            );
 
         $balance = $this->getOrCreateAnnualBalance($employee->id, $year, $policy);
 
+        // Jika rujukan kebijakan di saldo karyawan belum selaras dengan kebijakan aktif terbaru, sinkronisasikan secara otomatis
+        if ($balance->leave_policy_id !== $policy->id) {
+            $balance->update([
+                'leave_policy_id' => $policy->id,
+                'allocated_days' => $policy->annual_allowance
+            ]);
+        }
+
+        $actualPolicy = $balance->fresh('policy')->policy ?? $policy;
+
         return [
-            'policy' => $policy,
+            'policy' => $actualPolicy,
             'balance' => [
                 'allocated_days' => $balance->allocated_days,
                 'carry_over_days' => $balance->carry_over_days,
