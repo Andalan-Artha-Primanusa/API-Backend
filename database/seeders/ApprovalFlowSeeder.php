@@ -33,6 +33,9 @@ class ApprovalFlowSeeder extends Seeder
             'benefit_assignment'   => 'Benefit Assignment Approval Flow',
             'shift_swap'           => 'Shift Swap Approval Flow',
             'document'             => 'Employee Document Approval Flow',
+            'payroll'              => 'Payroll Approval Flow',
+            'kpi'                  => 'KPI Approval Flow',
+            'benefit_assignment'   => 'Benefit Assignment Approval Flow',
         ];
 
         foreach ($flows as $module => $name) {

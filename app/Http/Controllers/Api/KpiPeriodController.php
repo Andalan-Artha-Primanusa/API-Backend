@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\ApprovalFlow;
 use App\Models\KpiPeriod;
 use App\Models\KpiItem;
 use App\Helpers\ApiResponse;
@@ -259,6 +260,11 @@ class KpiPeriodController extends Controller
     public function approve(Request $request, int $id): JsonResponse
     {
         try {
+            $flow = ApprovalFlow::where('module', 'kpi')->where('is_active', true)->first();
+            if (!$flow) {
+                return ApiResponse::error('Approval flow untuk KPI belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
+            }
+
             $period = KpiPeriod::with('items')->findOrFail($id);
 
             $validated = $request->validate([

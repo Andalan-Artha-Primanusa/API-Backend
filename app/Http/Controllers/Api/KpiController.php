@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use App\Models\ApprovalFlow;
 use App\Models\Kpi;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\StoreKpiRequest;
@@ -218,6 +219,11 @@ class KpiController extends Controller
         try {
             if ($id <= 0) {
                 throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+            }
+
+            $flow = ApprovalFlow::where('module', 'kpi')->where('is_active', true)->first();
+            if (!$flow) {
+                return ApiResponse::error('Approval flow untuk KPI belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
             }
 
             $kpi = Kpi::findOrFail($id);

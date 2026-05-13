@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApprovalFlow;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Helpers\ApiResponse;
@@ -205,6 +206,11 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
+        $flow = ApprovalFlow::where('module', 'payroll')->where('is_active', true)->first();
+        if (!$flow) {
+            return ApiResponse::error('Approval flow untuk Payroll belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
+        }
+
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
@@ -237,6 +243,11 @@ class PayrollController extends Controller
 
         if (!($user->isAdmin() || $user->isHR())) {
             return ApiResponse::error('Forbidden', 'Only HR or Admin can perform final approval', 403);
+        }
+
+        $flow = ApprovalFlow::where('module', 'payroll')->where('is_active', true)->first();
+        if (!$flow) {
+            return ApiResponse::error('Approval flow untuk Payroll belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
         }
 
         $payroll = Payroll::find($id);

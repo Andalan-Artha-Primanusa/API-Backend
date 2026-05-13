@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Models\Position;
 use App\Models\WorkSchedule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -246,21 +248,29 @@ class OrgStructureController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $departments = Employee::query()
-            ->select('department')
-            ->whereNotNull('department')
-            ->distinct()
-            ->orderBy('department')
-            ->pluck('department')
-            ->values();
+        try {
+            $departments = Department::orderBy('name')->get();
+        } catch (\Exception) {
+            $departments = Employee::query()
+                ->select('department')
+                ->whereNotNull('department')
+                ->distinct()
+                ->orderBy('department')
+                ->pluck('department')
+                ->values();
+        }
 
-        $positions = Employee::query()
-            ->select('position')
-            ->whereNotNull('position')
-            ->distinct()
-            ->orderBy('position')
-            ->pluck('position')
-            ->values();
+        try {
+            $positions = Position::orderBy('name')->get();
+        } catch (\Exception) {
+            $positions = Employee::query()
+                ->select('position')
+                ->whereNotNull('position')
+                ->distinct()
+                ->orderBy('position')
+                ->pluck('position')
+                ->values();
+        }
 
         $statuses = [
             Employee::STATUS_ONBOARDING,

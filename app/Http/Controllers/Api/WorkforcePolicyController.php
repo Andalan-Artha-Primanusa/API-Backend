@@ -246,7 +246,7 @@ class WorkforcePolicyController extends Controller
 
     public function shiftSwapIndex(Request $request): JsonResponse
     {
-        $data = DB::table('shift_swap_requests')->orderByDesc('id')->paginate($request->integer('per_page', 15));
+        $data = ShiftSwapRequest::with(['requester.user', 'target.user'])->orderByDesc('id')->paginate($request->integer('per_page', 15));
         return ApiResponse::success('Shift swap requests retrieved successfully', $data);
     }
 
@@ -276,7 +276,7 @@ class WorkforcePolicyController extends Controller
             // No approval flow configured — fall back to direct pending status
         }
 
-        return ApiResponse::success('Shift swap request created successfully', DB::table('shift_swap_requests')->where('id', $id)->first(), 201);
+        return ApiResponse::success('Shift swap request created successfully', ShiftSwapRequest::with(['requester.user', 'target.user'])->find($id), 201);
     }
 
     public function shiftSwapApprove(Request $request, int $id): JsonResponse
