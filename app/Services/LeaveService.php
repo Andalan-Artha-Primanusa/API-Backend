@@ -52,15 +52,13 @@ class LeaveService
         }
 
         return DB::transaction(function () use ($user, $data, $flow, $employee, $totalDays, $leaveTypeCode, $leaveTypeId) {
-            if ($leaveTypeCode === Leave::TYPE_ANNUAL) {
-                $balance = $this->getOrCreateAnnualBalance($employee->id, (int) date('Y', strtotime($data['start_date'])));
+            $balance = $this->getOrCreateAnnualBalance($employee->id, (int) date('Y', strtotime($data['start_date'])));
 
-                if ($balance->availableDays() < $totalDays) {
-                    throw new \RuntimeException('Insufficient annual leave balance.');
-                }
-
-                $balance->increment('pending_days', $totalDays);
+            if ($balance->availableDays() < $totalDays) {
+                throw new \RuntimeException('Insufficient leave balance for this request.');
             }
+
+            $balance->increment('pending_days', $totalDays);
 
             $leave = Leave::create([
                 'user_id'          => $user->id,
@@ -321,14 +319,12 @@ class LeaveService
         $newDays = Leave::calculateDays($newStart, $newEnd);
 
         return DB::transaction(function () use ($leave, $data, $oldDays, $newStart, $newEnd, $newDays) {
-            if ($leave->type === Leave::TYPE_ANNUAL) {
-                $balance = $this->getOrCreateAnnualBalance($leave->employee_id, (int) date('Y', strtotime($newStart)));
-                $balance->decrement('pending_days', $oldDays);
-                if ($balance->availableDays() < $newDays) {
-                    throw new \RuntimeException('Insufficient annual leave balance.');
-                }
-                $balance->increment('pending_days', $newDays);
+            $balance = $this->getOrCreateAnnualBalance($leave->employee_id, (int) date('Y', strtotime($newStart)));
+            $balance->decrement('pending_days', $oldDays);
+            if ($balance->availableDays() < $newDays) {
+                throw new \RuntimeException('Insufficient leave balance for this update.');
             }
+            $balance->increment('pending_days', $newDays);
 
             $leave->update([
                 'start_date' => $newStart,
@@ -343,9 +339,7 @@ class LeaveService
 
     public function deletePendingLeave(Leave $leave): void
     {
-        if ($leave->type === Leave::TYPE_ANNUAL) {
-            $this->releaseAnnualLeave($leave);
-        }
+        $this->releaseAnnualLeave($leave);
 
         $leave->delete();
     }
@@ -388,9 +382,7 @@ class LeaveService
 
     private function finalizeAnnualLeave(Leave $leave): void
     {
-        if ($leave->type !== Leave::TYPE_ANNUAL) {
-            return;
-        }
+        // Selalu proses finalisasi saldo agar real-time dashboard terupdate
 
         $year = (int) Carbon::parse($leave->start_date)->format('Y');
         $balance = $this->getOrCreateAnnualBalance($leave->employee_id, $year);
@@ -401,9 +393,7 @@ class LeaveService
 
     private function releaseAnnualLeave(Leave $leave): void
     {
-        if ($leave->type !== Leave::TYPE_ANNUAL) {
-            return;
-        }
+        // Selalu rilis saldo jika ditolak atau dibatalkan
 
         $year = (int) Carbon::parse($leave->start_date)->format('Y');
         $balance = $this->getOrCreateAnnualBalance($leave->employee_id, $year);
