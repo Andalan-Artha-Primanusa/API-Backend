@@ -19,6 +19,7 @@ class MenuController
         ['key' => 'absensi-waktu.reports', 'label' => 'Laporan', 'path' => '/attendance/reports'],
         ['key' => 'manajemen-cuti', 'label' => 'Manajemen Cuti'],
         ['key' => 'manajemen-cuti.permohonan', 'label' => 'Permohonan Cuti', 'path' => '/leave/requests'],
+        ['key' => 'manajemen-cuti.persetujuan', 'label' => 'Persetujuan Cuti', 'path' => '/leave/approval'],
         ['key' => 'manajemen-cuti.kalender', 'label' => 'Kalender Cuti', 'path' => '/leave/calendar'],
         ['key' => 'manajemen-cuti.saldo', 'label' => 'Saldo Cuti', 'path' => '/leave/balance'],
         ['key' => 'penggajian', 'label' => 'Penggajian & Slip Gaji'],
