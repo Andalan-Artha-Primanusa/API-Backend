@@ -46,7 +46,7 @@ class ApprovalFlowController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'module' => 'required|string|max:100|unique:approval_flows,module',
+            'module' => 'required|string|max:100|unique:approval_flows,module,NULL,id,is_active,1',
             'steps' => 'required|array|min:1',
             'steps.*.step_order' => 'required|integer|min:1|distinct',
             'steps.*.role_id' => 'required|exists:roles,id',
@@ -90,7 +90,7 @@ class ApprovalFlowController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'module' => 'sometimes|string|max:100|unique:approval_flows,module,' . $flow->id,
+            'module' => 'sometimes|string|max:100|unique:approval_flows,module,' . $flow->id . ',id,is_active,1',
             'is_active' => 'sometimes|boolean',
             'steps' => 'sometimes|array|min:1',
             'steps.*.step_order' => 'required_with:steps|integer|min:1|distinct',
