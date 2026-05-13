@@ -18,7 +18,7 @@ class ApprovalFlowService
      */
     public function applyToModel(string $module, Model $model): Model
     {
-        $flow = ApprovalFlow::where('module', $module)->with('steps.role', 'steps.user')->first();
+        $flow = ApprovalFlow::where('module', $module)->where('is_active', true)->with('steps.role', 'steps.user')->first();
 
         if (!$flow) {
             throw new \RuntimeException("Approval flow for '{$module}' has not been configured.");

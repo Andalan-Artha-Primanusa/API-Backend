@@ -45,7 +45,7 @@ class AssignmentLetterController
             return ApiResponse::error('Forbidden: only admin/HR can create letters for other users', null, 403);
         }
 
-        $flow = ApprovalFlow::where('module', 'assignment_letter')->with('steps')->first();
+        $flow = ApprovalFlow::where('module', 'assignment_letter')->where('is_active', true)->with('steps')->first();
         if (!$flow) {
             return ApiResponse::error('Approval flow for assignment letter not configured', null, 500);
         }

@@ -250,8 +250,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         });
     });
 
-// Approval Flows - SUPER ADMIN ONLY (system-critical configuration)
-Route::middleware('role:super_admin')->prefix('approval-flows')->group(function () {
+// Approval Flows - admin/HR/super_admin can manage
+Route::middleware('role:admin,hr,super_admin')->prefix('approval-flows')->group(function () {
     Route::get('/', [ApprovalFlowController::class, 'index']);
     Route::post('/', [ApprovalFlowController::class, 'store']);
     Route::get('/{id}', [ApprovalFlowController::class, 'show']);

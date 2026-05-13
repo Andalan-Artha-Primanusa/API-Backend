@@ -9,6 +9,11 @@ class ApprovalFlow extends Model
     protected $fillable = [
         'name',
         'module',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     // 🔥 relasi ke steps

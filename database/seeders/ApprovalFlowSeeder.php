@@ -38,7 +38,7 @@ class ApprovalFlowSeeder extends Seeder
         foreach ($flows as $module => $name) {
             $flow = ApprovalFlow::firstOrCreate(
                 ['module' => $module],
-                ['name' => $name]
+                ['name' => $name, 'is_active' => true]
             );
 
             // Step 1 → Manager

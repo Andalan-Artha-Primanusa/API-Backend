@@ -24,7 +24,7 @@ class LeaveService
      */
     public function createLeave(User $user, array $data): Leave
     {
-        $flow = ApprovalFlow::where('module', 'leave')->first();
+        $flow = ApprovalFlow::where('module', 'leave')->where('is_active', true)->first();
 
         if (!$flow) {
             throw new \RuntimeException('Leave approval flow has not been configured.');

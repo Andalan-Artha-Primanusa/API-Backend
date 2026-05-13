@@ -10,6 +10,7 @@ use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ApprovalFlowController extends Controller
 {
@@ -90,6 +91,7 @@ class ApprovalFlowController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'module' => 'sometimes|string|max:100|unique:approval_flows,module,' . $flow->id,
+            'is_active' => 'sometimes|boolean',
             'steps' => 'sometimes|array|min:1',
             'steps.*.step_order' => 'required_with:steps|integer|min:1|distinct',
             'steps.*.role_id' => 'required_with:steps|exists:roles,id',
@@ -97,7 +99,7 @@ class ApprovalFlowController extends Controller
         ]);
 
         $flow = DB::transaction(function () use ($flow, $validated) {
-            $flow->update(collect($validated)->only(['name', 'module'])->filter()->toArray());
+            $flow->update(collect($validated)->only(['name', 'module', 'is_active'])->filter(fn($v) => $v !== null)->toArray());
 
             if (array_key_exists('steps', $validated)) {
                 $flow->steps()->delete();
@@ -132,10 +134,20 @@ class ApprovalFlowController extends Controller
             return ApiResponse::error('Approval flow not found', null, 404);
         }
 
-        $deleted = $flow->toArray();
-        $flow->delete();
+        try {
+            $deleted = $flow->toArray();
+            $flow->delete();
 
-        return ApiResponse::success('Approval flow deleted successfully', $deleted);
+            return ApiResponse::success('Approval flow deleted successfully', $deleted);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete approval flow', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return ApiResponse::error('Gagal menghapus approval flow: ' . $e->getMessage(), null, 500);
+        }
     }
 
     public function history(Request $request, string $module, int $moduleId): JsonResponse
