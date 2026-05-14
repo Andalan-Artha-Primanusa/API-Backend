@@ -195,7 +195,12 @@ class LeaveController extends Controller
 
         if ($user->isSuperAdmin() || $user->isAdmin() || $user->hasPermission('leave.approve')) {
             $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
-            $leaves->getCollection()->each->setAttribute('can_act', true);
+            
+            $leaves->getCollection()->transform(function ($leave) {
+                $leave->setAttribute('can_act', true);
+                return $leave;
+            });
+
             return ApiResponse::success('Pending leaves', $leaves);
         }
 
@@ -242,7 +247,10 @@ class LeaveController extends Controller
         $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
 
         // For non-admin users, leaves are already filtered to only show their steps
-        $leaves->getCollection()->each->setAttribute('can_act', true);
+        $leaves->getCollection()->transform(function ($leave) {
+            $leave->setAttribute('can_act', true);
+            return $leave;
+        });
 
         return ApiResponse::success('Pending leaves', $leaves);
     }

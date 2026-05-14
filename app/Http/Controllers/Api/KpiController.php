@@ -33,9 +33,6 @@ class KpiController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Get all KPIs with filtering by manager scope.
-     */
     public function index(Request $request): JsonResponse
     {
         try {
@@ -47,11 +44,10 @@ class KpiController extends Controller
 
             // Optimized query with eager loading
             $query = Kpi::with(self::KPI_RELATIONS)
-                ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->latest();
 
             // Scope by manager subordinates if not admin/hr
-            if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('kpi.view')) {
+            if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
                 $subordinateIds = $user->teamMembers()
                     ->pluck('id')
                     ->filter()
@@ -69,7 +65,8 @@ class KpiController extends Controller
             return ApiResponse::success('Data KPI berhasil dimuat', $kpis);
 
         } catch (\Exception $e) {
-            return ApiResponse::error('Gagal memuat data KPI', null, 500);
+            \Log::error('KPI INDEX ERROR: ' . $e->getMessage());
+            return ApiResponse::error('Gagal memuat data KPI: ' . $e->getMessage(), null, 500);
         }
     }
 
