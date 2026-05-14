@@ -157,7 +157,23 @@ class ApprovalFlowController extends Controller
             $approvalService = app(ApprovalFlowService::class);
             $history = $approvalService->getHistory($module, $moduleId);
 
-            return ApiResponse::success('Approval history retrieved', $history);
+            $totalSteps = 0;
+            if ($history->isNotEmpty()) {
+                $flowId = $history->first()->approval_flow_id;
+                $flow = \App\Models\ApprovalFlow::withCount('steps')->find($flowId);
+                $totalSteps = $flow ? $flow->steps_count : 0;
+            }
+
+            if ($totalSteps === 0) {
+                $totalSteps = $history->max('step_order') ?? 0;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Approval history retrieved',
+                'data' => $history,
+                'meta' => ['total_steps' => $totalSteps],
+            ]);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch approval history', null, 500);
         }

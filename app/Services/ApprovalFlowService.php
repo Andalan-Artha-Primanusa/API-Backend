@@ -6,6 +6,7 @@ use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowHistory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ApprovalFlowService
@@ -76,12 +77,12 @@ class ApprovalFlowService
 
         // Check if user has the required role
         if (!$approver->hasRole($step->role->name)) {
-            throw new \DomainException('It is not your turn to approve this request.');
+            throw new \DomainException('Bukan giliran Anda untuk menyetujui permintaan ini.');
         }
 
         // Check if specific user is assigned to this step
         if ($step->user_id && $step->user_id !== $approver->id) {
-            throw new \DomainException('A specific approver has been assigned to this step.');
+            throw new \DomainException('Approver khusus telah ditugaskan untuk langkah ini.');
         }
 
         // Record approval history
@@ -161,5 +162,54 @@ class ApprovalFlowService
             ->orderBy('step_order')
             ->orderBy('acted_at')
             ->get();
+    }
+
+    /**
+     * Check if the given user can act on the current step of the model.
+     * Returns true if no flow is configured (anyone can act).
+     */
+    public function canUserAct(Model $model, User $user): bool
+    {
+        if (!$model->approval_flow_id || !$model->approvalFlow) {
+            return true;
+        }
+
+        $flow = $model->approvalFlow;
+        $flow->loadMissing('steps.role', 'steps.user');
+
+        $step = $flow->steps->where('step_order', $model->current_step)->first();
+        if (!$step) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$user->hasRole($step->role->name)) {
+            return false;
+        }
+
+        if ($step->user_id && $step->user_id !== $user->id) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Add can_act flag to a collection of models for the given user.
+     * Also eager-loads approvalFlow.steps.role if not already loaded.
+     */
+    public function addCanActToListings(Collection $items, User $user): Collection
+    {
+        return $items->map(function ($item) use ($user) {
+            if ($item instanceof Model && $item->relationLoaded('approvalFlow')) {
+                $item->can_act = $this->canUserAct($item, $user);
+            } else {
+                $item->can_act = true;
+            }
+            return $item;
+        });
     }
 }

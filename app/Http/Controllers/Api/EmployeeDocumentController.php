@@ -112,11 +112,20 @@ class EmployeeDocumentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        return ApiResponse::success('Employee documents retrieved successfully', $this->buildQuery($request)->paginate($request->integer('per_page', 15)));
+        $documents = $this->buildQuery($request)->paginate($request->integer('per_page', 15));
+        $service = app(ApprovalFlowService::class);
+        $documents->getCollection()->transform(function ($item) use ($service, $user) {
+            $item->can_act = $service->canUserAct($item, $user);
+            return $item;
+        });
+
+        return ApiResponse::success('Employee documents retrieved successfully', $documents);
     }
 
     public function myDocuments(Request $request): JsonResponse
@@ -452,7 +461,7 @@ class EmployeeDocumentController extends Controller
 
     protected function buildQuery(Request $request)
     {
-        $query = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email'])->latest();
+        $query = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->latest();
 
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->integer('employee_id'));

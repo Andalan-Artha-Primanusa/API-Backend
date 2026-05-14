@@ -189,12 +189,12 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        $query = Leave::with(['user.profile', 'employee.user.profile', 'flow.steps.role'])
+        $query = Leave::with(['user.profile', 'employee.user.profile', 'flow.steps.role', 'flow.steps.user'])
             ->where('status', LeaveStatus::Pending);
 
         if ($user->isSuperAdmin() || $user->isAdmin()) {
-            // Admin / Super Admin melihat semua pending leaves
             $leaves = $query->latest()->get();
+            $leaves->each->setAttribute('can_act', true);
             return ApiResponse::success('Pending leaves', $leaves);
         }
 
@@ -239,6 +239,9 @@ class LeaveController extends Controller
             });
 
         $leaves = $query->latest()->get();
+
+        // For non-admin users, leaves are already filtered to only show their steps
+        $leaves->each->setAttribute('can_act', true);
 
         return ApiResponse::success('Pending leaves', $leaves);
     }

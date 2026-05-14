@@ -54,7 +54,7 @@ class KpiController extends Controller
                     ->toArray();
 
                 if (empty($subordinateIds)) {
-                    return ApiResponse::success('No KPIs available', collect());
+                    return ApiResponse::success('Tidak ada data KPI', collect());
                 }
 
                 $query->whereIn('employee_id', $subordinateIds);
@@ -62,10 +62,10 @@ class KpiController extends Controller
 
             $kpis = $query->get();
 
-            return ApiResponse::success('KPIs retrieved successfully', $kpis);
+            return ApiResponse::success('Data KPI berhasil dimuat', $kpis);
 
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch KPIs', null, 500);
+            return ApiResponse::error('Gagal memuat data KPI', null, 500);
         }
     }
 
@@ -85,13 +85,13 @@ class KpiController extends Controller
             ));
 
             return ApiResponse::success(
-                'KPI created successfully',
+                'KPI berhasil dibuat',
                 $kpi->load(self::KPI_RELATIONS),
                 201
             );
 
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create KPI', null, 500);
+            return ApiResponse::error('Gagal membuat KPI', null, 500);
         }
     }
 
@@ -102,21 +102,21 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $kpi = Kpi::with(self::KPI_RELATIONS)
                 ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->findOrFail($id);
 
-            return ApiResponse::success('KPI details', $kpi);
+            return ApiResponse::success('Detail KPI', $kpi);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch KPI', null, 500);
+            return ApiResponse::error('Gagal memuat detail KPI', null, 500);
         }
     }
 
@@ -127,7 +127,7 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $kpi = Kpi::findOrFail($id);
@@ -148,16 +148,16 @@ class KpiController extends Controller
             }
 
             return ApiResponse::success(
-                'KPI updated successfully',
+                'KPI berhasil diperbarui',
                 $kpi->fresh(self::KPI_RELATIONS)
             );
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Validation failed', $e->errors(), 422);
+            return ApiResponse::error('Validasi gagal', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update KPI', null, 500);
+            return ApiResponse::error('Gagal memperbarui KPI', null, 500);
         }
     }
 
@@ -168,21 +168,21 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $kpi = Kpi::select(['id', 'employee_id', 'title', 'target', 'achievement', 'status'])->findOrFail($id);
             $deleted = $kpi->toArray();
             $kpi->delete();
 
-            return ApiResponse::success('KPI deleted successfully', $deleted);
+            return ApiResponse::success('KPI berhasil dihapus', $deleted);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete KPI', null, 500);
+            return ApiResponse::error('Gagal menghapus KPI', null, 500);
         }
     }
 
@@ -193,7 +193,7 @@ class KpiController extends Controller
     {
         try {
             if ($employee_id <= 0) {
-                throw ValidationException::withMessages(['employee_id' => 'Invalid employee ID']);
+                throw ValidationException::withMessages(['employee_id' => 'ID karyawan tidak valid']);
             }
 
             $kpis = Kpi::with(self::KPI_RELATIONS)
@@ -202,12 +202,12 @@ class KpiController extends Controller
                 ->latest()
                 ->get();
 
-            return ApiResponse::success('Employee KPIs', $kpis);
+            return ApiResponse::success('KPI karyawan', $kpis);
 
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch KPIs', null, 500);
+            return ApiResponse::error('Gagal memuat data KPI', null, 500);
         }
     }
 
@@ -218,7 +218,7 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $flow = ApprovalFlow::where('module', 'kpi')->where('is_active', true)->first();
@@ -229,19 +229,19 @@ class KpiController extends Controller
             $kpi = Kpi::findOrFail($id);
 
             if ($kpi->status !== 'submitted') {
-                return ApiResponse::error('Invalid status', 'Only submitted KPIs can be approved', 400);
+                return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status submitted yang bisa disetujui', 400);
             }
 
             $kpi->update(['status' => 'approved']);
 
-            return ApiResponse::success('KPI approved successfully', $kpi->fresh(self::KPI_RELATIONS));
+            return ApiResponse::success('KPI berhasil disetujui', $kpi->fresh(self::KPI_RELATIONS));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to approve KPI', null, 500);
+            return ApiResponse::error('Gagal menyetujui KPI', null, 500);
         }
     }
 
@@ -265,10 +265,10 @@ class KpiController extends Controller
                 ->latest()
                 ->get();
 
-            return ApiResponse::success('My KPIs', $kpis);
+            return ApiResponse::success('KPI saya', $kpis);
 
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch your KPIs', null, 500);
+            return ApiResponse::error('Gagal memuat KPI Anda', null, 500);
         }
     }
 
@@ -279,30 +279,30 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $employee = $this->getAuthenticatedEmployee();
             $kpi = Kpi::findOrFail($id);
 
             if ($kpi->employee_id !== $employee->id) {
-                return ApiResponse::error('Forbidden', 'You cannot accept this KPI', 403);
+                return ApiResponse::error('Dilarang', 'Anda tidak dapat menerima KPI ini', 403);
             }
 
             if ($kpi->status !== 'assigned') {
-                return ApiResponse::error('Invalid status', 'Only assigned KPIs can be accepted', 400);
+                return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status assigned yang bisa diterima', 400);
             }
 
             $kpi->update(['status' => 'active']);
 
-            return ApiResponse::success('KPI accepted successfully', $kpi->fresh(self::KPI_RELATIONS));
+            return ApiResponse::success('KPI berhasil diterima', $kpi->fresh(self::KPI_RELATIONS));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to accept KPI', null, 500);
+            return ApiResponse::error('Gagal menerima KPI', null, 500);
         }
     }
 
@@ -313,18 +313,18 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $employee = $this->getAuthenticatedEmployee();
             $kpi = Kpi::findOrFail($id);
 
             if ($kpi->employee_id !== $employee->id) {
-                return ApiResponse::error('Forbidden', 'You cannot update this KPI', 403);
+                return ApiResponse::error('Dilarang', 'Anda tidak dapat memperbarui KPI ini', 403);
             }
 
             if (!in_array($kpi->status, ['active', 'submitted'])) {
-                return ApiResponse::error('Invalid status', 'Only active or submitted KPIs can be updated', 400);
+                return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status active atau submitted yang bisa diperbarui', 400);
             }
 
             $validated = $request->validate([
@@ -340,14 +340,14 @@ class KpiController extends Controller
 
             $kpi->save();
 
-            return ApiResponse::success('KPI progress updated', $kpi->fresh(self::KPI_RELATIONS));
+            return ApiResponse::success('Progres KPI diperbarui', $kpi->fresh(self::KPI_RELATIONS));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update KPI progress', null, 500);
+            return ApiResponse::error('Gagal memperbarui progres KPI', null, 500);
         }
     }
 
@@ -358,7 +358,7 @@ class KpiController extends Controller
     {
         try {
             if ($id <= 0) {
-                throw ValidationException::withMessages(['id' => 'Invalid KPI ID']);
+                throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
             $employee = $this->getAuthenticatedEmployee();
@@ -366,24 +366,24 @@ class KpiController extends Controller
 
             // Authorization: must be own KPI
             if ($kpi->employee_id !== $employee->id) {
-                return ApiResponse::error('Forbidden', 'You cannot submit this KPI', 403);
+                return ApiResponse::error('Dilarang', 'Anda tidak dapat mengajukan KPI ini', 403);
             }
 
             // Validation: must be in active status
             if ($kpi->status !== 'active') {
-                return ApiResponse::error('Invalid status', 'Only active KPIs can be submitted', 400);
+                return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status active yang bisa diajukan', 400);
             }
 
             $kpi->update(['status' => 'submitted']);
 
-            return ApiResponse::success('KPI submitted successfully', $kpi->fresh(self::KPI_RELATIONS));
+            return ApiResponse::success('KPI berhasil diajukan', $kpi->fresh(self::KPI_RELATIONS));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI record not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
         } catch (ValidationException $e) {
-            return ApiResponse::error('Invalid request', $e->errors(), 422);
+            return ApiResponse::error('Request tidak valid', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to submit KPI', null, 500);
+            return ApiResponse::error('Gagal mengajukan KPI', null, 500);
         }
     }
 }

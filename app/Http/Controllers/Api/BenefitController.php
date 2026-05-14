@@ -221,7 +221,7 @@ class BenefitController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $query = EmployeeBenefit::with(['benefit', 'assigner:id,name,email'])
+        $query = EmployeeBenefit::with(['benefit', 'assigner:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
             ->where('employee_id', $employeeId)
             ->latest();
 
@@ -229,7 +229,14 @@ class BenefitController extends Controller
             $query->where('status', $validated['status']);
         }
 
-        return ApiResponse::success('Employee benefits retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        $benefits = $query->paginate($validated['per_page'] ?? 15);
+        $service = app(\App\Services\ApprovalFlowService::class);
+        $benefits->getCollection()->transform(function ($item) use ($service, $request) {
+            $item->can_act = $service->canUserAct($item, $request->user());
+            return $item;
+        });
+
+        return ApiResponse::success('Employee benefits retrieved successfully', $benefits);
     }
 
     public function myBenefits(Request $request): JsonResponse

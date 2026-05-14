@@ -399,9 +399,16 @@ class AssetController extends Controller
             $query->where('status', $validated['status']);
         }
 
+        $assignments = $query->paginate($validated['per_page'] ?? 15);
+        $service = app(ApprovalFlowService::class);
+        $assignments->getCollection()->transform(function ($item) use ($service, $user) {
+            $item->can_act = $service->canUserAct($item, $user);
+            return $item;
+        });
+
         return ApiResponse::success(
             'Asset assignments retrieved successfully',
-            $query->paginate($validated['per_page'] ?? 15)
+            $assignments
         );
     }
 

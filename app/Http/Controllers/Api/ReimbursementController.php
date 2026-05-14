@@ -24,7 +24,7 @@ class ReimbursementController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile']);
+        $query = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
 
         // Scope by manager subordinates if not admin/hr
         if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
@@ -51,6 +51,8 @@ class ReimbursementController extends Controller
         }
 
         $reimbursements = $query->latest()->get();
+        $service = app(ApprovalFlowService::class);
+        $reimbursements = $service->addCanActToListings($reimbursements, $user);
 
         return ApiResponse::success('Reimbursements retrieved successfully', $reimbursements);
     }
@@ -205,12 +207,17 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement marked as paid', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
     }
 
-    public function pending(): JsonResponse
+    public function pending(Request $request): JsonResponse
     {
-        $reimbursements = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])
+        $user = $request->user();
+
+        $reimbursements = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
             ->where('status', 'submitted')
             ->latest()
             ->get();
+
+        $service = app(ApprovalFlowService::class);
+        $reimbursements = $service->addCanActToListings($reimbursements, $user);
 
         return ApiResponse::success('Pending reimbursements', $reimbursements);
     }

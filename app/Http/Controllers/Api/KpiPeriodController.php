@@ -29,7 +29,7 @@ class KpiPeriodController extends Controller
             if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
                 $subordinateIds = $user->teamMembers()->pluck('id')->filter()->toArray();
                 if (empty($subordinateIds)) {
-                    return ApiResponse::success('No KPI periods', collect());
+                    return ApiResponse::success('Tidak ada periode KPI', collect());
                 }
                 $query->whereIn('employee_id', $subordinateIds);
             }
@@ -38,9 +38,9 @@ class KpiPeriodController extends Controller
 
             $periods->each(fn($p) => $p->calculateOverallScore());
 
-            return ApiResponse::success('KPI periods retrieved', $periods);
+            return ApiResponse::success('Periode KPI berhasil dimuat', $periods);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch KPI periods', null, 500);
+            return ApiResponse::error('Gagal memuat periode KPI', null, 500);
         }
     }
 
@@ -95,11 +95,11 @@ class KpiPeriodController extends Controller
 
             $period->load(['employee.user', 'items']);
 
-            return ApiResponse::success('KPI period created', $period, 201);
+            return ApiResponse::success('Periode KPI berhasil dibuat', $period, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return ApiResponse::error('Validation failed', $e->errors(), 422);
+                return ApiResponse::error('Validasi gagal', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create KPI period', null, 500);
+            return ApiResponse::error('Gagal membuat periode KPI', null, 500);
         }
     }
 
@@ -114,11 +114,11 @@ class KpiPeriodController extends Controller
 
             $period->calculateOverallScore();
 
-            return ApiResponse::success('KPI period detail', $period);
+            return ApiResponse::success('Detail periode KPI', $period);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI period not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Periode KPI tidak ditemukan', 404);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch KPI period', null, 500);
+            return ApiResponse::error('Gagal memuat detail periode KPI', null, 500);
         }
     }
 
@@ -194,13 +194,13 @@ class KpiPeriodController extends Controller
             $period->calculateOverallScore();
             $period->save();
 
-            return ApiResponse::success('KPI period updated', $period->fresh(['employee.user', 'items']));
+            return ApiResponse::success('Periode KPI berhasil diperbarui', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI period not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Periode KPI tidak ditemukan', 404);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return ApiResponse::error('Validation failed', $e->errors(), 422);
+                return ApiResponse::error('Validasi gagal', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update KPI period', null, 500);
+            return ApiResponse::error('Gagal memperbarui periode KPI', null, 500);
         }
     }
 
@@ -211,7 +211,7 @@ class KpiPeriodController extends Controller
             $period = KpiPeriod::with('items')->findOrFail($id);
 
             if ($period->employee_id !== $employee->id) {
-                return ApiResponse::error('Forbidden', 'Not your KPI period', 403);
+                return ApiResponse::error('Forbidden', 'Bukan periode KPI Anda', 403);
             }
 
             $validated = $request->validate([
@@ -227,7 +227,7 @@ class KpiPeriodController extends Controller
                 }
 
                 if ($item->status !== 'draft') {
-                    return ApiResponse::error('Already submitted', 'Item is not in draft status', 400);
+                    return ApiResponse::error('Status tidak valid', 'Item sudah tidak dalam status draft', 400);
                 }
 
                 $item->status = 'submitted';
@@ -237,23 +237,23 @@ class KpiPeriodController extends Controller
                 $period = $period->fresh(['items']);
                 $this->syncPeriodStatus($period);
 
-                return ApiResponse::success('KPI item submitted', $period->fresh(['employee.user', 'items']));
+                return ApiResponse::success('Item KPI berhasil diajukan', $period->fresh(['employee.user', 'items']));
             }
 
             // Submit all items if no item_id (legacy behavior)
             if ($period->status !== 'draft') {
-                return ApiResponse::error('Already submitted', 'Period is not in draft status', 400);
+                return ApiResponse::error('Sudah diajukan', 'Periode sudah tidak dalam status draft', 400);
             }
 
             $period->items()->where('status', 'draft')->update(['status' => 'submitted']);
             $period->update(['status' => 'submitted']);
             $period->calculateOverallScore();
 
-            return ApiResponse::success('KPI period submitted', $period->fresh(['employee.user', 'items']));
+            return ApiResponse::success('Periode KPI berhasil diajukan', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI period not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Periode KPI tidak ditemukan', 404);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to submit KPI period', null, 500);
+            return ApiResponse::error('Gagal mengajukan periode KPI', null, 500);
         }
     }
 
@@ -280,7 +280,7 @@ class KpiPeriodController extends Controller
                 }
 
                 if ($item->status !== 'submitted') {
-                    return ApiResponse::error('Invalid status', 'KPI item must be submitted first', 400);
+                    return ApiResponse::error('Status tidak valid', 'Item KPI harus diajukan terlebih dahulu', 400);
                 }
 
                 $item->calculateScore();
@@ -291,12 +291,12 @@ class KpiPeriodController extends Controller
                 $period = $period->fresh(['items']);
                 $this->syncPeriodStatus($period);
 
-                return ApiResponse::success('KPI item approved', $period->fresh(['employee.user', 'items']));
+                return ApiResponse::success('Item KPI berhasil disetujui', $period->fresh(['employee.user', 'items']));
             }
 
             // Approve all items if no item_id (legacy behavior)
             if ($period->status !== 'submitted') {
-                return ApiResponse::error('Invalid status', 'KPI period must be submitted first', 400);
+                return ApiResponse::error('Status tidak valid', 'Periode KPI harus diajukan terlebih dahulu', 400);
             }
 
             foreach ($period->items as $item) {
@@ -309,11 +309,11 @@ class KpiPeriodController extends Controller
             $period->status = 'approved';
             $period->save();
 
-            return ApiResponse::success('KPI period approved', $period->fresh(['employee.user', 'items']));
+            return ApiResponse::success('Periode KPI berhasil disetujui', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI period not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Periode KPI tidak ditemukan', 404);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to approve KPI period', null, 500);
+            return ApiResponse::error('Gagal menyetujui periode KPI', null, 500);
         }
     }
 
@@ -323,11 +323,11 @@ class KpiPeriodController extends Controller
             $period = KpiPeriod::findOrFail($id);
             $period->delete();
 
-            return ApiResponse::success('KPI period deleted');
+            return ApiResponse::success('Periode KPI berhasil dihapus');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return ApiResponse::error('Not found', null, 404);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete', null, 500);
+            return ApiResponse::error('Gagal menghapus', null, 500);
         }
     }
 
@@ -344,9 +344,9 @@ class KpiPeriodController extends Controller
 
             $periods->each(fn($p) => $p->calculateOverallScore());
 
-            return ApiResponse::success('My KPI periods', $periods);
+            return ApiResponse::success('Periode KPI saya', $periods);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch KPI periods', null, 500);
+            return ApiResponse::error('Gagal memuat periode KPI', null, 500);
         }
     }
 
@@ -357,11 +357,11 @@ class KpiPeriodController extends Controller
             $period = KpiPeriod::with('items')->findOrFail($id);
 
             if ($period->employee_id !== $employee->id) {
-                return ApiResponse::error('Forbidden', 'Not your KPI period', 403);
+                return ApiResponse::error('Forbidden', 'Bukan periode KPI Anda', 403);
             }
 
             if ($period->status !== 'draft') {
-                return ApiResponse::error('Cannot edit non-draft KPI period', null, 400);
+                return ApiResponse::error('Tidak dapat mengedit periode KPI yang bukan draft', null, 400);
             }
 
             $validated = $request->validate([
@@ -374,7 +374,7 @@ class KpiPeriodController extends Controller
                 $item = $period->items->firstWhere('id', (int) $itemData['id']);
 
                 if (!$item) {
-                    return ApiResponse::error('Validation failed', [
+                    return ApiResponse::error('Validasi gagal', [
                         'items' => ['One or more KPI items do not belong to this period.'],
                     ], 422);
                 }
@@ -388,13 +388,13 @@ class KpiPeriodController extends Controller
             $period->calculateOverallScore();
             $period->save();
 
-            return ApiResponse::success('KPI period items updated', $period->fresh(['employee.user', 'items']));
+            return ApiResponse::success('Item periode KPI berhasil diperbarui', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiResponse::error('Not found', 'KPI period not found', 404);
+            return ApiResponse::error('Tidak ditemukan', 'Periode KPI tidak ditemukan', 404);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return ApiResponse::error('Validation failed', $e->errors(), 422);
+                return ApiResponse::error('Validasi gagal', $e->errors(), 422);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update KPI period items', null, 500);
+            return ApiResponse::error('Gagal memperbarui item periode KPI', null, 500);
         }
     }
 

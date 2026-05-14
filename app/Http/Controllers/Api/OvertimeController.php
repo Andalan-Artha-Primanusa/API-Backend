@@ -73,7 +73,7 @@ class OvertimeController extends Controller
         }
 
         try {
-            $query = OvertimeRequest::with(['employee', 'attendance', 'approver'])
+            $query = OvertimeRequest::with(['employee', 'attendance', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
                 ->latest('date');
 
             if ($request->has('status')) {
@@ -81,6 +81,8 @@ class OvertimeController extends Controller
             }
 
             $data = $query->get();
+            $service = app(ApprovalFlowService::class);
+            $data = $service->addCanActToListings($data, $user);
             return ApiResponse::success('Overtime requests', $data);
         } catch (\Exception $e) {
             \Log::error('OvertimeController@index ERROR', ['error' => $e->getMessage()]);
@@ -101,9 +103,12 @@ class OvertimeController extends Controller
 
         try {
             $requests = OvertimeRequest::where('status', 'pending')
-                ->with(['employee', 'attendance', 'approver'])
+                ->with(['employee', 'attendance', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
                 ->latest('date')
                 ->get();
+
+            $service = app(ApprovalFlowService::class);
+            $requests = $service->addCanActToListings($requests, $user);
 
             return ApiResponse::success('Pending overtime requests', $requests);
         } catch (\Exception $e) {

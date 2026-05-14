@@ -283,9 +283,12 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $query = TrainingEnrollment::with(['program', 'employee.user.profile'])->latest();
+        $enrollments = TrainingEnrollment::with(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->latest()->get();
 
-        return ApiResponse::success('Enrollments retrieved', $query->get());
+        $service = app(ApprovalFlowService::class);
+        $enrollments = $service->addCanActToListings($enrollments, $user);
+
+        return ApiResponse::success('Enrollments retrieved', $enrollments);
     }
 
     public function availableTrainings(Request $request): JsonResponse

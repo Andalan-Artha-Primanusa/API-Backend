@@ -20,6 +20,8 @@ class PromotionController
             'initiator.user',
             'approver',
             'reportApprover',
+            'approvalFlow.steps.role',
+            'approvalFlow.steps.user',
         ])
         ->where('event_type', 'promotion');
 
@@ -54,6 +56,11 @@ class PromotionController
         }
 
         $promotions = $query->latest()->paginate(15);
+        $service = app(ApprovalFlowService::class);
+        $promotions->getCollection()->transform(function ($item) use ($service, $user) {
+            $item->can_act = $service->canUserAct($item, $user);
+            return $item;
+        });
         return ApiResponse::success('Promotions retrieved', $promotions);
     }
 

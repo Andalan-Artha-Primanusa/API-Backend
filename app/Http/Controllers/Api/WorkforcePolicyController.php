@@ -246,7 +246,14 @@ class WorkforcePolicyController extends Controller
 
     public function shiftSwapIndex(Request $request): JsonResponse
     {
-        $data = ShiftSwapRequest::with(['requester.user', 'target.user'])->orderByDesc('id')->paginate($request->integer('per_page', 15));
+        $user = $request->user();
+
+        $data = ShiftSwapRequest::with(['requester.user', 'target.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->orderByDesc('id')->paginate($request->integer('per_page', 15));
+        $service = app(ApprovalFlowService::class);
+        $data->getCollection()->transform(function ($item) use ($service, $user) {
+            $item->can_act = $service->canUserAct($item, $user);
+            return $item;
+        });
         return ApiResponse::success('Shift swap requests retrieved successfully', $data);
     }
 
