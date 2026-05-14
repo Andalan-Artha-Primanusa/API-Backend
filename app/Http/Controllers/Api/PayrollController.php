@@ -35,7 +35,7 @@ class PayrollController extends Controller
 
         $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success(
             $data->isEmpty() ? 'No payroll data available' : 'Payroll data retrieved successfully',
@@ -50,7 +50,7 @@ class PayrollController extends Controller
         $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])
             ->where('employee_id', $employee->id)
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success(
             $data->isEmpty() ? 'No payroll data found' : 'Payroll retrieved successfully',

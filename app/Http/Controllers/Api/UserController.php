@@ -87,7 +87,7 @@ class UserController extends Controller
             });
         }
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $users = $query->paginate($perPage);
 
         return ApiResponse::success('User list', $users);

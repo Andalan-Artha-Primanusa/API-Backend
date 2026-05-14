@@ -175,7 +175,7 @@ class AttendanceController extends Controller
      * Get all attendance records with pagination and filtering (admin only).
      * 
      * Query params:
-     * - per_page: int (default: 15, max: 100)
+     * - per_page: int (default: 10, max: 100)
      * - sort_by: string (default: 'date', options: 'date', 'user_id', 'status')
      * - sort_order: string (default: 'desc', options: 'asc', 'desc')
      * - date_from: string (Y-m-d)
@@ -202,7 +202,7 @@ class AttendanceController extends Controller
                 'status'    => 'sometimes|in:on_time,late,absent',
             ]);
 
-            $perPage = $validated['per_page'] ?? 15;
+            $perPage = $validated['per_page'] ?? 10;
             $sortBy = $validated['sort_by'] ?? 'date';
             $sortOrder = $validated['sort_order'] ?? 'desc';
 

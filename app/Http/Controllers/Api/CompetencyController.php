@@ -44,7 +44,7 @@ class CompetencyController extends Controller
             });
         }
 
-        return ApiResponse::success('Competencies retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Competencies retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function store(Request $request): JsonResponse

@@ -27,7 +27,7 @@ class PositionController extends Controller
                 'department_id' => 'sometimes|integer',
             ]);
 
-            $perPage = $validated['per_page'] ?? 15;
+            $perPage = $validated['per_page'] ?? 10;
             $search = $validated['search'] ?? null;
             $departmentId = $validated['department_id'] ?? null;
 

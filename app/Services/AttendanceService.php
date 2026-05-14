@@ -211,7 +211,7 @@ class AttendanceService
             ->with(['user.employee.department', 'user.employee.position'])
             ->where('user_id', $user->id)
             ->latest('date')
-            ->paginate(15);
+            ->paginate(request()->integer('per_page', 10));
     }
 
     /**
@@ -232,7 +232,7 @@ class AttendanceService
     {
         return Attendance::with(['user.profile', 'user.employee.department', 'user.employee.position'])
             ->latest('date')
-            ->paginate(15);
+            ->paginate(request()->integer('per_page', 10));
     }
 
     /**

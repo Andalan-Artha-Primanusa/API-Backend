@@ -35,7 +35,7 @@ class TaskController
             });
         }
 
-        $tasks = $query->latest()->paginate(15);
+        $tasks = $query->latest()->paginate($request->integer('per_page', 10));
         return ApiResponse::success('Tasks retrieved', $tasks);
     }
 
@@ -116,18 +116,19 @@ class TaskController
     public function myTasks(Request $request): JsonResponse
     {
         $user = $request->user();
-        $tasks = Task::with(['assignedBy.profile'])
-            ->where('assigned_to', $user->id)
-            ->latest()
-            ->get();
+        $baseQuery = Task::where('assigned_to', $user->id);
 
         $summary = [
-            'total' => $tasks->count(),
-            'pending' => $tasks->where('status', 'pending')->count(),
-            'in_progress' => $tasks->where('status', 'in_progress')->count(),
-            'completed' => $tasks->where('status', 'completed')->count(),
-            'cancelled' => $tasks->where('status', 'cancelled')->count(),
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
+            'cancelled' => (clone $baseQuery)->where('status', 'cancelled')->count(),
         ];
+
+        $tasks = (clone $baseQuery)->with(['assignedBy.profile'])
+            ->latest()
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My tasks', [
             'tasks' => $tasks,

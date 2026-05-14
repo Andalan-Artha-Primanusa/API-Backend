@@ -57,7 +57,7 @@ class TrainingController extends Controller
             });
         }
 
-        return ApiResponse::success('Training programs retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Training programs retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function store(Request $request): JsonResponse
@@ -214,7 +214,7 @@ class TrainingController extends Controller
         if ($this->canUseAdminTrainingViews($request)) {
             $data = TrainingEnrollment::with('program', 'employee.user.profile')
                 ->latest()
-                ->get();
+                ->paginate($request->integer('per_page', 10));
 
             return ApiResponse::success('My trainings retrieved successfully', $data);
         }
@@ -224,7 +224,7 @@ class TrainingController extends Controller
         $data = TrainingEnrollment::with('program')
             ->where('employee_id', $employee->id)
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My trainings retrieved successfully', $data);
     }
@@ -283,10 +283,13 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollments = TrainingEnrollment::with(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->latest()->get();
+        $enrollments = TrainingEnrollment::with(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->latest()->paginate($request->integer('per_page', 10));
 
         $service = app(ApprovalFlowService::class);
-        $enrollments = $service->addCanActToListings($enrollments, $user);
+        $enrollments->getCollection()->transform(function ($item) use ($service, $user) {
+            $item->can_act = $service->canUserAct($item, $user);
+            return $item;
+        });
 
         return ApiResponse::success('Enrollments retrieved', $enrollments);
     }
@@ -318,7 +321,7 @@ class TrainingController extends Controller
             });
         }
 
-        return ApiResponse::success('Available trainings retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Available trainings retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function selfEnroll(Request $request, int $id): JsonResponse

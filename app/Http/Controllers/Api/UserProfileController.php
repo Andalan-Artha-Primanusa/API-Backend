@@ -59,7 +59,7 @@ class UserProfileController extends Controller
                         'birth_date', 'nationality', 'id_number', 'created_at'
                     ])
                     ->latest()
-                    ->paginate(15);
+                    ->paginate($request->integer('per_page', 10));
 
                 return ApiResponse::success('All user profiles', $profiles);
             }

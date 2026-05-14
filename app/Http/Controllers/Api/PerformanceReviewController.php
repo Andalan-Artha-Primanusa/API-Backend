@@ -32,7 +32,7 @@ class PerformanceReviewController extends Controller
             $query->where('year', $validated['year']);
         }
 
-        return ApiResponse::success('Review cycles retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Review cycles retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function cyclesStore(Request $request): JsonResponse
@@ -150,7 +150,7 @@ class PerformanceReviewController extends Controller
             $query->where('status', $validated['status']);
         }
 
-        return ApiResponse::success('Performance reviews retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Performance reviews retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function reviewsStore(Request $request): JsonResponse
@@ -321,7 +321,7 @@ class PerformanceReviewController extends Controller
         $reviews = PerformanceReview::with(['cycle', 'reviewer:id,name,email', 'kpi'])
             ->where('employee_id', $employee->id)
             ->latest()
-            ->paginate($request->integer('per_page', 15));
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My performance reviews retrieved successfully', $reviews);
     }

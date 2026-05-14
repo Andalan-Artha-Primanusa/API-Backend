@@ -55,7 +55,7 @@ class PromotionController
             });
         }
 
-        $promotions = $query->latest()->paginate(15);
+        $promotions = $query->latest()->paginate($request->integer('per_page', 10));
         $service = app(ApprovalFlowService::class);
         $promotions->getCollection()->transform(function ($item) use ($service, $user) {
             $item->can_act = $service->canUserAct($item, $user);
@@ -290,14 +290,14 @@ class PromotionController
             });
         }
 
-        $promotions = $query->latest()->get();
-
         $summary = [
-            'total' => $promotions->count(),
-            'approved' => $promotions->where('status', 'approved')->count(),
-            'pending' => $promotions->where('status', 'pending')->count(),
-            'rejected' => $promotions->where('status', 'rejected')->count(),
+            'total' => (clone $query)->count(),
+            'approved' => (clone $query)->where('status', 'approved')->count(),
+            'pending' => (clone $query)->where('status', 'pending')->count(),
+            'rejected' => (clone $query)->where('status', 'rejected')->count(),
         ];
+
+        $promotions = $query->latest()->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My promotions', [
             'promotions' => $promotions,

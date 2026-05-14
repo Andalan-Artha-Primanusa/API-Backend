@@ -13,7 +13,7 @@ class BiometricIntegrationController extends Controller
 {
     public function deviceIndex(Request $request): JsonResponse
     {
-        return ApiResponse::success('Biometric devices retrieved successfully', DB::table('biometric_devices')->orderByDesc('id')->paginate($request->integer('per_page', 15)));
+        return ApiResponse::success('Biometric devices retrieved successfully', DB::table('biometric_devices')->orderByDesc('id')->paginate($request->integer('per_page', 10)));
     }
 
     public function deviceStore(Request $request): JsonResponse

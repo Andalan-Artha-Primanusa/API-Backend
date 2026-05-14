@@ -43,7 +43,7 @@ class RecruitmentController extends Controller
             });
         }
 
-        return ApiResponse::success('Job openings retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Job openings retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function openingsStore(Request $request): JsonResponse
@@ -170,7 +170,7 @@ class RecruitmentController extends Controller
             });
         }
 
-        return ApiResponse::success('Candidates retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Candidates retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function candidatesStore(Request $request): JsonResponse

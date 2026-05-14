@@ -34,9 +34,9 @@ class KpiPeriodController extends Controller
                 $query->whereIn('employee_id', $subordinateIds);
             }
 
-            $periods = $query->latest()->get();
+            $periods = $query->latest()->paginate($request->integer('per_page', 10));
 
-            $periods->each(fn($p) => $p->calculateOverallScore());
+            $periods->getCollection()->each(fn($p) => $p->calculateOverallScore());
 
             return ApiResponse::success('Periode KPI berhasil dimuat', $periods);
         } catch (\Exception $e) {
@@ -340,9 +340,9 @@ class KpiPeriodController extends Controller
             $periods = KpiPeriod::with('items')
                 ->where('employee_id', $employee->id)
                 ->latest()
-                ->get();
+                ->paginate($request->integer('per_page', 10));
 
-            $periods->each(fn($p) => $p->calculateOverallScore());
+            $periods->getCollection()->each(fn($p) => $p->calculateOverallScore());
 
             return ApiResponse::success('Periode KPI saya', $periods);
         } catch (\Exception $e) {

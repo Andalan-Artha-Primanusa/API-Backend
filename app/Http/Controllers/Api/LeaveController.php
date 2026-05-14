@@ -37,7 +37,7 @@ class LeaveController extends Controller
         $leaves = Leave::where('employee_id', $employee->id)
             ->with(['user.profile', 'employee.user.profile', 'approver.profile'])
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My Leaves', $leaves);
     }
@@ -193,8 +193,8 @@ class LeaveController extends Controller
             ->where('status', LeaveStatus::Pending);
 
         if ($user->isSuperAdmin() || $user->isAdmin()) {
-            $leaves = $query->latest()->get();
-            $leaves->each->setAttribute('can_act', true);
+            $leaves = $query->latest()->paginate($request->integer('per_page', 10));
+            $leaves->getCollection()->each->setAttribute('can_act', true);
             return ApiResponse::success('Pending leaves', $leaves);
         }
 
@@ -238,10 +238,10 @@ class LeaveController extends Controller
                 }
             });
 
-        $leaves = $query->latest()->get();
+        $leaves = $query->latest()->paginate($request->integer('per_page', 10));
 
         // For non-admin users, leaves are already filtered to only show their steps
-        $leaves->each->setAttribute('can_act', true);
+        $leaves->getCollection()->each->setAttribute('can_act', true);
 
         return ApiResponse::success('Pending leaves', $leaves);
     }

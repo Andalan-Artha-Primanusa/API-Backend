@@ -82,7 +82,7 @@ class NotificationController extends Controller
             $query->whereNull('read_at');
         }
 
-        $notifications = $query->paginate($validated['per_page'] ?? 15);
+        $notifications = $query->paginate($validated['per_page'] ?? 10);
 
         return ApiResponse::success('Notifications retrieved successfully', $notifications);
     }
@@ -229,7 +229,7 @@ class NotificationController extends Controller
 
     public function emailTemplateIndex(Request $request): JsonResponse
     {
-        $templates = EmailTemplate::query()->orderBy('name')->paginate($request->integer('per_page', 15));
+        $templates = EmailTemplate::query()->orderBy('name')->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('Email templates retrieved', $templates);
     }
@@ -431,7 +431,7 @@ class NotificationController extends Controller
         }
 
         $logs = $query->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('Email logs retrieved', $logs);
     }

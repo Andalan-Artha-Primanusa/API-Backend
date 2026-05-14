@@ -17,7 +17,7 @@ class CareerDevelopmentController extends Controller
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
             ->select('i.*', 'u.name as employee_name')
             ->orderByDesc('i.created_at')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('IDP list retrieved successfully', $data);
     }
@@ -74,7 +74,7 @@ class CareerDevelopmentController extends Controller
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
             ->select('s.*', 'u.name as employee_name', 'e.position', 'e.department')
             ->orderByDesc('s.talent_score')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('Succession matrix retrieved successfully', $data);
     }

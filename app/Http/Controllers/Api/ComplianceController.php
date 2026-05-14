@@ -138,7 +138,7 @@ class ComplianceController extends Controller
         ]);
 
         $days = (int) ($validated['days'] ?? 30);
-        $perPage = (int) ($validated['per_page'] ?? 15);
+        $perPage = (int) ($validated['per_page'] ?? 10);
         $today = Carbon::today();
         $until = Carbon::today()->addDays($days);
 

@@ -119,7 +119,7 @@ class LeaveService
             $query->where('user_id', $user->id);
         }
 
-        return $query->latest()->paginate(15);
+        return $query->latest()->paginate(request()->integer('per_page', 10));
     }
 
     /**
@@ -238,6 +238,7 @@ class LeaveService
             'final'  => true,
             'action' => 'approved',
         ];
+    }
     }
 
     private function recordHistory(Leave $leave, User $approver, string $action, ?string $note, $step = null): void

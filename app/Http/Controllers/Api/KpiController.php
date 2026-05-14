@@ -60,7 +60,7 @@ class KpiController extends Controller
                 $query->whereIn('employee_id', $subordinateIds);
             }
 
-            $kpis = $query->get();
+            $kpis = $query->paginate($request->integer('per_page', 10));
 
             return ApiResponse::success('Data KPI berhasil dimuat', $kpis);
 
@@ -200,7 +200,7 @@ class KpiController extends Controller
                 ->where('employee_id', $employee_id)
                 ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->latest()
-                ->get();
+                ->paginate($request->integer('per_page', 10));
 
             return ApiResponse::success('KPI karyawan', $kpis);
 
@@ -263,7 +263,7 @@ class KpiController extends Controller
                 ->where('employee_id', $employee->id)
                 ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->latest()
-                ->get();
+                ->paginate($request->integer('per_page', 10));
 
             return ApiResponse::success('KPI saya', $kpis);
 

@@ -50,7 +50,7 @@ class AssetController extends Controller
             });
         }
 
-        return ApiResponse::success('Assets retrieved successfully', $query->paginate($validated['per_page'] ?? 15));
+        return ApiResponse::success('Assets retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
     public function store(Request $request): JsonResponse
@@ -399,7 +399,7 @@ class AssetController extends Controller
             $query->where('status', $validated['status']);
         }
 
-        $assignments = $query->paginate($validated['per_page'] ?? 15);
+        $assignments = $query->paginate($validated['per_page'] ?? 10);
         $service = app(ApprovalFlowService::class);
         $assignments->getCollection()->transform(function ($item) use ($service, $user) {
             $item->can_act = $service->canUserAct($item, $user);
@@ -424,7 +424,7 @@ class AssetController extends Controller
         $assignments = InventoryAssetAssignment::with(['asset', 'assignedBy:id,name,email'])
             ->where('employee_id', $employee->id)
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My assets retrieved successfully', $assignments);
     }

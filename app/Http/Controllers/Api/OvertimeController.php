@@ -28,7 +28,7 @@ class OvertimeController extends Controller
         $requests = OvertimeRequest::where('employee_id', $employee->id)
             ->with(['attendance', 'approver:id,name', 'evidences'])
             ->latest('date')
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My overtime requests', $requests);
     }
@@ -80,9 +80,12 @@ class OvertimeController extends Controller
                 $query->where('status', $request->status);
             }
 
-            $data = $query->get();
+            $data = $query->paginate($request->integer('per_page', 10));
             $service = app(ApprovalFlowService::class);
-            $data = $service->addCanActToListings($data, $user);
+            $data->getCollection()->transform(function ($item) use ($service, $user) {
+                $item->can_act = $service->canUserAct($item, $user);
+                return $item;
+            });
             return ApiResponse::success('Overtime requests', $data);
         } catch (\Exception $e) {
             \Log::error('OvertimeController@index ERROR', ['error' => $e->getMessage()]);
@@ -105,10 +108,13 @@ class OvertimeController extends Controller
             $requests = OvertimeRequest::where('status', 'pending')
                 ->with(['employee', 'attendance', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
                 ->latest('date')
-                ->get();
+                ->paginate($request->integer('per_page', 10));
 
             $service = app(ApprovalFlowService::class);
-            $requests = $service->addCanActToListings($requests, $user);
+            $requests->getCollection()->transform(function ($item) use ($service, $user) {
+                $item->can_act = $service->canUserAct($item, $user);
+                return $item;
+            });
 
             return ApiResponse::success('Pending overtime requests', $requests);
         } catch (\Exception $e) {
@@ -330,7 +336,7 @@ class OvertimeController extends Controller
         $evidences = OvertimeEvidence::where('overtime_request_id', $overtimeRequest->id)
             ->with(['uploader:id,name', 'reviewer:id,name'])
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('My overtime evidences', $evidences);
     }
@@ -365,7 +371,7 @@ class OvertimeController extends Controller
         $evidences = OvertimeEvidence::where('overtime_request_id', $overtimeRequest->id)
             ->with(['uploader:id,name', 'reviewer:id,name'])
             ->latest()
-            ->get();
+            ->paginate($request->integer('per_page', 10));
 
         return ApiResponse::success('Overtime evidences', $evidences);
     }

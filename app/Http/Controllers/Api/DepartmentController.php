@@ -26,7 +26,7 @@ class DepartmentController extends Controller
                 'search'   => 'sometimes|string|max:255',
             ]);
 
-            $perPage = $validated['per_page'] ?? 15;
+            $perPage = $validated['per_page'] ?? 10;
             $search = $validated['search'] ?? null;
 
             $query = Department::withCount('employees');

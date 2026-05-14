@@ -15,7 +15,7 @@ class EngagementController extends Controller
 
     public function surveyIndex(Request $request): JsonResponse
     {
-        $data = DB::table('engagement_surveys')->orderByDesc('id')->paginate($request->integer('per_page', 15));
+        $data = DB::table('engagement_surveys')->orderByDesc('id')->paginate($request->integer('per_page', 10));
         return ApiResponse::success('Engagement surveys retrieved successfully', $data);
     }
 
