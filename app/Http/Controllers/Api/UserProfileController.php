@@ -20,7 +20,7 @@ class UserProfileController extends Controller
         'user.roles:id,name',
         'user.roles.permissions:id,name',
         'employee:id,user_id,position,department,manager_id',
-        'employee.manager:id,user_id,position',
+        'employee.manager:id,name,email',
     ];
 
     /**

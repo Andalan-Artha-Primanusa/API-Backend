@@ -23,7 +23,7 @@ class KpiController extends Controller
         'employee:id,user_id,position,department,manager_id',
         'employee.user:id,name,email',
         'employee.user.profile:id,user_id,phone,address',
-        'employee.manager:id,user_id,position',
+        'employee.manager:id,name,email',
         'employee.manager.profile:id,user_id,phone',
     ];
 

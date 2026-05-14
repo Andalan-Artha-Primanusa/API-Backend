@@ -78,7 +78,7 @@ class GoogleAuthController extends Controller
                 'roles.permissions:id,name',
                 'profile:id,user_id,phone,address,gender',
                 'employee:id,user_id,position,department,employee_code',
-                'employee.manager:id,user_id,position',
+                'employee.manager:id,name,email',
                 'employee.manager.profile:id,user_id,phone',
             ]);
 

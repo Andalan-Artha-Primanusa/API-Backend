@@ -70,7 +70,7 @@ class LeaveController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $leaves = $this->leaveService->getLeavesByRole($user);
+        $leaves = $this->leaveService->getLeavesByRole($user)->withQueryString();
 
         return ApiResponse::success('Leave list', $leaves);
     }
