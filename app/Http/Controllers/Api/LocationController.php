@@ -35,7 +35,7 @@ class LocationController extends Controller
                 $query->where('name', 'like', '%' . $search . '%');
             }
 
-            $locations = $query->latest('id')->paginate($perPage);
+            $locations = $query->latest('id')->paginate($perPage)->withQueryString();
 
             return ApiResponse::success(
                 $locations->isEmpty() ? 'No locations available' : 'Location list',

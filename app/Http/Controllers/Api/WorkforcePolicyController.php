@@ -64,7 +64,7 @@ class WorkforcePolicyController extends Controller
 
     public function holidayCalendarIndex(Request $request): JsonResponse
     {
-        $paginator = DB::table('holiday_calendars')->orderByDesc('id')->paginate($request->integer('per_page', 10));
+        $paginator = DB::table('holiday_calendars')->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
         $paginator->getCollection()->transform(function ($calendar) {
             return $this->holidayCalendarPayload($calendar);
         });
@@ -248,7 +248,7 @@ class WorkforcePolicyController extends Controller
     {
         $user = $request->user();
 
-        $data = ShiftSwapRequest::with(['requester.user', 'target.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->orderByDesc('id')->paginate($request->integer('per_page', 10));
+        $data = ShiftSwapRequest::with(['requester.user', 'target.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
         $service = app(ApprovalFlowService::class);
         $data->getCollection()->transform(function ($item) use ($service, $user) {
             $item->can_act = $service->canUserAct($item, $user);
@@ -346,7 +346,7 @@ class WorkforcePolicyController extends Controller
 
     public function overtimeRuleIndex(Request $request): JsonResponse
     {
-        $paginator = DB::table('overtime_rules')->orderByDesc('id')->paginate($request->integer('per_page', 10));
+        $paginator = DB::table('overtime_rules')->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
         $paginator->getCollection()->transform(function ($rule) {
             return $this->overtimeRulePayload($rule);
         });

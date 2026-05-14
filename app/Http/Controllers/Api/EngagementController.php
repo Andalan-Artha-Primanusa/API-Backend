@@ -32,7 +32,7 @@ class EngagementController extends Controller
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $data = DB::table('engagement_surveys')->orderByDesc('id')->paginate($request->integer('per_page', 10));
+        $data = DB::table('engagement_surveys')->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
         return ApiResponse::success('Engagement surveys retrieved successfully', $data);
     }
 

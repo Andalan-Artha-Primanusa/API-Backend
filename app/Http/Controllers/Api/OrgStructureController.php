@@ -79,7 +79,8 @@ class OrgStructureController extends Controller
         $order = $validated['order'] ?? 'asc';
 
         $employees = $query->orderBy($sort, $order)
-            ->paginate($validated['per_page'] ?? 10);
+            ->paginate($validated['per_page'] ?? 10)
+            ->withQueryString();
 
         return ApiResponse::success('Employee directory retrieved successfully', $employees);
     }

@@ -162,7 +162,8 @@ class EnterpriseAtsController extends Controller
             ->leftJoin('job_openings as j', 'j.id', '=', 'c.job_opening_id')
             ->select('t.*', 'c.full_name', 'c.email', 'c.phone', 'c.current_stage', 'j.title as opening_title')
             ->orderByDesc('t.created_at')
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('Talent pool retrieved successfully', $data);
     }

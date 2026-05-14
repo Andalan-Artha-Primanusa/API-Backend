@@ -58,7 +58,7 @@ class AuditLogController extends Controller
             });
         }
 
-        $logs = $query->paginate($validated['per_page'] ?? 10);
+        $logs = $query->paginate($validated['per_page'] ?? 10)->withQueryString();
 
         return ApiResponse::success('Audit logs retrieved successfully', $logs);
     }

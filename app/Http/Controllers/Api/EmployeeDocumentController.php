@@ -64,7 +64,7 @@ class EmployeeDocumentController extends Controller
             });
         }
 
-        $contracts = $query->paginate($validated['per_page'] ?? 10);
+        $contracts = $query->paginate($validated['per_page'] ?? 10)->withQueryString();
 
         $baseCountQuery = EmployeeDocument::query()
             ->where(function ($builder) {
@@ -118,7 +118,7 @@ class EmployeeDocumentController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $documents = $this->buildQuery($request)->paginate($request->integer('per_page', 10));
+        $documents = $this->buildQuery($request)->paginate($request->integer('per_page', 10))->withQueryString();
         $service = app(ApprovalFlowService::class);
         $documents->getCollection()->transform(function ($item) use ($service, $user) {
             $item->can_act = $service->canUserAct($item, $user);
@@ -136,7 +136,7 @@ class EmployeeDocumentController extends Controller
             ->where('employee_id', $employee->id)
             ->latest();
 
-        return ApiResponse::success('My documents retrieved successfully', $query->paginate($request->integer('per_page', 10)));
+        return ApiResponse::success('My documents retrieved successfully', $query->paginate($request->integer('per_page', 10))->withQueryString());
     }
 
     public function store(Request $request): JsonResponse

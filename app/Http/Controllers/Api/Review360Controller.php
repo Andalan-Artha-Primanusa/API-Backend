@@ -48,7 +48,8 @@ class Review360Controller extends Controller
 
         $reviews = $query->with(['cycle', 'employee', 'manager', 'feeders'])
             ->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('360 Reviews retrieved successfully', $reviews);
     }

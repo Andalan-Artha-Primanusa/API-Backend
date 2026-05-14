@@ -230,7 +230,7 @@ class AttendanceController extends Controller
             // Apply sorting with protection against injection
             $query->orderBy($sortBy, $sortOrder);
 
-            $data = $query->paginate($perPage);
+            $data = $query->paginate($perPage)->withQueryString();
 
             return ApiResponse::success('All attendance records', $data);
         } catch (ValidationException $e) {

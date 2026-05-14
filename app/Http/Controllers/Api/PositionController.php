@@ -45,7 +45,7 @@ class PositionController extends Controller
                 $query->where('department_id', $departmentId);
             }
 
-            $positions = $query->latest('id')->paginate($perPage);
+            $positions = $query->latest('id')->paginate($perPage)->withQueryString();
 
             return ApiResponse::success(
                 $positions->isEmpty() ? 'No positions available' : 'Position list',

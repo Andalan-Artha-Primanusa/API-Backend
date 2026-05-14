@@ -38,7 +38,7 @@ class DepartmentController extends Controller
                 });
             }
 
-            $departments = $query->latest('id')->paginate($perPage);
+            $departments = $query->latest('id')->paginate($perPage)->withQueryString();
 
             return ApiResponse::success(
                 $departments->isEmpty() ? 'No departments available' : 'Department list',

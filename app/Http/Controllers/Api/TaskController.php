@@ -35,7 +35,7 @@ class TaskController
             });
         }
 
-        $tasks = $query->latest()->paginate($request->integer('per_page', 10));
+        $tasks = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
         return ApiResponse::success('Tasks retrieved', $tasks);
     }
 
@@ -132,7 +132,8 @@ class TaskController
 
         $tasks = (clone $baseQuery)->with(['assignedBy.profile'])
             ->latest()
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('My tasks', [
             'tasks' => $tasks,

@@ -23,7 +23,7 @@ class AssignmentLetterController
         if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('assignment_letter.view')) {
             $query->where('user_id', $user->id);
         }
-        $letters = $query->latest()->paginate($request->integer('per_page', 10));
+        $letters = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
         return ApiResponse::success('Assignment letters', $letters);
     }
 

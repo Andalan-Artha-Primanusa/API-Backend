@@ -44,7 +44,8 @@ class CalibrationController extends Controller
 
         $sessions = $query->with(['cycle', 'facilitator', 'participants'])
             ->orderByDesc('scheduled_at')
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('Calibration sessions retrieved', $sessions);
     }

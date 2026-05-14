@@ -146,7 +146,7 @@ class HrServiceRequestController extends Controller
             });
         }
 
-        return ApiResponse::success('Helpdesk requests retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
+        return ApiResponse::success('Helpdesk requests retrieved successfully', $query->paginate($validated['per_page'] ?? 10)->withQueryString());
     }
 
     public function myRequests(Request $request): JsonResponse
@@ -156,7 +156,8 @@ class HrServiceRequestController extends Controller
         $requests = \App\Models\HrServiceRequest::with(['assignee:id,name,email', 'comments.user:id,name,email'])
             ->where('employee_id', $employee->id)
             ->latest()
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('My helpdesk requests retrieved successfully', $requests);
     }

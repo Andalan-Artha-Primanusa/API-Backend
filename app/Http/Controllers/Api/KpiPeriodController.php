@@ -38,7 +38,7 @@ class KpiPeriodController extends Controller
                 $query->whereIn('employee_id', $subordinateIds);
             }
 
-            $periods = $query->latest()->paginate($request->integer('per_page', 10));
+            $periods = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
 
             $periods->getCollection()->each(fn($p) => $p->calculateOverallScore());
 
@@ -374,7 +374,8 @@ class KpiPeriodController extends Controller
             $periods = KpiPeriod::with('items')
                 ->where('employee_id', $employee->id)
                 ->latest()
-                ->paginate($request->integer('per_page', 10));
+                ->paginate($request->integer('per_page', 10))
+                ->withQueryString();
 
             $periods->getCollection()->each(fn($p) => $p->calculateOverallScore());
 

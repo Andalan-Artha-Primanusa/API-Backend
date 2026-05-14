@@ -50,7 +50,7 @@ class ReimbursementController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
-        $reimbursements = $query->latest()->paginate($request->integer('per_page', 10));
+        $reimbursements = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
         $service = app(ApprovalFlowService::class);
         $reimbursements->getCollection()->transform(function ($item) use ($service, $user) {
             $item->can_act = $service->canUserAct($item, $user);
@@ -217,7 +217,8 @@ class ReimbursementController extends Controller
         $reimbursements = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
             ->where('status', 'submitted')
             ->latest()
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         $service = app(ApprovalFlowService::class);
         $reimbursements->getCollection()->transform(function ($item) use ($service, $user) {
@@ -233,7 +234,8 @@ class ReimbursementController extends Controller
         $reimbursements = Reimbursement::where('employee_id', $employee_id)
             ->with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])
             ->latest()
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('Employee reimbursements', $reimbursements);
     }
@@ -275,7 +277,7 @@ class ReimbursementController extends Controller
             $query->where('status', $request->status);
         }
 
-        $reimbursements = $query->latest()->paginate($request->integer('per_page', 10));
+        $reimbursements = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
 
         return ApiResponse::success('My Reimbursements', $reimbursements);
     }

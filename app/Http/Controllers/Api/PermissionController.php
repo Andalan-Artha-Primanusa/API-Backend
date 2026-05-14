@@ -18,7 +18,8 @@ class PermissionController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $permissions = Permission::all();
+        $permissions = Permission::paginate($request->integer('per_page', 50))
+            ->withQueryString();
 
         return ApiResponse::success('Permission list', $permissions);
     }

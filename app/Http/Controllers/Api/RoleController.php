@@ -22,7 +22,8 @@ class RoleController extends Controller
 
         $roles = Role::withCount('permissions')
             ->where('name', '!=', User::ROLE_SUPER_ADMIN)
-            ->get();
+            ->paginate($request->integer('per_page', 50))
+            ->withQueryString();
 
         return ApiResponse::success('Role list', $roles);
     }

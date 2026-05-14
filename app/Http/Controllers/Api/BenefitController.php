@@ -44,7 +44,7 @@ class BenefitController extends Controller
             });
         }
 
-        return ApiResponse::success('Benefits retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
+        return ApiResponse::success('Benefits retrieved successfully', $query->paginate($validated['per_page'] ?? 10)->withQueryString());
     }
 
     public function store(Request $request): JsonResponse
@@ -235,7 +235,7 @@ class BenefitController extends Controller
             $query->where('status', $validated['status']);
         }
 
-        $benefits = $query->paginate($validated['per_page'] ?? 10);
+        $benefits = $query->paginate($validated['per_page'] ?? 10)->withQueryString();
         $service = app(\App\Services\ApprovalFlowService::class);
         $benefits->getCollection()->transform(function ($item) use ($service, $request) {
             $item->can_act = $service->canUserAct($item, $request->user());
@@ -253,7 +253,7 @@ class BenefitController extends Controller
             ->where('employee_id', $employee->id)
             ->latest();
 
-        return ApiResponse::success('My benefits retrieved successfully', $query->paginate($request->integer('per_page', 10)));
+        return ApiResponse::success('My benefits retrieved successfully', $query->paginate($request->integer('per_page', 10))->withQueryString());
     }
 
     private function authorizeManage(Request $request, string $permission): void

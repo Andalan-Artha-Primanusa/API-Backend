@@ -153,7 +153,7 @@ class ComplianceController extends Controller
             $query->where('status', $validated['status']);
         }
 
-        $documents = $query->paginate($perPage);
+        $documents = $query->paginate($perPage)->withQueryString();
 
         return ApiResponse::success('Expiring documents retrieved successfully', [
             'days' => $days,

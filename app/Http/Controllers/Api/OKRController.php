@@ -49,7 +49,8 @@ class OKRController extends Controller
 
         $okrs = $query->with(['employee', 'period', 'createdBy', 'approvedBy'])
             ->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 10));
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
 
         return ApiResponse::success('OKRs retrieved successfully', $okrs);
     }
