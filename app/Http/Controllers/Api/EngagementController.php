@@ -13,14 +13,35 @@ class EngagementController extends Controller
 {
     use HasEmployee;
 
+    private function canUseEngagement(Request $request, string $permission): bool
+    {
+        $user = $request->user();
+
+        return $user && (
+            $user->isAdmin()
+            || $user->isHR()
+            || $user->isManager()
+            || $user->isSuperAdmin()
+            || $user->hasPermission($permission)
+        );
+    }
+
     public function surveyIndex(Request $request): JsonResponse
     {
+        if (!$this->canUseEngagement($request, 'engagement.survey.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $data = DB::table('engagement_surveys')->orderByDesc('id')->paginate($request->integer('per_page', 10));
         return ApiResponse::success('Engagement surveys retrieved successfully', $data);
     }
 
     public function surveyStore(Request $request): JsonResponse
     {
+        if (!$this->canUseEngagement($request, 'engagement.survey.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'survey_type' => 'sometimes|string|in:pulse,enps,custom',
@@ -65,6 +86,10 @@ class EngagementController extends Controller
 
     public function submitResponse(Request $request, int $surveyId): JsonResponse
     {
+        if (!$this->canUseEngagement($request, 'engagement.survey.respond')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $employee = $this->getAuthenticatedEmployee();
 
         $validated = $request->validate([
@@ -91,6 +116,10 @@ class EngagementController extends Controller
 
     public function analytics(Request $request, int $surveyId): JsonResponse
     {
+        if (!$this->canUseEngagement($request, 'engagement.survey.analytics')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $totalResponses = DB::table('engagement_survey_responses')->where('survey_id', $surveyId)->count();
         $avgRating = DB::table('engagement_survey_responses')->where('survey_id', $surveyId)->whereNotNull('rating_value')->avg('rating_value');
 

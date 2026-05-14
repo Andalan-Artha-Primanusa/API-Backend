@@ -14,7 +14,7 @@ class TaskController
         $user = $request->user();
         $query = Task::with(['assignedBy.profile', 'assignedTo.profile']);
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.view')) {
             $query->where('assigned_to', $user->id);
         }
 
@@ -43,6 +43,10 @@ class TaskController
     {
         $user = $request->user();
 
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -66,7 +70,7 @@ class TaskController
         $user = $request->user();
         $task = Task::with(['assignedBy.profile', 'assignedTo.profile'])->findOrFail($id);
 
-        if ($task->assigned_to !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if ($task->assigned_to !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.view')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -78,7 +82,7 @@ class TaskController
         $user = $request->user();
         $task = Task::findOrFail($id);
 
-        if ($task->assigned_to !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if ($task->assigned_to !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.update')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -105,7 +109,7 @@ class TaskController
         $user = $request->user();
         $task = Task::findOrFail($id);
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.delete')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 

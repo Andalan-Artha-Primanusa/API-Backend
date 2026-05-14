@@ -68,7 +68,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.view'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -100,7 +100,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.approve'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -130,7 +130,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.approve'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -210,7 +210,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.approve'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -362,7 +362,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.view'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -383,7 +383,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.approve'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -420,7 +420,7 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('overtime.approve'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

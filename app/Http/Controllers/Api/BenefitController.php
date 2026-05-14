@@ -49,7 +49,7 @@ class BenefitController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'benefit.create');
 
         $validated = $request->validate([
             'code' => 'required|string|max:50|unique:benefits,code',
@@ -84,7 +84,7 @@ class BenefitController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'benefit.update');
 
         $benefit = Benefit::find($id);
 
@@ -109,7 +109,7 @@ class BenefitController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'benefit.delete');
 
         $benefit = Benefit::withCount('employeeBenefits')->find($id);
 
@@ -125,7 +125,7 @@ class BenefitController extends Controller
 
     public function assignToEmployee(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'benefit.assign');
 
         $benefit = Benefit::find($id);
 
@@ -166,7 +166,7 @@ class BenefitController extends Controller
 
     public function approveBenefitAssignment(Request $request, int $assignmentId): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'benefit.assign');
 
         $assignment = EmployeeBenefit::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($assignmentId);
 
@@ -188,7 +188,7 @@ class BenefitController extends Controller
 
     public function rejectBenefitAssignment(Request $request, int $assignmentId): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'benefit.assign');
 
         $assignment = EmployeeBenefit::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($assignmentId);
 
@@ -210,6 +210,12 @@ class BenefitController extends Controller
 
     public function employeeBenefits(Request $request, int $employeeId): JsonResponse
     {
+        $user = $request->user();
+
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('benefit.view'))) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $employee = Employee::find($employeeId);
 
         if (!$employee) {
@@ -250,11 +256,11 @@ class BenefitController extends Controller
         return ApiResponse::success('My benefits retrieved successfully', $query->paginate($request->integer('per_page', 10)));
     }
 
-    private function authorizeManage(Request $request): void
+    private function authorizeManage(Request $request, string $permission): void
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission($permission))) {
             abort(403, 'No permission');
         }
     }

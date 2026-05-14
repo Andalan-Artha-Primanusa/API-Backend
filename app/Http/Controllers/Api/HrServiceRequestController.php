@@ -17,7 +17,7 @@ class HrServiceRequestController extends Controller
 
     public function slaSummary(Request $request): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
+        if (!$this->canViewTickets($request)) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -106,7 +106,7 @@ class HrServiceRequestController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR() || $request->user()->isManager())) {
+        if (!$this->canViewTickets($request)) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -174,7 +174,7 @@ class HrServiceRequestController extends Controller
             'due_at' => 'nullable|date',
         ]);
 
-        if ($user->isAdmin() || $user->isHR() || $user->isManager()) {
+        if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('hr_request.create')) {
             if (empty($validated['employee_id'])) {
                 return ApiResponse::error('Validation error', ['employee_id' => ['The employee_id field is required.']], 422);
             }
@@ -243,7 +243,7 @@ class HrServiceRequestController extends Controller
 
     public function assign(Request $request, int $id): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!$this->canAssignTickets($request)) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -284,7 +284,7 @@ class HrServiceRequestController extends Controller
 
     public function updateStatus(Request $request, int $id): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!$this->canManageTickets($request)) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -373,7 +373,7 @@ class HrServiceRequestController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        if (!($request->user()->isAdmin() || $request->user()->isHR())) {
+        if (!$this->canManageTickets($request)) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -393,10 +393,31 @@ class HrServiceRequestController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isAdmin() || $user->isHR() || $user->isManager()) {
+        if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('hr_request.view')) {
             return true;
         }
 
         return $ticket->employee?->user_id === $user->id;
+    }
+
+    private function canViewTickets(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('hr_request.view'));
+    }
+
+    private function canAssignTickets(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('hr_request.assign'));
+    }
+
+    private function canManageTickets(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('hr_request.manage'));
     }
 }

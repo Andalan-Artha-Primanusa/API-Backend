@@ -14,8 +14,25 @@ use Illuminate\Http\Request;
 
 class OrgStructureController extends Controller
 {
+    private function canUseOrganization(Request $request, string $permission): bool
+    {
+        $user = $request->user();
+
+        return $user && (
+            $user->isAdmin()
+            || $user->isHR()
+            || $user->isManager()
+            || $user->isSuperAdmin()
+            || $user->hasPermission($permission)
+        );
+    }
+
     public function directory(Request $request): JsonResponse
     {
+        if (!$this->canUseOrganization($request, 'organization.directory')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $validated = $request->validate([
             'search' => 'sometimes|string|max:255',
             'department' => 'sometimes|string|max:255',
@@ -69,6 +86,10 @@ class OrgStructureController extends Controller
 
     public function teamMembers(Request $request, int $managerUserId): JsonResponse
     {
+        if (!$this->canUseOrganization($request, 'organization.team')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $validated = $request->validate([
             'department' => 'sometimes|string|max:255',
             'status' => 'sometimes|string|max:50',
@@ -101,6 +122,10 @@ class OrgStructureController extends Controller
 
     public function orgChart(Request $request): JsonResponse
     {
+        if (!$this->canUseOrganization($request, 'organization.chart')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $validated = $request->validate([
             'department' => 'sometimes|string|max:255',
             'status' => 'sometimes|string|max:50',
@@ -163,6 +188,10 @@ class OrgStructureController extends Controller
 
     public function summary(Request $request): JsonResponse
     {
+        if (!$this->canUseOrganization($request, 'organization.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $validated = $request->validate([
             'department' => 'sometimes|string|max:255',
             'status' => 'sometimes|string|max:50',
@@ -242,9 +271,7 @@ class OrgStructureController extends Controller
 
     public function masterData(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isManager()) {
+        if (!$this->canUseOrganization($request, 'organization.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

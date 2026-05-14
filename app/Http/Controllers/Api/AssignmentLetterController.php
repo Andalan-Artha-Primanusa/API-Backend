@@ -20,7 +20,7 @@ class AssignmentLetterController
     {
         $user = $request->user();
         $query = AssignmentLetter::with(['user.profile', 'approvalFlow.steps.role', 'approver.profile']);
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isManager()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('assignment_letter.view')) {
             $query->where('user_id', $user->id);
         }
         $letters = $query->latest()->paginate($request->integer('per_page', 10));
@@ -30,6 +30,10 @@ class AssignmentLetterController
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('assignment_letter.create')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -41,7 +45,7 @@ class AssignmentLetterController
 
         $targetUserId = $validated['user_id'] ?? $user->id;
 
-        if ($targetUserId !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager()) {
+        if ($targetUserId !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('assignment_letter.create')) {
             return ApiResponse::error('Forbidden: only admin/HR can create letters for other users', null, 403);
         }
 
@@ -78,7 +82,7 @@ class AssignmentLetterController
     {
         $letter = AssignmentLetter::with(['user.profile', 'approvalFlow.steps.role', 'approver.profile'])->findOrFail($id);
         $user = $request->user();
-        if ($letter->user_id !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isManager()) {
+        if ($letter->user_id !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('assignment_letter.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
         return ApiResponse::success('Assignment letter detail', $letter);
@@ -95,7 +99,7 @@ class AssignmentLetterController
         if (!$step) {
             return ApiResponse::error('Approval step not found', null, 500);
         }
-        if (!$user->hasRole($step->role->name)) {
+        if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
             return ApiResponse::error('It is not your turn to approve', null, 403);
         }
 
@@ -147,7 +151,7 @@ class AssignmentLetterController
         if (!$step) {
             return ApiResponse::error('Approval step not found', null, 500);
         }
-        if (!$user->hasRole($step->role->name)) {
+        if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
             return ApiResponse::error('It is not your turn to approve', null, 403);
         }
 
@@ -176,7 +180,7 @@ class AssignmentLetterController
         }
 
         $user = $request->user();
-        if ($letter->user_id !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isManager()) {
+        if ($letter->user_id !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('assignment_letter.export')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -222,4 +226,3 @@ class AssignmentLetterController
         ]);
     }
 }
-

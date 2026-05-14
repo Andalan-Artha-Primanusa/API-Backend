@@ -27,7 +27,7 @@ class ReimbursementController extends Controller
         $query = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
 
         // Scope by manager subordinates if not admin/hr
-        if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
+        if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('reimbursement.view')) {
             $subordinateIds = $user->teamMembers()->pluck('id');
             $query->whereIn('employee_id', $subordinateIds);
         }
@@ -42,7 +42,7 @@ class ReimbursementController extends Controller
 
         if ($request->has('employee_id') && $request->employee_id) {
             // Further verify they can see this employee if they are a manager
-            if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
+            if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('reimbursement.view')) {
                 if (!in_array($request->employee_id, $subordinateIds->toArray())) {
                     return ApiResponse::error('Forbidden', 'Cannot access this employee data', 403);
                 }
@@ -119,7 +119,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
+        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR() && !$user->hasPermission('reimbursement.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
@@ -159,7 +159,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR()) {
+        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR() && !$user->hasPermission('reimbursement.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
@@ -196,7 +196,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR()))  {
+        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('reimbursement.pay')))  {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $reimbursement = Reimbursement::findOrFail($id);

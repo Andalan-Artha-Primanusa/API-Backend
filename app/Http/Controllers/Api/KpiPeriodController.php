@@ -20,13 +20,17 @@ class KpiPeriodController extends Controller
         try {
             $user = $request->user();
 
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $query = KpiPeriod::with([
                 'employee:id,user_id,position,department',
                 'employee.user:id,name,email',
                 'items',
             ]);
 
-            if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
+            if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('kpi.view')) {
                 $subordinateIds = $user->teamMembers()->pluck('id')->filter()->toArray();
                 if (empty($subordinateIds)) {
                     return ApiResponse::success('Tidak ada periode KPI', collect());
@@ -47,6 +51,12 @@ class KpiPeriodController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.create')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $validated = $request->validate([
                 'employee_id' => 'required|exists:employees,id',
                 'period_type' => 'required|in:quarterly,semi_annual,annual',
@@ -112,6 +122,13 @@ class KpiPeriodController extends Controller
                 'creator:id,name',
             ])->findOrFail($id);
 
+            $user = $request->user();
+            $isOwner = $period->employee?->user_id === $user->id;
+
+            if (!$isOwner && !$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $period->calculateOverallScore();
 
             return ApiResponse::success('Detail periode KPI', $period);
@@ -126,6 +143,11 @@ class KpiPeriodController extends Controller
     {
         try {
             $period = KpiPeriod::findOrFail($id);
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.update')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
 
             if ($period->status !== 'draft') {
                 return ApiResponse::error('Cannot edit non-draft KPI period', null, 400);
@@ -260,6 +282,12 @@ class KpiPeriodController extends Controller
     public function approve(Request $request, int $id): JsonResponse
     {
         try {
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.approve')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $flow = ApprovalFlow::where('module', 'kpi')->where('is_active', true)->first();
             if (!$flow) {
                 return ApiResponse::error('Approval flow untuk KPI belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
@@ -320,6 +348,12 @@ class KpiPeriodController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         try {
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.delete')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $period = KpiPeriod::findOrFail($id);
             $period->delete();
 

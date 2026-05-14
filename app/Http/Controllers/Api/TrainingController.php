@@ -21,14 +21,14 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager());
+        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.view'));
     }
 
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.view'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -64,7 +64,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.create'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -93,7 +93,7 @@ class TrainingController extends Controller
         }
 
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.view'))) {
             $employee = $this->getAuthenticatedEmployee();
             $hasEnrollment = $program->enrollments->contains(fn ($enrollment) => $enrollment->employee_id === $employee->id);
 
@@ -109,7 +109,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.update'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -139,7 +139,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.delete'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -159,7 +159,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.enroll'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -233,7 +233,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.update'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -279,7 +279,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.view'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -366,7 +366,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.enroll'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -439,7 +439,7 @@ class TrainingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('training.enroll'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

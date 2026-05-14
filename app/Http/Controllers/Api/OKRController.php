@@ -11,8 +11,25 @@ use Illuminate\Http\Request;
 
 class OKRController extends Controller
 {
+    private function canUseOkr(Request $request, string $permission): bool
+    {
+        $user = $request->user();
+
+        return $user && (
+            $user->isAdmin()
+            || $user->isHR()
+            || $user->isManager()
+            || $user->isSuperAdmin()
+            || $user->hasPermission($permission)
+        );
+    }
+
     public function index(Request $request): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $query = OKR::query();
 
         // Filter by employee
@@ -39,6 +56,10 @@ class OKRController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'employee_id' => 'required|integer|exists:employees,id',
             'period_id' => 'nullable|integer|exists:review_cycles,id',
@@ -60,14 +81,22 @@ class OKRController extends Controller
         return ApiResponse::success('OKR created successfully', $okr->load(['employee', 'period', 'createdBy']), 201);
     }
 
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::with(['employee', 'period', 'createdBy', 'approvedBy'])->findOrFail($id);
         return ApiResponse::success('OKR retrieved successfully', $okr);
     }
 
     public function update(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.update')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         $validated = $request->validate([
@@ -93,6 +122,10 @@ class OKRController extends Controller
 
     public function submit(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.submit')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         if ($okr->status !== 'draft') {
@@ -106,6 +139,10 @@ class OKRController extends Controller
 
     public function approve(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.approve')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         $validated = $request->validate([
@@ -123,6 +160,10 @@ class OKRController extends Controller
 
     public function updateProgress(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.progress')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         $validated = $request->validate([
@@ -134,8 +175,12 @@ class OKRController extends Controller
         return ApiResponse::success('OKR progress updated. Completion: ' . round($okr->getProgressPercentage(), 2) . '%', $okr->fresh());
     }
 
-    public function markInProgress($id): JsonResponse
+    public function markInProgress(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.progress')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         if ($okr->status !== 'approved') {
@@ -147,8 +192,12 @@ class OKRController extends Controller
         return ApiResponse::success('OKR marked as in progress', $okr->fresh());
     }
 
-    public function markCompleted($id): JsonResponse
+    public function markCompleted(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.progress')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         if (!in_array($okr->status, ['in_progress', 'approved'])) {
@@ -160,8 +209,12 @@ class OKRController extends Controller
         return ApiResponse::success('OKR marked as completed', $okr->fresh());
     }
 
-    public function destroy($id): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseOkr($request, 'okr.delete')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $okr = OKR::findOrFail($id);
 
         if ($okr->status !== 'draft') {

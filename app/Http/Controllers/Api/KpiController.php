@@ -41,13 +41,17 @@ class KpiController extends Controller
         try {
             $user = $request->user();
 
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             // Optimized query with eager loading
             $query = Kpi::with(self::KPI_RELATIONS)
                 ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->latest();
 
             // Scope by manager subordinates if not admin/hr
-            if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
+            if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('kpi.view')) {
                 $subordinateIds = $user->teamMembers()
                     ->pluck('id')
                     ->filter()
@@ -75,6 +79,12 @@ class KpiController extends Controller
     public function store(StoreKpiRequest $request): JsonResponse
     {
         try {
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.create')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $kpi = Kpi::create(array_merge(
                 $request->validated(),
                 [
@@ -109,6 +119,13 @@ class KpiController extends Controller
                 ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->findOrFail($id);
 
+            $user = $request->user();
+            $isOwner = $kpi->employee?->user_id === $user->id;
+
+            if (!$isOwner && !$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             return ApiResponse::success('Detail KPI', $kpi);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
@@ -131,6 +148,11 @@ class KpiController extends Controller
             }
 
             $kpi = Kpi::findOrFail($id);
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.update')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
 
             $validated = $request->validate([
                 'title'       => 'sometimes|string|max:255',
@@ -172,6 +194,12 @@ class KpiController extends Controller
             }
 
             $kpi = Kpi::select(['id', 'employee_id', 'title', 'target', 'achievement', 'status'])->findOrFail($id);
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.delete')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $deleted = $kpi->toArray();
             $kpi->delete();
 
@@ -194,6 +222,12 @@ class KpiController extends Controller
         try {
             if ($employee_id <= 0) {
                 throw ValidationException::withMessages(['employee_id' => 'ID karyawan tidak valid']);
+            }
+
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
             $kpis = Kpi::with(self::KPI_RELATIONS)
@@ -227,6 +261,11 @@ class KpiController extends Controller
             }
 
             $kpi = Kpi::findOrFail($id);
+            $user = $request->user();
+
+            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.approve')) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
 
             if ($kpi->status !== 'submitted') {
                 return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status submitted yang bisa disetujui', 400);

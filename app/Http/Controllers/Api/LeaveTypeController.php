@@ -31,7 +31,7 @@ class LeaveTypeController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->hasPermission('leave.policy.manage'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -50,7 +50,7 @@ class LeaveTypeController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->hasPermission('leave.policy.manage'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -74,7 +74,7 @@ class LeaveTypeController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->hasPermission('leave.policy.manage'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

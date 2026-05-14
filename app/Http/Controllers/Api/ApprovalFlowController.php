@@ -16,6 +16,12 @@ class ApprovalFlowController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('admin.approval_flow.manage')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $flows = ApprovalFlow::with('steps.role', 'steps.user.employee')
             ->withCount('steps')
             ->orderBy('module')
@@ -27,6 +33,12 @@ class ApprovalFlowController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('admin.approval_flow.manage')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $flow = ApprovalFlow::with('steps.role', 'steps.user.employee')->find($id);
 
         if (!$flow) {
@@ -40,7 +52,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -79,7 +91,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -125,7 +137,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

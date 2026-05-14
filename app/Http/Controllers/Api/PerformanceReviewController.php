@@ -37,7 +37,7 @@ class PerformanceReviewController extends Controller
 
     public function cyclesStore(Request $request): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'performance.cycle.create');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -76,7 +76,7 @@ class PerformanceReviewController extends Controller
 
     public function cyclesUpdate(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'performance.cycle.manage');
 
         $cycle = ReviewCycle::find($id);
 
@@ -105,7 +105,7 @@ class PerformanceReviewController extends Controller
 
     public function cyclesClose(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'performance.cycle.manage');
 
         $cycle = ReviewCycle::find($id);
 
@@ -155,7 +155,7 @@ class PerformanceReviewController extends Controller
 
     public function reviewsStore(Request $request): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'performance.review.create');
 
         $validated = $request->validate([
             'review_cycle_id' => 'required|integer|exists:review_cycles,id',
@@ -204,7 +204,7 @@ class PerformanceReviewController extends Controller
         $employee = $this->getAuthenticatedEmployee();
         $isOwner = $employee->id === $review->employee_id;
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $isOwner)) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $isOwner || $user->hasPermission('performance.review.update'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -259,7 +259,7 @@ class PerformanceReviewController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('performance.review.update'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -291,7 +291,7 @@ class PerformanceReviewController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('performance.review.approve'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -353,11 +353,11 @@ class PerformanceReviewController extends Controller
         ]);
     }
 
-    private function authorizeManage(Request $request): void
+    private function authorizeManage(Request $request, string $permission): void
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission($permission))) {
             abort(403, 'No permission');
         }
     }

@@ -29,7 +29,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.view'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -68,7 +68,7 @@ class PayrollController extends Controller
 
         $user = $request->user();
 
-        if ($data->employee?->user_id !== $user->id && !($user->isAdmin() || $user->isHR())) {
+        if ($data->employee?->user_id !== $user->id && !($user->isAdmin() || $user->isHR() || $user->hasPermission('payroll.view'))) {
             return ApiResponse::error('Forbidden', 'You cannot access this payroll', 403);
         }
 
@@ -83,7 +83,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.create'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -126,7 +126,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.generate'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -202,7 +202,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.approve'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -241,7 +241,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('payroll.approve'))) {
             return ApiResponse::error('Forbidden', 'Only HR or Admin can perform final approval', 403);
         }
 
@@ -280,7 +280,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.approve'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -343,7 +343,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.pay'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -375,7 +375,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('payroll.pay'))) {
             return ApiResponse::error('Forbidden', 'Only HR or Admin can bulk-pay payrolls', 403);
         }
 
@@ -436,7 +436,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.view'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -458,7 +458,7 @@ class PayrollController extends Controller
             return ApiResponse::error('Payroll not found', null, 404);
         }
 
-        if ($payroll->employee?->user_id !== $user->id && !($user->isAdmin() || $user->isHR())) {
+        if ($payroll->employee?->user_id !== $user->id && !($user->isAdmin() || $user->isHR() || $user->hasPermission('payroll.export'))) {
             return ApiResponse::error('Forbidden', 'You cannot access this payroll', 403);
         }
 
@@ -504,7 +504,7 @@ class PayrollController extends Controller
             return ApiResponse::error('Payroll not found', null, 404);
         }
 
-        if ($payroll->employee?->user_id !== $user->id && !($user->isAdmin() || $user->isHR())) {
+        if ($payroll->employee?->user_id !== $user->id && !($user->isAdmin() || $user->isHR() || $user->hasPermission('payroll.export'))) {
             return ApiResponse::error('Forbidden', 'You cannot access this payroll', 403);
         }
 
@@ -529,7 +529,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.export'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
@@ -599,7 +599,7 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('payroll.export'))) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 

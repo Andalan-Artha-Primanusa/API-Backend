@@ -48,7 +48,7 @@ class RecruitmentController extends Controller
 
     public function openingsStore(Request $request): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.opening.create');
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -89,7 +89,7 @@ class RecruitmentController extends Controller
 
     public function openingsUpdate(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.opening.update');
 
         $opening = JobOpening::find($id);
 
@@ -121,7 +121,7 @@ class RecruitmentController extends Controller
 
     public function openingsDestroy(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.opening.delete');
 
         $opening = JobOpening::withCount('candidates')->find($id);
 
@@ -175,7 +175,7 @@ class RecruitmentController extends Controller
 
     public function candidatesStore(Request $request): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.candidate.manage');
 
         $validated = $request->validate([
             'job_opening_id' => 'required|integer|exists:job_openings,id',
@@ -220,7 +220,7 @@ class RecruitmentController extends Controller
 
     public function candidatesUpdate(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.candidate.manage');
 
         $candidate = Candidate::find($id);
 
@@ -255,7 +255,7 @@ class RecruitmentController extends Controller
 
     public function candidatesMoveStage(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.candidate.manage');
 
         $candidate = Candidate::find($id);
 
@@ -283,7 +283,7 @@ class RecruitmentController extends Controller
 
     public function candidatesDestroy(Request $request, int $id): JsonResponse
     {
-        $this->authorizeManage($request);
+        $this->authorizeManage($request, 'recruitment.candidate.manage');
 
         $candidate = Candidate::with(['opening:id,code,title,status'])->find($id);
 
@@ -339,11 +339,11 @@ class RecruitmentController extends Controller
         ]);
     }
 
-    private function authorizeManage(Request $request): void
+    private function authorizeManage(Request $request, string $permission): void
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager())) {
+        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission($permission))) {
             abort(403, 'No permission');
         }
     }

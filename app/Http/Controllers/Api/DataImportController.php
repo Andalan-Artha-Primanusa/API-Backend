@@ -17,8 +17,8 @@ class DataImportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'Only admin/HR can import users', 403);
+        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.import.execute')) {
+            return ApiResponse::error('Forbidden', 'Missing admin import capability', 403);
         }
 
         $validated = $request->validate([
@@ -49,8 +49,8 @@ class DataImportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'Only admin/HR can import employees', 403);
+        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.import.execute')) {
+            return ApiResponse::error('Forbidden', 'Missing admin import capability', 403);
         }
 
         $validated = $request->validate([
@@ -301,8 +301,8 @@ class DataImportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR()) {
-            return ApiResponse::error('Forbidden', 'Only admin/HR can access templates', 403);
+        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.import.execute')) {
+            return ApiResponse::error('Forbidden', 'Missing admin import capability', 403);
         }
 
         $type = $request->query('type', 'user'); // user or employee

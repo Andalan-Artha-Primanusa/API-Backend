@@ -13,8 +13,25 @@ use Illuminate\Http\Request;
 
 class Review360Controller extends Controller
 {
+    private function canUseReview360(Request $request, string $permission): bool
+    {
+        $user = $request->user();
+
+        return $user && (
+            $user->isAdmin()
+            || $user->isHR()
+            || $user->isManager()
+            || $user->isSuperAdmin()
+            || $user->hasPermission($permission)
+        );
+    }
+
     public function index(Request $request): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $query = Review360::query();
 
         if ($request->has('cycle_id')) {
@@ -38,6 +55,10 @@ class Review360Controller extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'cycle_id' => 'required|integer|exists:review_cycles,id',
             'employee_id' => 'required|integer|exists:employees,id',
@@ -55,14 +76,22 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review created successfully', $review->load(['cycle', 'employee', 'manager']), 201);
     }
 
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::with(['cycle', 'employee', 'manager', 'feeders.feeder'])->findOrFail($id);
         return ApiResponse::success('360 Review retrieved successfully', $review);
     }
 
     public function assignFeeders(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.assign_feeders')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::findOrFail($id);
 
         $validated = $request->validate([
@@ -88,6 +117,10 @@ class Review360Controller extends Controller
 
     public function submitFeederFeedback(Request $request, $reviewId, $feederId): JsonResponse
     {
+        if ((int) $feederId !== $request->user()->id && !$this->canUseReview360($request, 'review360.provide_feedback')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $feeder = Review360Feeder::where('review_360_id', $reviewId)
             ->where('feeder_id', $feederId)
             ->firstOrFail();
@@ -116,6 +149,10 @@ class Review360Controller extends Controller
 
     public function submitSelfAssessment(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.submit')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::findOrFail($id);
 
         $validated = $request->validate([
@@ -129,6 +166,10 @@ class Review360Controller extends Controller
 
     public function submitManagerAssessment(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.submit')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::findOrFail($id);
 
         $validated = $request->validate([
@@ -142,8 +183,12 @@ class Review360Controller extends Controller
         return ApiResponse::success('Manager assessment submitted', $review->fresh());
     }
 
-    public function completeReview($id): JsonResponse
+    public function completeReview(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.submit')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::findOrFail($id);
 
         $review->markComplete();
@@ -151,8 +196,12 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review marked as completed', $review->fresh());
     }
 
-    public function submitForReview($id): JsonResponse
+    public function submitForReview(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.submit')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::findOrFail($id);
 
         if ($review->status !== 'in_progress') {
@@ -164,8 +213,12 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review submitted for review', $review->fresh());
     }
 
-    public function approveReview($id): JsonResponse
+    public function approveReview(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.approve')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::findOrFail($id);
 
         if ($review->status !== 'reviewed') {
@@ -177,8 +230,12 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review approved', $review->fresh());
     }
 
-    public function getFeederStatus($id): JsonResponse
+    public function getFeederStatus(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseReview360($request, 'review360.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $review = Review360::with('feeders.feeder')->findOrFail($id);
 
         $feeders = $review->feeders->map(function ($feeder) {

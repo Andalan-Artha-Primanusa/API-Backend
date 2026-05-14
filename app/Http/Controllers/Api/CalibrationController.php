@@ -13,8 +13,25 @@ use Illuminate\Http\Request;
 
 class CalibrationController extends Controller
 {
+    private function canUseCalibration(Request $request, string $permission): bool
+    {
+        $user = $request->user();
+
+        return $user && (
+            $user->isAdmin()
+            || $user->isHR()
+            || $user->isManager()
+            || $user->isSuperAdmin()
+            || $user->hasPermission($permission)
+        );
+    }
+
     public function index(Request $request): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $query = CalibrationSession::query();
 
         if ($request->has('cycle_id')) {
@@ -34,6 +51,10 @@ class CalibrationController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'cycle_id' => 'required|integer|exists:review_cycles,id',
             'name' => 'required|string|max:255',
@@ -49,8 +70,12 @@ class CalibrationController extends Controller
         return ApiResponse::success('Calibration session created', $session->load(['cycle', 'facilitator']), 201);
     }
 
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::with(['cycle', 'facilitator', 'participants.manager', 'employeeReviews'])
             ->findOrFail($id);
 
@@ -59,6 +84,10 @@ class CalibrationController extends Controller
 
     public function addParticipants(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.manage')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::findOrFail($id);
 
         $validated = $request->validate([
@@ -81,6 +110,10 @@ class CalibrationController extends Controller
 
     public function addReviewsForCalibration(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.manage')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::findOrFail($id);
 
         $validated = $request->validate([
@@ -103,8 +136,12 @@ class CalibrationController extends Controller
         return ApiResponse::success('Reviews added for calibration', $session->fresh(['employeeReviews']));
     }
 
-    public function startSession($id): JsonResponse
+    public function startSession(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.manage')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::findOrFail($id);
 
         if ($session->status !== 'scheduled') {
@@ -118,6 +155,10 @@ class CalibrationController extends Controller
 
     public function calibrateEmployee(Request $request, $sessionId, $calibrationReviewId): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.participate')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $calibrationReview = CalibrationEmployeeReview::findOrFail($calibrationReviewId);
 
         if ($calibrationReview->calibration_session_id != $sessionId) {
@@ -136,8 +177,12 @@ class CalibrationController extends Controller
         return ApiResponse::success('Employee review calibrated', $calibrationReview->fresh());
     }
 
-    public function getCalibrationReport($id): JsonResponse
+    public function getCalibrationReport(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::with(['employeeReviews.employee', 'employeeReviews.review360'])
             ->findOrFail($id);
 
@@ -166,8 +211,12 @@ class CalibrationController extends Controller
         return ApiResponse::success('Calibration report retrieved', $report);
     }
 
-    public function completeSession($id): JsonResponse
+    public function completeSession(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.manage')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::findOrFail($id);
 
         if ($session->status !== 'in_progress') {
@@ -179,8 +228,12 @@ class CalibrationController extends Controller
         return ApiResponse::success('Calibration session completed', $session->fresh());
     }
 
-    public function destroy($id): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
+        if (!$this->canUseCalibration($request, 'calibration.manage')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $session = CalibrationSession::findOrFail($id);
 
         if ($session->status !== 'scheduled') {

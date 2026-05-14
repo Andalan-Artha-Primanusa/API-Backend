@@ -27,6 +27,8 @@ class Permissions
     const LEAVE = [
         'leave.view' => 'View leave requests',
         'leave.create' => 'Create leave request',
+        'leave.update' => 'Update leave request',
+        'leave.delete' => 'Delete leave request',
         'leave.approve' => 'Approve/reject leave (Manager/HR)',
         'leave.policy.manage' => 'Manage leave policies',
     ];
@@ -46,6 +48,7 @@ class Permissions
         'payroll.approve' => 'Approve payroll payment',
         'payroll.pay' => 'Process payroll payment',
         'payroll.export' => 'Export payroll slips',
+        'payroll.reports.view' => 'View payroll reports',
     ];
 
     const OVERTIME = [
@@ -59,6 +62,7 @@ class Permissions
         'kpi.view' => 'View KPI records',
         'kpi.create' => 'Create KPI',
         'kpi.update' => 'Update KPI',
+        'kpi.delete' => 'Delete KPI',
         'kpi.approve' => 'Approve KPI submission',
     ];
 
@@ -101,6 +105,13 @@ class Permissions
         'document.review' => 'Review/approve document',
     ];
 
+    const ASSIGNMENT_LETTER = [
+        'assignment_letter.view' => 'View assignment letters',
+        'assignment_letter.create' => 'Create assignment letter',
+        'assignment_letter.approve' => 'Approve/reject assignment letter',
+        'assignment_letter.export' => 'Generate assignment letter PDF',
+    ];
+
     const HR_REQUEST = [
         'hr_request.view' => 'View HR service requests',
         'hr_request.create' => 'Create HR request (employee)',
@@ -108,10 +119,19 @@ class Permissions
         'hr_request.manage' => 'Manage & close requests',
     ];
 
+    const TASK = [
+        'task.view' => 'View assigned tasks',
+        'task.create' => 'Create new task',
+        'task.update' => 'Update task details',
+        'task.delete' => 'Delete task',
+        'task.complete' => 'Complete task',
+    ];
+
     const RECRUITMENT = [
         'recruitment.opening.view' => 'View job openings',
         'recruitment.opening.create' => 'Create job opening',
         'recruitment.opening.update' => 'Update job opening',
+        'recruitment.opening.delete' => 'Delete job opening',
         'recruitment.candidate.view' => 'View candidates',
         'recruitment.candidate.manage' => 'Manage candidate pipeline',
         'recruitment.interview.schedule' => 'Schedule interviews',
@@ -122,6 +142,7 @@ class Permissions
         'benefit.view' => 'View benefits',
         'benefit.create' => 'Create benefit plan',
         'benefit.update' => 'Update benefit plan',
+        'benefit.delete' => 'Delete benefit plan',
         'benefit.assign' => 'Assign benefit to employee',
     ];
 
@@ -131,6 +152,7 @@ class Permissions
         'performance.cycle.manage' => 'Manage performance cycles',
         'performance.review.view' => 'View performance reviews',
         'performance.review.create' => 'Create performance review',
+        'performance.review.update' => 'Update performance review',
         'performance.review.submit' => 'Submit performance review',
         'performance.review.approve' => 'Approve performance review',
     ];
@@ -138,6 +160,8 @@ class Permissions
     const OKR = [
         'okr.view' => 'View OKRs',
         'okr.create' => 'Create OKR',
+        'okr.update' => 'Update OKR',
+        'okr.delete' => 'Delete OKR',
         'okr.submit' => 'Submit OKR for approval',
         'okr.approve' => 'Approve OKR',
         'okr.progress' => 'Update OKR progress',
@@ -146,6 +170,7 @@ class Permissions
     const REVIEW360 = [
         'review360.view' => 'View 360 reviews',
         'review360.create' => 'Create 360 review cycle',
+        'review360.assign_feeders' => 'Assign 360 review feeders',
         'review360.provide_feedback' => 'Provide 360 feedback as feeder',
         'review360.submit' => 'Submit 360 review',
         'review360.approve' => 'Approve 360 review',
@@ -161,8 +186,14 @@ class Permissions
     const CAREER = [
         'career.idp.view' => 'View Individual Development Plans',
         'career.idp.create' => 'Create IDP',
+        'career.idp.update' => 'Update IDP',
         'career.succession.view' => 'View succession planning',
         'career.succession.manage' => 'Manage succession planning',
+        'career.promotion.view' => 'View promotion records',
+        'career.promotion.create' => 'Create promotion request',
+        'career.promotion.update' => 'Update promotion records',
+        'career.promotion.delete' => 'Delete promotion records',
+        'career.promotion.approve' => 'Approve promotion request',
     ];
 
     const ENGAGEMENT = [
@@ -200,6 +231,14 @@ class Permissions
     // ==========================================
 
     const ADMIN_SYSTEM = [
+        'user.view' => 'View users',
+        'user.assign_role' => 'Assign roles to users',
+        'role.view' => 'View roles',
+        'role.create' => 'Create roles',
+        'role.update' => 'Update roles',
+        'role.delete' => 'Delete roles',
+        'role.assign_permission' => 'Assign permissions to roles',
+        'permission.view' => 'View permissions',
         'admin.user.view' => 'View all users',
         'admin.user.assign_role' => 'Assign roles to users',
         'admin.role.view' => 'View roles',
@@ -207,9 +246,25 @@ class Permissions
         'admin.permission.view' => 'View permissions',
         'admin.audit.view' => 'View audit logs',
         'admin.audit.delete' => 'Delete audit records',
+        'audit.logs.view' => 'View audit logs',
     ];
 
     const ADMIN_SETTINGS = [
+        'location.view' => 'View locations',
+        'location.create' => 'Create locations',
+        'location.update' => 'Update locations',
+        'location.delete' => 'Delete locations',
+        'department.view' => 'View departments',
+        'department.create' => 'Create departments',
+        'department.update' => 'Update departments',
+        'department.delete' => 'Delete departments',
+        'position.view' => 'View positions',
+        'position.create' => 'Create positions',
+        'position.update' => 'Update positions',
+        'position.delete' => 'Delete positions',
+        'profile.view_all' => 'View all profiles',
+        'profile.update' => 'Update profiles',
+        'profile.delete' => 'Delete profiles',
         'admin.email.manage' => 'Manage email notifications & templates',
         'admin.location.manage' => 'Manage locations',
         'admin.department.manage' => 'Manage departments',
@@ -219,11 +274,14 @@ class Permissions
         'admin.schedule.manage' => 'Manage work schedules',
         'admin.approval_flow.manage' => 'Manage approval workflows',
         'admin.biometric.manage' => 'Manage biometric devices',
+        'biometric.devices.view' => 'View biometric devices',
+        'biometric.attendance.sync' => 'Sync biometric attendance',
     ];
 
     const ADMIN_DATA = [
         'admin.import.users' => 'Bulk import users',
         'admin.import.employees' => 'Bulk import employees',
+        'admin.import.execute' => 'Execute admin imports',
     ];
 
     // ==========================================
@@ -243,7 +301,9 @@ class Permissions
             self::COMPETENCY,
             self::ASSET,
             self::DOCUMENT,
+            self::ASSIGNMENT_LETTER,
             self::HR_REQUEST,
+            self::TASK,
             self::RECRUITMENT,
             self::BENEFIT,
             self::PERFORMANCE,
@@ -285,7 +345,9 @@ class Permissions
                 array_keys(self::COMPETENCY),
                 array_keys(self::ASSET),
                 array_keys(self::DOCUMENT),
+                array_keys(self::ASSIGNMENT_LETTER),
                 array_keys(self::HR_REQUEST),
+                array_keys(self::TASK),
                 array_keys(self::RECRUITMENT),
                 array_keys(self::BENEFIT),
                 array_keys(self::PERFORMANCE),
@@ -298,6 +360,8 @@ class Permissions
                 array_keys(self::COMPLIANCE),
                 array_keys(self::REPORTING),
                 array_keys(self::ADMIN_SYSTEM),
+                array_keys(self::ADMIN_SETTINGS),
+                array_keys(self::ADMIN_DATA),
             ),
 
             'hr' => array_merge(
@@ -311,7 +375,9 @@ class Permissions
                 array_keys(self::TRAINING),
                 array_keys(self::COMPETENCY),
                 array_keys(self::DOCUMENT),
+                array_keys(self::ASSIGNMENT_LETTER),
                 array_keys(self::HR_REQUEST),
+                array_keys(self::TASK),
                 array_keys(self::RECRUITMENT),
                 array_keys(self::BENEFIT),
                 array_keys(self::PERFORMANCE),
@@ -322,6 +388,8 @@ class Permissions
                 array_keys(self::ORGANIZATION),
                 array_keys(self::COMPLIANCE),
                 array_keys(self::REPORTING),
+                array_keys(self::ADMIN_DATA),
+                ['admin.email.manage', 'profile.view_all', 'profile.update'],
             ),
 
             'manager' => array_merge(
@@ -336,11 +404,13 @@ class Permissions
                 array_keys(self::COMPETENCY),
                 array_keys(self::ASSET),
                 array_keys(self::DOCUMENT),
+                array_keys(self::ASSIGNMENT_LETTER),
+                ['task.view', 'task.complete'],
                 ['employee.onboard', 'employee.offboard'],
                 ['user.view'],
                 ['role.view'],
                 ['permission.view'],
-                ['location.view'],
+                ['location.view', 'department.view', 'position.view', 'profile.view_all'],
                 ['performance.review.view', 'performance.review.approve'],
                 ['okr.view', 'okr.approve'],
                 ['review360.view', 'review360.approve'],
@@ -364,6 +434,12 @@ class Permissions
                 'competency.view',
                 'asset.view',
                 'document.view',
+                'assignment_letter.view',
+                'assignment_letter.create',
+                'assignment_letter.export',
+                'task.view',
+                'task.create',
+                'task.update',
                 'hr_request.view',
                 'hr_request.create',
                 'benefit.view',

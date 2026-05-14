@@ -10,8 +10,25 @@ use Illuminate\Support\Facades\DB;
 
 class CareerDevelopmentController extends Controller
 {
+    private function canUseCareer(Request $request, string $permission): bool
+    {
+        $user = $request->user();
+
+        return $user && (
+            $user->isAdmin()
+            || $user->isHR()
+            || $user->isManager()
+            || $user->isSuperAdmin()
+            || $user->hasPermission($permission)
+        );
+    }
+
     public function idpIndex(Request $request): JsonResponse
     {
+        if (!$this->canUseCareer($request, 'career.idp.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $data = DB::table('individual_development_plans as i')
             ->leftJoin('employees as e', 'e.id', '=', 'i.employee_id')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
@@ -24,6 +41,10 @@ class CareerDevelopmentController extends Controller
 
     public function idpStore(Request $request): JsonResponse
     {
+        if (!$this->canUseCareer($request, 'career.idp.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'employee_id' => 'required|integer|exists:employees,id',
             'review_cycle_id' => 'nullable|integer|exists:review_cycles,id',
@@ -47,6 +68,10 @@ class CareerDevelopmentController extends Controller
 
     public function idpUpdate(Request $request, int $id): JsonResponse
     {
+        if (!$this->canUseCareer($request, 'career.idp.update')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'goal_title' => 'sometimes|string|max:255',
             'goal_description' => 'sometimes|nullable|string|max:5000',
@@ -69,6 +94,10 @@ class CareerDevelopmentController extends Controller
 
     public function successionMatrix(Request $request): JsonResponse
     {
+        if (!$this->canUseCareer($request, 'career.succession.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $data = DB::table('succession_candidates as s')
             ->leftJoin('employees as e', 'e.id', '=', 's.employee_id')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
@@ -81,6 +110,10 @@ class CareerDevelopmentController extends Controller
 
     public function successionStore(Request $request): JsonResponse
     {
+        if (!$this->canUseCareer($request, 'career.succession.manage')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
         $validated = $request->validate([
             'position_key' => 'required|string|max:255',
             'employee_id' => 'required|integer|exists:employees,id',
