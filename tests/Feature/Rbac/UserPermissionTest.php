@@ -50,7 +50,9 @@ class UserPermissionTest extends TestCase
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->rememberToken();
             $table->timestamps();
         });
     }
@@ -81,12 +83,18 @@ class UserPermissionTest extends TestCase
         }
     }
 
-    public function test_super_admin_has_all_permissions(): void
+    private function makeUserWithRole(string $roleName): User
     {
         $user = User::factory()->create();
-        $user->roles()->attach(Role::where('name', 'super_admin')->first()->id);
+        $user->roles()->attach(Role::where('name', $roleName)->first()->id);
         $user->unsetRelation('roles');
         $user->load('roles.permissions');
+        return $user;
+    }
+
+    public function test_super_admin_has_all_permissions(): void
+    {
+        $user = $this->makeUserWithRole('super_admin');
 
         $this->assertTrue($user->isSuperAdmin());
         $this->assertTrue($user->hasPermission('employee.view'));
@@ -96,53 +104,72 @@ class UserPermissionTest extends TestCase
         $this->assertTrue($user->isEmployee());
     }
 
-    public function test_admin_role_has_admin_level(): void
+    public function test_config_level_indicators_are_loaded(): void
     {
-        $user = User::factory()->create();
-        $user->roles()->attach(Role::where('name', 'admin')->first()->id);
-        $user->unsetRelation('roles');
-        $user->load('roles.permissions');
+        $admin = config('rbac.level_indicators.admin');
+        $hr = config('rbac.level_indicators.hr');
+        $manager = config('rbac.level_indicators.manager');
+        $employee = config('rbac.level_indicators.employee');
+
+        $this->assertNotNull($admin, 'admin level_indicators is null');
+        $this->assertNotNull($hr, 'hr level_indicators is null');
+        $this->assertNotNull($manager, 'manager level_indicators is null');
+        $this->assertNotNull($employee, 'employee level_indicators is null');
+        $this->assertNotEmpty($admin, 'admin level_indicators is empty');
+    }
+
+    public function test_admin_role_has_all_levels_except_superadmin(): void
+    {
+        $user = $this->makeUserWithRole('admin');
 
         $this->assertFalse($user->isSuperAdmin());
         $this->assertTrue($user->isAdmin());
-        $this->assertFalse($user->isHR());
-        $this->assertFalse($user->isManager());
+        $this->assertTrue($user->isHR());
+        $this->assertTrue($user->isManager());
+        $this->assertTrue($user->isEmployee());
     }
 
-    public function test_hr_role_has_hr_level(): void
+    public function test_hr_role_has_hr_and_below_levels(): void
     {
-        $user = User::factory()->create();
-        $user->roles()->attach(Role::where('name', 'hr')->first()->id);
-        $user->unsetRelation('roles');
-        $user->load('roles.permissions');
+        $user = $this->makeUserWithRole('hr');
 
         $this->assertFalse($user->isSuperAdmin());
         $this->assertFalse($user->isAdmin());
         $this->assertTrue($user->isHR());
-        $this->assertFalse($user->isManager());
+        $this->assertTrue($user->isManager());
+        $this->assertTrue($user->isEmployee());
     }
 
-    public function test_manager_role_has_manager_level(): void
+    public function test_manager_role_has_manager_and_employee_levels(): void
     {
-        $user = User::factory()->create();
-        $user->roles()->attach(Role::where('name', 'manager')->first()->id);
-        $user->unsetRelation('roles');
-        $user->load('roles.permissions');
+        $user = $this->makeUserWithRole('manager');
 
         $this->assertFalse($user->isSuperAdmin());
         $this->assertFalse($user->isAdmin());
         $this->assertFalse($user->isHR());
         $this->assertTrue($user->isManager());
+        $this->assertTrue($user->isEmployee());
     }
 
-    public function test_employee_role_has_employee_level(): void
+    public function test_user_with_no_role_has_no_levels(): void
     {
         $user = User::factory()->create();
-        $user->roles()->attach(Role::where('name', 'employee')->first()->id);
-        $user->unsetRelation('roles');
-        $user->load('roles.permissions');
 
         $this->assertFalse($user->isSuperAdmin());
+        $this->assertFalse($user->isAdmin());
+        $this->assertFalse($user->isHR());
+        $this->assertFalse($user->isManager());
+        $this->assertFalse($user->isEmployee());
+        $this->assertFalse($user->hasPermission('employee.view'));
+    }
+
+    public function test_employee_role_has_employee_level_only(): void
+    {
+        $user = $this->makeUserWithRole('employee');
+
+        $this->assertFalse($user->isSuperAdmin());
+        $this->assertFalse($user->isAdmin());
+        $this->assertFalse($user->isHR());
         $this->assertFalse($user->isManager());
         $this->assertTrue($user->isEmployee());
     }
@@ -162,6 +189,9 @@ class UserPermissionTest extends TestCase
         $this->assertTrue($user->hasPermission('leave.approve'));
         $this->assertTrue($user->hasPermission('employee.view'));
         $this->assertFalse($user->hasPermission('payroll.view'));
+        $this->assertTrue($user->isManager());
+        $this->assertFalse($user->isHR());
+        $this->assertFalse($user->isAdmin());
     }
 
     public function test_user_with_no_role_has_no_permissions(): void
@@ -169,5 +199,9 @@ class UserPermissionTest extends TestCase
         $user = User::factory()->create();
         $this->assertFalse($user->hasPermission('employee.view'));
         $this->assertFalse($user->isSuperAdmin());
+        $this->assertFalse($user->isAdmin());
+        $this->assertFalse($user->isHR());
+        $this->assertFalse($user->isManager());
+        $this->assertFalse($user->isEmployee());
     }
 }
