@@ -29,12 +29,12 @@ class OvertimeController extends Controller
             ->with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'attendance', 
                 'approver:id,name,email',
-                'approver.profile:id,user_id,avatar',
+                'approver.profile:id,user_id,profile_photo_path',
                 'approver.employee:id,user_id,position_id',
                 'approver.employee.position:id,name',
                 'evidences'
@@ -89,12 +89,12 @@ class OvertimeController extends Controller
             $query = OvertimeRequest::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'attendance',
                 'approver:id,name,email',
-                'approver.profile:id,user_id,avatar',
+                'approver.profile:id,user_id,profile_photo_path',
                 'approver.employee:id,user_id,position_id',
                 'approver.employee.position:id,name',
                 'approvalFlow.steps.role',
@@ -135,12 +135,12 @@ class OvertimeController extends Controller
                 ->with([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'attendance',
                     'approver:id,name,email',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'approver.employee:id,user_id,position_id',
                     'approver.employee.position:id,name',
                     'approvalFlow.steps.role',
@@ -197,11 +197,11 @@ class OvertimeController extends Controller
                 $overtimeRequest->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approver:id,name,email',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'evidences',
                     'approvalFlow.steps.role',
                     'approvalFlow.steps.user'
@@ -254,11 +254,11 @@ class OvertimeController extends Controller
         return ApiResponse::success('Overtime request approved', $overtimeRequest->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'evidences'
         ]));
     }
@@ -290,11 +290,11 @@ class OvertimeController extends Controller
                 $overtimeRequest->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approver:id,name,email',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'approvalFlow.steps.role',
                     'approvalFlow.steps.user'
                 ]);
@@ -344,11 +344,11 @@ class OvertimeController extends Controller
         return ApiResponse::success('Overtime request rejected', $overtimeRequest->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar'
+            'approver.profile:id,user_id,profile_photo_path'
         ]));
     }
 

@@ -27,7 +27,7 @@ class KpiPeriodController extends Controller
             $query = KpiPeriod::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'items',
@@ -122,12 +122,12 @@ class KpiPeriodController extends Controller
             $period = KpiPeriod::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'items',
                 'creator:id,name,email',
-                'creator.profile:id,user_id,avatar'
+                'creator.profile:id,user_id,profile_photo_path'
             ])->findOrFail($id);
 
             $user = $request->user();
@@ -352,7 +352,7 @@ class KpiPeriodController extends Controller
                 $period->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'items'

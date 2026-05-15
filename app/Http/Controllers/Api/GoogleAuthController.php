@@ -76,14 +76,14 @@ class GoogleAuthController extends Controller
             $user->load([
                 'roles:id,name',
                 'roles.permissions:id,name',
-                'profile:id,user_id,avatar,phone,address',
+                'profile:id,user_id,profile_photo_path,phone,address',
                 'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.location:id,name',
                 'employee.workSchedule:id,name',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,avatar',
+                'employee.manager.profile:id,user_id,profile_photo_path',
             ]);
 
             // 2. Bungkus profil user agar dikirim via URL ke Frontend React

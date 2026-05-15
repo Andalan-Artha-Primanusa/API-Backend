@@ -36,11 +36,11 @@ class PayrollController extends Controller
         $data = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ])
@@ -61,11 +61,11 @@ class PayrollController extends Controller
         $data = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ])
@@ -85,11 +85,11 @@ class PayrollController extends Controller
         $data = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ])->find($id);
@@ -148,11 +148,11 @@ class PayrollController extends Controller
                     $payroll->load([
                         'employee:id,user_id,employee_code,department_id,position_id',
                         'employee.user:id,name,email',
-                        'employee.user.profile:id,user_id,avatar',
+                        'employee.user.profile:id,user_id,profile_photo_path',
                         'employee.department:id,name',
                         'employee.position:id,name',
                         'employee.manager:id,name',
-                        'employee.manager.profile:id,user_id,avatar',
+                        'employee.manager.profile:id,user_id,profile_photo_path',
                         'details',
                         'reimbursements'
                     ]),
@@ -181,7 +181,7 @@ class PayrollController extends Controller
             $hydrated = Payroll::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'details'
@@ -222,11 +222,11 @@ class PayrollController extends Controller
         return ApiResponse::success('Payroll updated successfully', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ]));
@@ -296,11 +296,11 @@ class PayrollController extends Controller
         return ApiResponse::success('Payroll approved by manager — awaiting HR final approval', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ]));
@@ -345,11 +345,11 @@ class PayrollController extends Controller
         return ApiResponse::success('Payroll approved by HR — ready for payment', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ]));
@@ -396,11 +396,11 @@ class PayrollController extends Controller
         return ApiResponse::success('Payroll rejected', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ]));
@@ -460,11 +460,11 @@ class PayrollController extends Controller
         return ApiResponse::success('Payroll paid', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ]));
@@ -514,7 +514,7 @@ class PayrollController extends Controller
             'data' => $payrolls->load([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'details'
@@ -533,11 +533,11 @@ class PayrollController extends Controller
         $payroll = Payroll::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,avatar',
+                'employee.manager.profile:id,user_id,profile_photo_path',
                 'details',
                 'reimbursements'
             ])
@@ -563,11 +563,11 @@ class PayrollController extends Controller
         $payroll = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,avatar',
+            'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
         ])->find($id);
@@ -585,7 +585,7 @@ class PayrollController extends Controller
         $payroll = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'details'
@@ -638,7 +638,7 @@ class PayrollController extends Controller
         $payroll = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'details'
@@ -753,7 +753,7 @@ class PayrollController extends Controller
         $payrolls = Payroll::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
             ])

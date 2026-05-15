@@ -18,18 +18,18 @@ class PromotionController
         $query = EmployeeLifecycleEvent::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'initiator:id,user_id,employee_code,department_id,position_id',
             'initiator.user:id,name,email',
-            'initiator.user.profile:id,user_id,avatar',
+            'initiator.user.profile:id,user_id,profile_photo_path',
             'initiator.department:id,name',
             'initiator.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'reportApprover:id,name,email',
-            'reportApprover.profile:id,user_id,avatar',
+            'reportApprover.profile:id,user_id,profile_photo_path',
             'approvalFlow.steps.role',
             'approvalFlow.steps.user',
         ])
@@ -125,12 +125,12 @@ class PromotionController
             return ApiResponse::success('Pengajuan promosi berhasil dibuat', $event->fresh([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'initiator:id,user_id,employee_code,department_id,position_id',
                 'initiator.user:id,name,email',
-                'initiator.user.profile:id,user_id,avatar',
+                'initiator.user.profile:id,user_id,profile_photo_path',
                 'initiator.department:id,name',
                 'initiator.position:id,name',
                 'approvalFlow.steps.role', 
@@ -164,11 +164,11 @@ class PromotionController
                 $event->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approver:id,name,email',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'approvalFlow.steps.role', 
                     'approvalFlow.steps.user'
                 ]);
@@ -207,11 +207,11 @@ class PromotionController
             $event->load([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'approver:id,name,email',
-                'approver.profile:id,user_id,avatar'
+                'approver.profile:id,user_id,profile_photo_path'
             ]);
 
             DB::commit();
@@ -246,11 +246,11 @@ class PromotionController
                 return ApiResponse::success('Promosi ditolak', $result['model']->fresh([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approver:id,name,email',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'approvalFlow.steps.role', 
                     'approvalFlow.steps.user'
                 ]));
@@ -280,11 +280,11 @@ class PromotionController
         return ApiResponse::success('Promosi ditolak', $event->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar'
+            'approver.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -337,18 +337,18 @@ class PromotionController
         $query = EmployeeLifecycleEvent::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'initiator:id,user_id,employee_code,department_id,position_id',
             'initiator.user:id,name,email',
-            'initiator.user.profile:id,user_id,avatar',
+            'initiator.user.profile:id,user_id,profile_photo_path',
             'initiator.department:id,name',
             'initiator.position:id,name',
             'reportApprover:id,name,email',
-            'reportApprover.profile:id,user_id,avatar',
+            'reportApprover.profile:id,user_id,profile_photo_path',
         ])
         ->where('event_type', 'promotion');
 
@@ -414,11 +414,11 @@ class PromotionController
         return ApiResponse::success('Activity report submitted', $event->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar'
+            'approver.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -452,13 +452,13 @@ class PromotionController
         return ApiResponse::success('Activity report approved. Promotion completed!', $event->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'reportApprover:id,name,email',
-            'reportApprover.profile:id,user_id,avatar'
+            'reportApprover.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -493,13 +493,13 @@ class PromotionController
         return ApiResponse::success('Activity report rejected', $event->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'reportApprover:id,name,email',
-            'reportApprover.profile:id,user_id,avatar'
+            'reportApprover.profile:id,user_id,profile_photo_path'
         ]));
     }
 }

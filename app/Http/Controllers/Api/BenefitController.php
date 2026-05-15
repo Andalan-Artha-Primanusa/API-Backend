@@ -76,7 +76,7 @@ class BenefitController extends Controller
         $benefit = Benefit::with([
             'employeeBenefits.employee:id,user_id,employee_code,department_id,position_id',
             'employeeBenefits.employee.user:id,name,email',
-            'employeeBenefits.employee.user.profile:id,user_id,avatar',
+            'employeeBenefits.employee.user.profile:id,user_id,profile_photo_path',
             'employeeBenefits.employee.department:id,name',
             'employeeBenefits.employee.position:id,name'
         ])->find($id);
@@ -171,11 +171,11 @@ class BenefitController extends Controller
             'benefit', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'assigner:id,name,email', 
-            'assigner.profile:id,user_id,avatar',
+            'assigner.profile:id,user_id,profile_photo_path',
             'assigner.employee:id,user_id,position_id',
             'assigner.employee.position:id,name',
             'approvalFlow.steps.role', 
@@ -264,7 +264,7 @@ class BenefitController extends Controller
         return ApiResponse::success('Employee benefits retrieved successfully', $benefits->load([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -281,7 +281,7 @@ class BenefitController extends Controller
         return ApiResponse::success('My benefits retrieved successfully', $query->paginate($request->integer('per_page', 10))->withQueryString()->load([
             'benefit', 
             'assigner:id,name,email',
-            'assigner.profile:id,user_id,avatar',
+            'assigner.profile:id,user_id,profile_photo_path',
             'assigner.employee:id,user_id,position_id',
             'assigner.employee.position:id,name'
         ]));

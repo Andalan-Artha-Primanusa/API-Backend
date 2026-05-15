@@ -14,12 +14,12 @@ class TaskController
         $user = $request->user();
         $query = Task::with([
             'assignedBy:id,name,email',
-            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.profile:id,user_id,profile_photo_path',
             'assignedBy.employee:id,user_id,department_id,position_id',
             'assignedBy.employee.department:id,name',
             'assignedBy.employee.position:id,name',
             'assignedTo:id,name,email',
-            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.profile:id,user_id,profile_photo_path',
             'assignedTo.employee:id,user_id,department_id,position_id',
             'assignedTo.employee.department:id,name',
             'assignedTo.employee.position:id,name',
@@ -74,12 +74,12 @@ class TaskController
 
         $task->load([
             'assignedBy:id,name,email',
-            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.profile:id,user_id,profile_photo_path',
             'assignedBy.employee:id,user_id,department_id,position_id',
             'assignedBy.employee.department:id,name',
             'assignedBy.employee.position:id,name',
             'assignedTo:id,name,email',
-            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.profile:id,user_id,profile_photo_path',
             'assignedTo.employee:id,user_id,department_id,position_id',
             'assignedTo.employee.department:id,name',
             'assignedTo.employee.position:id,name',
@@ -92,12 +92,12 @@ class TaskController
         $user = $request->user();
         $task = Task::with([
             'assignedBy:id,name,email',
-            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.profile:id,user_id,profile_photo_path',
             'assignedBy.employee:id,user_id,department_id,position_id',
             'assignedBy.employee.department:id,name',
             'assignedBy.employee.position:id,name',
             'assignedTo:id,name,email',
-            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.profile:id,user_id,profile_photo_path',
             'assignedTo.employee:id,user_id,department_id,position_id',
             'assignedTo.employee.department:id,name',
             'assignedTo.employee.position:id,name',
@@ -135,12 +135,12 @@ class TaskController
         $task->update($validated);
         $task->load([
             'assignedBy:id,name,email',
-            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.profile:id,user_id,profile_photo_path',
             'assignedBy.employee:id,user_id,department_id,position_id',
             'assignedBy.employee.department:id,name',
             'assignedBy.employee.position:id,name',
             'assignedTo:id,name,email',
-            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.profile:id,user_id,profile_photo_path',
             'assignedTo.employee:id,user_id,department_id,position_id',
             'assignedTo.employee.department:id,name',
             'assignedTo.employee.position:id,name',
@@ -176,7 +176,7 @@ class TaskController
 
         $tasks = (clone $baseQuery)->with([
                 'assignedBy:id,name,email',
-                'assignedBy.profile:id,user_id,avatar',
+                'assignedBy.profile:id,user_id,profile_photo_path',
                 'assignedBy.employee:id,user_id,department_id,position_id',
                 'assignedBy.employee.department:id,name',
                 'assignedBy.employee.position:id,name',

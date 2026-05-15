@@ -25,7 +25,7 @@ class ApprovalFlowController extends Controller
         $flows = ApprovalFlow::with([
                 'steps.role:id,name',
                 'steps.user:id,name,email',
-                'steps.user.profile:id,user_id,avatar',
+                'steps.user.profile:id,user_id,profile_photo_path',
                 'steps.user.employee:id,user_id,employee_code,department_id,position_id',
                 'steps.user.employee.department:id,name',
                 'steps.user.employee.position:id,name',
@@ -49,7 +49,7 @@ class ApprovalFlowController extends Controller
         $flow = ApprovalFlow::with([
             'steps.role:id,name',
             'steps.user:id,name,email',
-            'steps.user.profile:id,user_id,avatar',
+            'steps.user.profile:id,user_id,profile_photo_path',
             'steps.user.employee:id,user_id,employee_code,department_id,position_id',
             'steps.user.employee.department:id,name',
             'steps.user.employee.position:id,name',
@@ -98,7 +98,7 @@ class ApprovalFlowController extends Controller
             return $flow->load([
                 'steps.role:id,name',
                 'steps.user:id,name,email',
-                'steps.user.profile:id,user_id,avatar',
+                'steps.user.profile:id,user_id,profile_photo_path',
                 'steps.user.employee:id,user_id,employee_code,department_id,position_id',
                 'steps.user.employee.department:id,name',
                 'steps.user.employee.position:id,name',
@@ -151,7 +151,7 @@ class ApprovalFlowController extends Controller
             return $flow->fresh([
                 'steps.role:id,name',
                 'steps.user:id,name,email',
-                'steps.user.profile:id,user_id,avatar',
+                'steps.user.profile:id,user_id,profile_photo_path',
                 'steps.user.employee:id,user_id,employee_code,department_id,position_id',
                 'steps.user.employee.department:id,name',
                 'steps.user.employee.position:id,name',

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 use App\Services\UserService;
 use App\Models\Employee;
 use App\Models\Permission;
@@ -54,18 +55,17 @@ class AuthController extends Controller
             $user->tokens()->delete();
             $token = $user->createToken('api-token', ['*'])->plainTextToken;
 
-            // Load relations efficiently
+            // Load relations without schema-fragile column lists; production databases may lag optional profile/employee columns.
             $user->load([
                 'roles:id,name',
                 'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender,avatar',
-                'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
+                'profile',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.location:id,name',
                 'employee.workSchedule:id,name,check_in_time,check_out_time',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,avatar',
+                'employee.manager.profile',
             ]);
 
             $effectivePermissions = $this->resolveEffectivePermissions($user);
@@ -108,18 +108,17 @@ class AuthController extends Controller
             $user->tokens()->delete();
             $token = $user->createToken('api-token', ['*'])->plainTextToken;
 
-            // Load relations efficiently
+            // Load relations without schema-fragile column lists; production databases may lag optional profile/employee columns.
             $user->load([
                 'roles:id,name',
                 'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender,avatar',
-                'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
+                'profile',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.location:id,name',
                 'employee.workSchedule:id,name,check_in_time,check_out_time',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,avatar',
+                'employee.manager.profile',
             ]);
 
             $effectivePermissions = $this->resolveEffectivePermissions($user);
@@ -132,8 +131,9 @@ class AuthController extends Controller
 
         } catch (ValidationException $e) {
             return ApiResponse::error('Validation failed', $e->errors(), 422);
-        } catch (\Exception $e) {
-            return ApiResponse::error('Login failed', null, 500);
+        } catch (\Throwable $e) {
+            Log::error('Login failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return ApiResponse::error('Login failed', config('app.debug') ? $e->getMessage() : null, 500);
         }
     }
 
@@ -177,14 +177,13 @@ class AuthController extends Controller
             $user->load([
                 'roles:id,name',
                 'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender,avatar',
-                'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
+                'profile',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.location:id,name',
                 'employee.workSchedule:id,name,check_in_time,check_out_time',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,avatar',
+                'employee.manager.profile',
             ]);
 
             $effectivePermissions = $this->resolveEffectivePermissions($user);
@@ -193,8 +192,9 @@ class AuthController extends Controller
                 'user' => $user,
                 'effective_permissions' => $effectivePermissions,
             ]);
-        } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch authenticated user', null, 500);
+        } catch (\Throwable $e) {
+            Log::error('Fetch authenticated user failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return ApiResponse::error('Failed to fetch authenticated user', config('app.debug') ? $e->getMessage() : null, 500);
         }
     }
 

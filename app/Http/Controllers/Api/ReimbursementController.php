@@ -27,11 +27,11 @@ class ReimbursementController extends Controller
         $query = Reimbursement::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name',
             'approvalFlow.steps.role:id,name'
@@ -81,11 +81,11 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement created successfully', $reimbursement->load([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
         ]));
@@ -96,11 +96,11 @@ class ReimbursementController extends Controller
         $reimbursement = Reimbursement::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
         ])->findOrFail($id);
@@ -132,11 +132,11 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement updated successfully', $reimbursement->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
         ]));
@@ -175,10 +175,10 @@ class ReimbursementController extends Controller
                 $reimbursement->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'approvalFlow.steps'
                 ]);
                 
@@ -204,11 +204,11 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement approved', $reimbursement->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name',
             'approvalFlow.steps'
@@ -233,10 +233,10 @@ class ReimbursementController extends Controller
                 return ApiResponse::success('Reimbursement rejected', $result['model']->fresh([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
-                    'approver.profile:id,user_id,avatar',
+                    'approver.profile:id,user_id,profile_photo_path',
                     'approvalFlow.steps'
                 ]));
             } catch (\DomainException $e) {
@@ -260,10 +260,10 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement rejected', $reimbursement->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approvalFlow.steps'
         ]));
     }
@@ -286,11 +286,11 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement marked as paid', $reimbursement->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
         ]));
@@ -303,11 +303,11 @@ class ReimbursementController extends Controller
         $reimbursements = Reimbursement::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name',
             'approvalFlow.steps.role:id,name'
@@ -332,10 +332,10 @@ class ReimbursementController extends Controller
             ->with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
-                'approver.profile:id,user_id,avatar'
+                'approver.profile:id,user_id,profile_photo_path'
             ])
             ->latest()
             ->paginate($request->integer('per_page', 10))
@@ -378,10 +378,10 @@ class ReimbursementController extends Controller
             ->with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
-                'approver.profile:id,user_id,avatar'
+                'approver.profile:id,user_id,profile_photo_path'
             ]);
 
         if ($request->has('status') && $request->status) {
@@ -419,11 +419,11 @@ class ReimbursementController extends Controller
         return ApiResponse::success('Reimbursement submitted', $reimbursement->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name',
             'approvalFlow.steps.role:id,name'
@@ -445,10 +445,10 @@ class ReimbursementController extends Controller
         return ApiResponse::success('My Reimbursement created successfully', $reimbursement->load([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.departmentRel:id,name',
             'employee.positionRel:id,name',
-            'approver.profile:id,user_id,avatar'
+            'approver.profile:id,user_id,profile_photo_path'
         ]));
     }
 }

@@ -39,13 +39,13 @@ class EmployeeDocumentController extends Controller
         $query = EmployeeDocument::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'uploader:id,name,email',
-                'uploader.profile:id,user_id,avatar',
+                'uploader.profile:id,user_id,profile_photo_path',
                 'reviewer:id,name,email',
-                'reviewer.profile:id,user_id,avatar'
+                'reviewer.profile:id,user_id,profile_photo_path'
             ])
             ->where(function ($builder) {
                 $builder->where('category', 'contract')
@@ -145,13 +145,13 @@ class EmployeeDocumentController extends Controller
         $query = EmployeeDocument::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'uploader:id,name,email',
-                'uploader.profile:id,user_id,avatar',
+                'uploader.profile:id,user_id,profile_photo_path',
                 'reviewer:id,name,email',
-                'reviewer.profile:id,user_id,avatar'
+                'reviewer.profile:id,user_id,profile_photo_path'
             ])
             ->where('employee_id', $employee->id)
             ->latest();
@@ -232,11 +232,11 @@ class EmployeeDocumentController extends Controller
         return ApiResponse::success('Employee document created successfully', $document->load([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'uploader:id,name,email',
-            'uploader.profile:id,user_id,avatar'
+            'uploader.profile:id,user_id,profile_photo_path'
         ]), 201);
     }
 
@@ -245,13 +245,13 @@ class EmployeeDocumentController extends Controller
         $document = EmployeeDocument::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'uploader:id,name,email',
-            'uploader.profile:id,user_id,avatar',
+            'uploader.profile:id,user_id,profile_photo_path',
             'reviewer:id,name,email',
-            'reviewer.profile:id,user_id,avatar'
+            'reviewer.profile:id,user_id,profile_photo_path'
         ])->find($id);
 
         if (!$document) {
@@ -310,13 +310,13 @@ class EmployeeDocumentController extends Controller
         return ApiResponse::success('Employee document updated successfully', $document->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'uploader:id,name,email',
-            'uploader.profile:id,user_id,avatar',
+            'uploader.profile:id,user_id,profile_photo_path',
             'reviewer:id,name,email',
-            'reviewer.profile:id,user_id,avatar'
+            'reviewer.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -384,13 +384,13 @@ class EmployeeDocumentController extends Controller
                 return ApiResponse::success('Employee document reviewed successfully', $result['model']->fresh([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'uploader:id,name,email',
-                    'uploader.profile:id,user_id,avatar',
+                    'uploader.profile:id,user_id,profile_photo_path',
                     'reviewer:id,name,email',
-                    'reviewer.profile:id,user_id,avatar'
+                    'reviewer.profile:id,user_id,profile_photo_path'
                 ]));
             } catch (\DomainException $e) {
                 return ApiResponse::error($e->getMessage(), null, 403);
@@ -424,13 +424,13 @@ class EmployeeDocumentController extends Controller
         return ApiResponse::success('Employee document reviewed successfully', $document->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'uploader:id,name,email',
-            'uploader.profile:id,user_id,avatar',
+            'uploader.profile:id,user_id,profile_photo_path',
             'reviewer:id,name,email',
-            'reviewer.profile:id,user_id,avatar'
+            'reviewer.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -465,13 +465,13 @@ class EmployeeDocumentController extends Controller
             return ApiResponse::success('Document approved', $result['model']->fresh([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'uploader:id,name,email',
-                'uploader.profile:id,user_id,avatar',
+                'uploader.profile:id,user_id,profile_photo_path',
                 'reviewer:id,name,email',
-                'reviewer.profile:id,user_id,avatar'
+                'reviewer.profile:id,user_id,profile_photo_path'
             ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
@@ -511,13 +511,13 @@ class EmployeeDocumentController extends Controller
             return ApiResponse::success('Document rejected', $result['model']->fresh([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'uploader:id,name,email',
-                'uploader.profile:id,user_id,avatar',
+                'uploader.profile:id,user_id,profile_photo_path',
                 'reviewer:id,name,email',
-                'reviewer.profile:id,user_id,avatar'
+                'reviewer.profile:id,user_id,profile_photo_path'
             ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
@@ -541,11 +541,11 @@ class EmployeeDocumentController extends Controller
         $documents = EmployeeDocument::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'uploader:id,name,email',
-                'uploader.profile:id,user_id,avatar'
+                'uploader.profile:id,user_id,profile_photo_path'
             ])
             ->whereNotNull('expires_at')
             ->whereBetween('expires_at', [now()->startOfDay(), now()->addDays($days)->endOfDay()])
@@ -560,13 +560,13 @@ class EmployeeDocumentController extends Controller
         $query = EmployeeDocument::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'uploader:id,name,email',
-                'uploader.profile:id,user_id,avatar',
+                'uploader.profile:id,user_id,profile_photo_path',
                 'reviewer:id,name,email',
-                'reviewer.profile:id,user_id,avatar',
+                'reviewer.profile:id,user_id,profile_photo_path',
                 'approvalFlow.steps.role',
                 'approvalFlow.steps.user'
             ])->latest();

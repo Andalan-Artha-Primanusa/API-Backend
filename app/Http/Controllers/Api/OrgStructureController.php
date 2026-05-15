@@ -47,13 +47,13 @@ class OrgStructureController extends Controller
 
         $query = Employee::with([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'department:id,name',
             'position:id,name',
             'location:id,name',
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]);
 
         if (!empty($validated['search'])) {
@@ -108,13 +108,13 @@ class OrgStructureController extends Controller
 
         $query = Employee::with([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'department:id,name',
                 'position:id,name',
                 'location:id,name',
                 'workSchedule:id,name,check_in_time,check_out_time',
                 'manager:id,name',
-                'manager.profile:id,user_id,avatar'
+                'manager.profile:id,user_id,profile_photo_path'
             ])
             ->where('manager_id', $managerUserId);
 
@@ -153,13 +153,13 @@ class OrgStructureController extends Controller
 
         $query = Employee::with([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'department:id,name',
             'position:id,name',
             'location:id,name',
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]);
 
         if (!empty($validated['department'])) {

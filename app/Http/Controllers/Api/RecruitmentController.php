@@ -24,7 +24,7 @@ class RecruitmentController extends Controller
         $query = JobOpening::with([
                 'location:id,name', 
                 'creator:id,name,email',
-                'creator.profile:id,user_id,avatar'
+                'creator.profile:id,user_id,profile_photo_path'
             ])
             ->withCount('candidates')
             ->latest();
@@ -78,7 +78,7 @@ class RecruitmentController extends Controller
         return ApiResponse::success('Job opening created successfully', $opening->load([
             'location:id,name', 
             'creator:id,name,email',
-            'creator.profile:id,user_id,avatar'
+            'creator.profile:id,user_id,profile_photo_path'
         ]), 201);
     }
 
@@ -87,9 +87,9 @@ class RecruitmentController extends Controller
         $opening = JobOpening::with([
                 'location:id,name', 
                 'creator:id,name,email',
-                'creator.profile:id,user_id,avatar',
+                'creator.profile:id,user_id,profile_photo_path',
                 'candidates.assignee:id,name,email',
-                'candidates.assignee.profile:id,user_id,avatar'
+                'candidates.assignee.profile:id,user_id,profile_photo_path'
             ])
             ->withCount('candidates')
             ->find($id);
@@ -133,7 +133,7 @@ class RecruitmentController extends Controller
         return ApiResponse::success('Job opening updated successfully', $opening->fresh([
             'location:id,name', 
             'creator:id,name,email',
-            'creator.profile:id,user_id,avatar'
+            'creator.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -166,7 +166,7 @@ class RecruitmentController extends Controller
         $query = Candidate::with([
                 'opening:id,code,title,status', 
                 'assignee:id,name,email',
-                'assignee.profile:id,user_id,avatar'
+                'assignee.profile:id,user_id,profile_photo_path'
             ])
             ->latest();
 
@@ -228,7 +228,7 @@ class RecruitmentController extends Controller
         return ApiResponse::success('Candidate created successfully', $candidate->load([
             'opening:id,code,title,status', 
             'assignee:id,name,email',
-            'assignee.profile:id,user_id,avatar'
+            'assignee.profile:id,user_id,profile_photo_path'
         ]), 201);
     }
 
@@ -237,9 +237,9 @@ class RecruitmentController extends Controller
         $candidate = Candidate::with([
                 'opening.location', 
                 'assignee:id,name,email', 
-                'assignee.profile:id,user_id,avatar',
+                'assignee.profile:id,user_id,profile_photo_path',
                 'creator:id,name,email',
-                'creator.profile:id,user_id,avatar'
+                'creator.profile:id,user_id,profile_photo_path'
             ])
             ->find($id);
 
@@ -285,7 +285,7 @@ class RecruitmentController extends Controller
         return ApiResponse::success('Candidate updated successfully', $candidate->fresh([
             'opening:id,code,title,status', 
             'assignee:id,name,email',
-            'assignee.profile:id,user_id,avatar'
+            'assignee.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -317,7 +317,7 @@ class RecruitmentController extends Controller
         return ApiResponse::success('Candidate stage updated successfully', $candidate->fresh([
             'opening:id,code,title,status', 
             'assignee:id,name,email',
-            'assignee.profile:id,user_id,avatar'
+            'assignee.profile:id,user_id,profile_photo_path'
         ]));
     }
 

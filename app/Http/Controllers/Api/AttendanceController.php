@@ -41,7 +41,7 @@ class AttendanceController extends Controller
                 'distance' => $result['distance'] . ' meter',
                 'data'     => $result['attendance']->load([
                     'user:id,name,email',
-                    'user.profile:id,user_id,avatar',
+                    'user.profile:id,user_id,profile_photo_path',
                     'user.employee:id,user_id,department_id,position_id',
                     'user.employee.departmentRel:id,name',
                     'user.employee.positionRel:id,name',
@@ -79,7 +79,7 @@ class AttendanceController extends Controller
             return ApiResponse::success($message, [
                 'attendance' => $result['attendance']->load([
                     'user:id,name,email',
-                    'user.profile:id,user_id,avatar',
+                    'user.profile:id,user_id,profile_photo_path',
                     'user.employee:id,user_id,department_id,position_id',
                     'user.employee.departmentRel:id,name',
                     'user.employee.positionRel:id,name',
@@ -111,7 +111,7 @@ class AttendanceController extends Controller
                 $data->getCollection()->transform(function ($item) {
                     return $item->load([
                         'user:id,name,email',
-                        'user.profile:id,user_id,avatar',
+                        'user.profile:id,user_id,profile_photo_path',
                         'user.employee:id,user_id,department_id,position_id',
                         'user.employee.department:id,name',
                         'user.employee.position:id,name',
@@ -142,7 +142,7 @@ class AttendanceController extends Controller
             if ($attendance) {
                 $attendance->load([
                     'user:id,name,email',
-                    'user.profile:id,user_id,avatar',
+                    'user.profile:id,user_id,profile_photo_path',
                     'user.employee:id,user_id,department_id,position_id',
                     'user.employee.departmentRel:id,name',
                     'user.employee.positionRel:id,name',
@@ -241,7 +241,7 @@ class AttendanceController extends Controller
             // Optimized query with eager loading
             $query = Attendance::with([
                 'user:id,name,email',
-                'user.profile:id,user_id,phone,address,avatar',
+                'user.profile:id,user_id,phone,address,profile_photo_path',
                 'user.employee:id,user_id,employee_code,department_id,position_id',
                 'user.employee.department:id,name',
                 'user.employee.position:id,name',
@@ -292,7 +292,7 @@ class AttendanceController extends Controller
             // Optimized query with eager loading
             $attendance = Attendance::with([
                 'user:id,name,email',
-                'user.profile:id,user_id,phone,address,avatar',
+                'user.profile:id,user_id,phone,address,profile_photo_path',
                 'user.employee:id,user_id,employee_code,department_id,position_id',
                 'user.employee.department:id,name',
                 'user.employee.position:id,name',

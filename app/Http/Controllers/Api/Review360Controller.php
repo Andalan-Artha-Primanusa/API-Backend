@@ -50,13 +50,13 @@ class Review360Controller extends Controller
                 'cycle:id,title,start_date,end_date',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'manager:id,name,email',
-                'manager.profile:id,user_id,avatar',
+                'manager.profile:id,user_id,profile_photo_path',
                 'feeders.feeder:id,name,email',
-                'feeders.feeder.profile:id,user_id,avatar'
+                'feeders.feeder.profile:id,user_id,profile_photo_path'
             ])
             ->orderByDesc('created_at')
             ->paginate($request->integer('per_page', 10))
@@ -89,11 +89,11 @@ class Review360Controller extends Controller
             'cycle:id,title', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'manager:id,name,email',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]), 201);
     }
 
@@ -107,13 +107,13 @@ class Review360Controller extends Controller
             'cycle:id,title,start_date,end_date', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'manager:id,name,email',
-            'manager.profile:id,user_id,avatar',
+            'manager.profile:id,user_id,profile_photo_path',
             'feeders.feeder:id,name,email',
-            'feeders.feeder.profile:id,user_id,avatar'
+            'feeders.feeder.profile:id,user_id,profile_photo_path'
         ])->findOrFail($id);
         return ApiResponse::success('360 Review retrieved successfully', $review);
     }
@@ -146,7 +146,7 @@ class Review360Controller extends Controller
 
         return ApiResponse::success('Feeders assigned successfully', $review->fresh([
             'feeders.feeder:id,name,email',
-            'feeders.feeder.profile:id,user_id,avatar'
+            'feeders.feeder.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -181,7 +181,7 @@ class Review360Controller extends Controller
 
         return ApiResponse::success('Feedback submitted successfully', $feeder->fresh([
             'feeder:id,name,email',
-            'feeder.profile:id,user_id,avatar'
+            'feeder.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -202,7 +202,7 @@ class Review360Controller extends Controller
         return ApiResponse::success('Self assessment submitted', $review->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -226,7 +226,7 @@ class Review360Controller extends Controller
 
         return ApiResponse::success('Manager assessment submitted', $review->fresh([
             'manager:id,name,email',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -243,7 +243,7 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review marked as completed', $review->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -266,7 +266,7 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review submitted for review', $review->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -289,7 +289,7 @@ class Review360Controller extends Controller
         return ApiResponse::success('360 Review approved', $review->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -303,7 +303,7 @@ class Review360Controller extends Controller
 
         $review = Review360::with([
             'feeders.feeder:id,name,email',
-            'feeders.feeder.profile:id,user_id,avatar'
+            'feeders.feeder.profile:id,user_id,profile_photo_path'
         ])->findOrFail($id);
 
         $feeders = $review->feeders->map(function ($feeder) {

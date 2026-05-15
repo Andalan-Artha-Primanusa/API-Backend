@@ -45,9 +45,9 @@ class CalibrationController extends Controller
         $sessions = $query->with([
                 'cycle:id,title',
                 'facilitator:id,name,email',
-                'facilitator.profile:id,user_id,avatar',
+                'facilitator.profile:id,user_id,profile_photo_path',
                 'participants.manager:id,name,email',
-                'participants.manager.profile:id,user_id,avatar',
+                'participants.manager.profile:id,user_id,profile_photo_path',
                 'participants.manager.employee:id,user_id,department_id,position_id',
                 'participants.manager.employee.department:id,name',
                 'participants.manager.employee.position:id,name'
@@ -80,7 +80,7 @@ class CalibrationController extends Controller
         return ApiResponse::success('Calibration session created', $session->load([
             'cycle:id,title', 
             'facilitator:id,name,email',
-            'facilitator.profile:id,user_id,avatar'
+            'facilitator.profile:id,user_id,profile_photo_path'
         ]), 201);
     }
 
@@ -93,15 +93,15 @@ class CalibrationController extends Controller
         $session = CalibrationSession::with([
             'cycle:id,title', 
             'facilitator:id,name,email',
-            'facilitator.profile:id,user_id,avatar',
+            'facilitator.profile:id,user_id,profile_photo_path',
             'participants.manager:id,name,email',
-            'participants.manager.profile:id,user_id,avatar',
+            'participants.manager.profile:id,user_id,profile_photo_path',
             'participants.manager.employee:id,user_id,department_id,position_id',
             'participants.manager.employee.department:id,name',
             'participants.manager.employee.position:id,name',
             'employeeReviews.employee:id,user_id,employee_code,department_id,position_id',
             'employeeReviews.employee.user:id,name,email',
-            'employeeReviews.employee.user.profile:id,user_id,avatar',
+            'employeeReviews.employee.user.profile:id,user_id,profile_photo_path',
             'employeeReviews.employee.department:id,name',
             'employeeReviews.employee.position:id,name',
             'employeeReviews.review360:id,overall_score,status'
@@ -136,7 +136,7 @@ class CalibrationController extends Controller
 
         return ApiResponse::success('Participants added', $session->fresh([
             'participants.manager:id,name,email',
-            'participants.manager.profile:id,user_id,avatar',
+            'participants.manager.profile:id,user_id,profile_photo_path',
             'participants.manager.employee:id,user_id,department_id,position_id',
             'participants.manager.employee.department:id,name',
             'participants.manager.employee.position:id,name'
@@ -171,7 +171,7 @@ class CalibrationController extends Controller
         return ApiResponse::success('Reviews added for calibration', $session->fresh([
             'employeeReviews.employee:id,user_id,employee_code,department_id,position_id',
             'employeeReviews.employee.user:id,name,email',
-            'employeeReviews.employee.user.profile:id,user_id,avatar',
+            'employeeReviews.employee.user.profile:id,user_id,profile_photo_path',
             'employeeReviews.employee.department:id,name',
             'employeeReviews.employee.position:id,name'
         ]));
@@ -193,7 +193,7 @@ class CalibrationController extends Controller
 
         return ApiResponse::success('Calibration session started', $session->fresh([
             'facilitator:id,name,email',
-            'facilitator.profile:id,user_id,avatar'
+            'facilitator.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -221,7 +221,7 @@ class CalibrationController extends Controller
         return ApiResponse::success('Employee review calibrated', $calibrationReview->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -236,7 +236,7 @@ class CalibrationController extends Controller
         $session = CalibrationSession::with([
                 'employeeReviews.employee:id,user_id,employee_code,department_id,position_id',
                 'employeeReviews.employee.user:id,name,email',
-                'employeeReviews.employee.user.profile:id,user_id,avatar',
+                'employeeReviews.employee.user.profile:id,user_id,profile_photo_path',
                 'employeeReviews.employee.department:id,name',
                 'employeeReviews.employee.position:id,name',
                 'employeeReviews.review360:id,overall_score'

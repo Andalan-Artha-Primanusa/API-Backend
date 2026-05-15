@@ -97,10 +97,10 @@ class DepartmentController extends Controller
 
             $department = Department::with([
                 'manager:id,name,email', 
-                'manager.profile:id,user_id,avatar',
+                'manager.profile:id,user_id,profile_photo_path',
                 'employees:id,user_id,employee_code,department_id,position_id',
                 'employees.user:id,name,email',
-                'employees.user.profile:id,user_id,avatar',
+                'employees.user.profile:id,user_id,profile_photo_path',
                 'employees.position:id,name'
             ])
                 ->withCount('employees')
@@ -145,7 +145,7 @@ class DepartmentController extends Controller
 
             return ApiResponse::success('Department updated successfully', $department->fresh([
                 'manager:id,name,email', 
-                'manager.profile:id,user_id,avatar'
+                'manager.profile:id,user_id,profile_photo_path'
             ]));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {

@@ -50,10 +50,10 @@ class LeaveController extends Controller
         $leaves = Leave::where('employee_id', $employee->id)
             ->with([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name'
@@ -118,16 +118,16 @@ class LeaveController extends Controller
     {
         $leave = Leave::with([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
                 'approver:id,name,email',
-                'approver.profile:id,user_id,avatar',
+                'approver.profile:id,user_id,profile_photo_path',
                 'approver.employee:id,user_id,position_id',
                 'approver.employee.position:id,name'
             ])
@@ -148,7 +148,7 @@ class LeaveController extends Controller
         $query = Leave::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name'
         ]);
@@ -213,10 +213,10 @@ class LeaveController extends Controller
 
         return ApiResponse::success('Leave updated successfully', $leave->fresh([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'leaveType:id,name'
@@ -237,13 +237,13 @@ class LeaveController extends Controller
 
         $deleted = $leave->load([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'flow.steps.role:id,name'
         ])->toArray();
 
@@ -268,16 +268,16 @@ class LeaveController extends Controller
 
         $query = Leave::with([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
                 'approver:id,name,email',
-                'approver.profile:id,user_id,avatar',
+                'approver.profile:id,user_id,profile_photo_path',
                 'approver.employee:id,user_id,position_id',
                 'approver.employee.position:id,name'
             ])
@@ -402,16 +402,16 @@ class LeaveController extends Controller
 
         return ApiResponse::success('Leave rejected successfully', $result['leave']->fresh([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'leaveType:id,name',
             'flow.steps.role:id,name',
             'approver:id,name,email',
-            'approver.profile:id,user_id,avatar',
+            'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
         ]));

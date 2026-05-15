@@ -93,15 +93,15 @@ class LeaveService
 
             return $leave->load([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
-                'approver.profile:id,user_id,avatar'
+                'approver.profile:id,user_id,profile_photo_path'
             ]);
         });
     }
@@ -118,15 +118,15 @@ class LeaveService
     {
         $query = Leave::with([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'leaveType:id,name',
             'flow.steps.role:id,name',
-            'approver.profile:id,user_id,avatar'
+            'approver.profile:id,user_id,profile_photo_path'
         ]);
 
         // Admin/HR/SuperAdmin — see all (no filter)
@@ -175,15 +175,15 @@ class LeaveService
             return [
                 'leave' => $leave->fresh([
                     'user:id,name,email',
-                    'user.profile:id,user_id,avatar',
+                    'user.profile:id,user_id,profile_photo_path',
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'leaveType:id,name',
                     'flow.steps.role:id,name',
-                    'approver.profile:id,user_id,avatar'
+                    'approver.profile:id,user_id,profile_photo_path'
                 ]),
                 'final' => true,
                 'action' => 'approved',
@@ -234,15 +234,15 @@ class LeaveService
             return [
                 'leave'  => $leave->fresh([
                     'user:id,name,email',
-                    'user.profile:id,user_id,avatar',
+                    'user.profile:id,user_id,profile_photo_path',
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'leaveType:id,name',
                     'flow.steps.role:id,name',
-                    'approver.profile:id,user_id,avatar'
+                    'approver.profile:id,user_id,profile_photo_path'
                 ]),
                 'final'  => true,
                 'action' => 'rejected',
@@ -264,15 +264,15 @@ class LeaveService
             return [
                 'leave' => $leave->load([
                     'user:id,name,email',
-                    'user.profile:id,user_id,avatar',
+                    'user.profile:id,user_id,profile_photo_path',
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,avatar',
+                    'employee.user.profile:id,user_id,profile_photo_path',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'leaveType:id,name',
                     'flow.steps.role:id,name',
-                    'approver.profile:id,user_id,avatar'
+                    'approver.profile:id,user_id,profile_photo_path'
                 ]),
                 'final'        => false,
                 'action'       => 'approved',
@@ -294,15 +294,15 @@ class LeaveService
         return [
             'leave' => $leave->fresh([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
-                'approver.profile:id,user_id,avatar'
+                'approver.profile:id,user_id,profile_photo_path'
             ]),
             'final'  => true,
             'action' => 'approved',
@@ -426,15 +426,15 @@ class LeaveService
 
             return $leave->fresh([
                 'user:id,name,email',
-                'user.profile:id,user_id,avatar',
+                'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
-                'approver.profile:id,user_id,avatar'
+                'approver.profile:id,user_id,profile_photo_path'
             ]);
         });
     }

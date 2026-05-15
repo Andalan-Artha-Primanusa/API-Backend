@@ -32,7 +32,7 @@ class AssetController extends Controller
         $query = InventoryAsset::with([
                 'assignments.employee:id,user_id,employee_code,department_id,position_id',
                 'assignments.employee.user:id,name,email',
-                'assignments.employee.user.profile:id,user_id,avatar',
+                'assignments.employee.user.profile:id,user_id,profile_photo_path',
                 'assignments.employee.department:id,name',
                 'assignments.employee.position:id,name',
             ])->latest();
@@ -91,11 +91,11 @@ class AssetController extends Controller
         $asset = InventoryAsset::with([
             'assignments.employee:id,user_id,employee_code,department_id,position_id',
             'assignments.employee.user:id,name,email',
-            'assignments.employee.user.profile:id,user_id,avatar',
+            'assignments.employee.user.profile:id,user_id,profile_photo_path',
             'assignments.employee.department:id,name',
             'assignments.employee.position:id,name',
             'assignments.assignedBy:id,name,email',
-            'assignments.assignedBy.profile:id,user_id,avatar'
+            'assignments.assignedBy.profile:id,user_id,profile_photo_path'
         ])->find($id);
 
         if (!$asset) {
@@ -236,11 +236,11 @@ class AssetController extends Controller
             'asset:id,code,name,brand,model', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'assignedBy:id,name,email', 
-            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.profile:id,user_id,profile_photo_path',
             'approvalFlow.steps.role', 
             'approvalFlow.steps.user'
         ]), 201);
@@ -272,11 +272,11 @@ class AssetController extends Controller
                 'asset:id,code,name,brand,model', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'assignedBy:id,name,email', 
-                'assignedBy.profile:id,user_id,avatar',
+                'assignedBy.profile:id,user_id,profile_photo_path',
                 'approvalFlow.steps.role', 
                 'approvalFlow.steps.user'
             ]));
@@ -311,11 +311,11 @@ class AssetController extends Controller
                 'asset:id,code,name,brand,model', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'assignedBy:id,name,email', 
-                'assignedBy.profile:id,user_id,avatar',
+                'assignedBy.profile:id,user_id,profile_photo_path',
                 'approvalFlow.steps.role', 
                 'approvalFlow.steps.user'
             ]));
@@ -381,11 +381,11 @@ class AssetController extends Controller
             'asset:id,code,name,brand,model', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'assignedBy:id,name,email', 
-            'assignedBy.profile:id,user_id,avatar'
+            'assignedBy.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -447,11 +447,11 @@ class AssetController extends Controller
             'asset:id,code,name,brand,model', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'assignedBy:id,name,email', 
-            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.profile:id,user_id,profile_photo_path',
             'approvalFlow.steps.role',
             'approvalFlow.steps.user',
         ])->latest();
@@ -485,7 +485,7 @@ class AssetController extends Controller
         $assignments = InventoryAssetAssignment::with([
                 'asset:id,code,name,brand,model', 
                 'assignedBy:id,name,email',
-                'assignedBy.profile:id,user_id,avatar'
+                'assignedBy.profile:id,user_id,profile_photo_path'
             ])
             ->where('employee_id', $employee->id)
             ->latest()

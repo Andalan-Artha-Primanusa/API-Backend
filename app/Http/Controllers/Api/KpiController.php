@@ -22,11 +22,11 @@ class KpiController extends Controller
     private const KPI_RELATIONS = [
         'employee:id,user_id,employee_code,department_id,position_id',
         'employee.user:id,name,email',
-        'employee.user.profile:id,user_id,avatar',
+        'employee.user.profile:id,user_id,profile_photo_path',
         'employee.department:id,name',
         'employee.position:id,name',
         'employee.manager:id,name',
-        'employee.manager.profile:id,user_id,avatar',
+        'employee.manager.profile:id,user_id,profile_photo_path',
     ];
 
     /*

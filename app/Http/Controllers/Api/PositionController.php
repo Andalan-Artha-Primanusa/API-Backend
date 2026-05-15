@@ -106,7 +106,7 @@ class PositionController extends Controller
                 'department:id,name', 
                 'employees:id,user_id,employee_code,department_id,position_id',
                 'employees.user:id,name,email',
-                'employees.user.profile:id,user_id,avatar',
+                'employees.user.profile:id,user_id,profile_photo_path',
                 'employees.department:id,name'
             ])
                 ->withCount('employees')

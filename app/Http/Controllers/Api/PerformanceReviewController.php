@@ -24,7 +24,7 @@ class PerformanceReviewController extends Controller
 
         $query = ReviewCycle::with([
                 'creator:id,name,email',
-                'creator.profile:id,user_id,avatar'
+                'creator.profile:id,user_id,profile_photo_path'
             ])
             ->withCount('reviews')
             ->latest();
@@ -65,7 +65,7 @@ class PerformanceReviewController extends Controller
 
         return ApiResponse::success('Review cycle created successfully', $cycle->load([
             'creator:id,name,email',
-            'creator.profile:id,user_id,avatar'
+            'creator.profile:id,user_id,profile_photo_path'
         ]), 201);
     }
 
@@ -74,13 +74,13 @@ class PerformanceReviewController extends Controller
         $cycle = ReviewCycle::with([
                 'reviews.employee:id,user_id,employee_code,department_id,position_id',
                 'reviews.employee.user:id,name,email',
-                'reviews.employee.user.profile:id,user_id,avatar',
+                'reviews.employee.user.profile:id,user_id,profile_photo_path',
                 'reviews.employee.department:id,name',
                 'reviews.employee.position:id,name',
                 'reviews.reviewer:id,name,email',
-                'reviews.reviewer.profile:id,user_id,avatar',
+                'reviews.reviewer.profile:id,user_id,profile_photo_path',
                 'creator:id,name,email',
-                'creator.profile:id,user_id,avatar'
+                'creator.profile:id,user_id,profile_photo_path'
             ])
             ->withCount('reviews')
             ->find($id);
@@ -120,7 +120,7 @@ class PerformanceReviewController extends Controller
 
         return ApiResponse::success('Review cycle updated successfully', $cycle->fresh([
             'creator:id,name,email',
-            'creator.profile:id,user_id,avatar'
+            'creator.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -141,7 +141,7 @@ class PerformanceReviewController extends Controller
 
         return ApiResponse::success('Review cycle closed successfully', $cycle->fresh([
             'creator:id,name,email',
-            'creator.profile:id,user_id,avatar'
+            'creator.profile:id,user_id,profile_photo_path'
         ]));
     }
 
@@ -159,11 +159,11 @@ class PerformanceReviewController extends Controller
                 'cycle:id,name,period_type,year', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'reviewer:id,name,email', 
-                'reviewer.profile:id,user_id,avatar',
+                'reviewer.profile:id,user_id,profile_photo_path',
                 'kpi:id,title,target,achievement,score'
             ])
             ->latest();
@@ -215,11 +215,11 @@ class PerformanceReviewController extends Controller
             'cycle:id,name,period_type,year', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'reviewer:id,name,email', 
-            'reviewer.profile:id,user_id,avatar',
+            'reviewer.profile:id,user_id,profile_photo_path',
             'kpi:id,title,target,achievement,score'
         ]), 201);
     }
@@ -230,11 +230,11 @@ class PerformanceReviewController extends Controller
             'cycle:id,name,period_type,year', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'reviewer:id,name,email', 
-            'reviewer.profile:id,user_id,avatar',
+            'reviewer.profile:id,user_id,profile_photo_path',
             'kpi:id,title,target,achievement,score'
         ])
             ->find($id);
@@ -283,11 +283,11 @@ class PerformanceReviewController extends Controller
             'cycle:id,name,period_type,year', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'reviewer:id,name,email', 
-            'reviewer.profile:id,user_id,avatar',
+            'reviewer.profile:id,user_id,profile_photo_path',
             'kpi:id,title,target,achievement,score'
         ]));
     }
@@ -320,11 +320,11 @@ class PerformanceReviewController extends Controller
             'cycle:id,name,period_type,year', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'reviewer:id,name,email', 
-            'reviewer.profile:id,user_id,avatar',
+            'reviewer.profile:id,user_id,profile_photo_path',
             'kpi:id,title,target,achievement,score'
         ]));
     }
@@ -362,11 +362,11 @@ class PerformanceReviewController extends Controller
             'cycle:id,name,period_type,year', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'reviewer:id,name,email', 
-            'reviewer.profile:id,user_id,avatar',
+            'reviewer.profile:id,user_id,profile_photo_path',
             'kpi:id,title,target,achievement,score'
         ]));
     }
@@ -399,11 +399,11 @@ class PerformanceReviewController extends Controller
             'cycle:id,name,period_type,year', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,avatar',
+            'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'reviewer:id,name,email', 
-            'reviewer.profile:id,user_id,avatar',
+            'reviewer.profile:id,user_id,profile_photo_path',
             'kpi:id,title,target,achievement,score'
         ]));
     }
@@ -416,11 +416,11 @@ class PerformanceReviewController extends Controller
                 'cycle:id,name,period_type,year', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,avatar',
+                'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'reviewer:id,name,email', 
-                'reviewer.profile:id,user_id,avatar',
+                'reviewer.profile:id,user_id,profile_photo_path',
                 'kpi:id,title,target,achievement,score'
             ])
             ->where('employee_id', $employee->id)

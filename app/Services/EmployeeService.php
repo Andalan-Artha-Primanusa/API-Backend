@@ -17,13 +17,13 @@ class EmployeeService
     {
         $query = Employee::with([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]);
 
         // Filter by department
@@ -59,13 +59,13 @@ class EmployeeService
     {
         return Employee::with([
             'user:id,name,email',
-            'user.profile:id,user_id,phone,address,gender,avatar',
+            'user.profile:id,user_id,phone,address,gender,profile_photo_path',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ])->findOrFail($id);
     }
 
@@ -91,13 +91,13 @@ class EmployeeService
 
         return Employee::create($data)->load([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]);
     }
 
@@ -126,13 +126,13 @@ class EmployeeService
 
         return $employee->fresh([
             'user:id,name,email',
-            'user.profile:id,user_id,avatar',
+            'user.profile:id,user_id,profile_photo_path',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
-            'manager.profile:id,user_id,avatar'
+            'manager.profile:id,user_id,profile_photo_path'
         ]);
     }
 

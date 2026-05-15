@@ -23,7 +23,7 @@ class UserProfileController extends Controller
         'employee.department:id,name',
         'employee.position:id,name',
         'employee.manager:id,name,email',
-        'employee.manager.profile:id,user_id,avatar',
+        'employee.manager.profile:id,user_id,profile_photo_path',
         'employee.manager.employee:id,user_id,position_id',
         'employee.manager.employee.position:id,name',
     ];
