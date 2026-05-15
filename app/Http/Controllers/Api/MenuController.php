@@ -132,6 +132,12 @@ class MenuController
             return ApiResponse::success('All menus', array_column(self::MENU_DEFINITIONS, 'key'));
         }
 
+        // Jika user tidak punya role, tidak ada menu yang bisa diakses
+        if (!$user->roles->count()) {
+            return ApiResponse::success('No allowed menus', []);
+        }
+
+        // Menu permission sudah dikonfigurasi → hanya return menu yang di-assign ke role user
         $userRoleIds = $user->roles->pluck('id');
         $assignedKeys = MenuPermission::whereIn('role_id', $userRoleIds)
             ->pluck('menu_key')
@@ -139,18 +145,6 @@ class MenuController
             ->values()
             ->toArray();
 
-        $allKeys = array_column(self::MENU_DEFINITIONS, 'key');
-        $restrictedKeys = MenuPermission::select('menu_key')->distinct()->pluck('menu_key')->toArray();
-
-        // Menus with no restrictions are visible to everyone
-        // Menus with restrictions are only visible if user's role is assigned
-        $allowedKeys = [];
-        foreach ($allKeys as $key) {
-            if (!in_array($key, $restrictedKeys) || in_array($key, $assignedKeys)) {
-                $allowedKeys[] = $key;
-            }
-        }
-
-        return ApiResponse::success('Allowed menus', $allowedKeys);
+        return ApiResponse::success('Allowed menus', $assignedKeys);
     }
 }
