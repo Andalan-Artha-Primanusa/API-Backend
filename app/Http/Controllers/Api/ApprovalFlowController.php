@@ -22,7 +22,14 @@ class ApprovalFlowController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $flows = ApprovalFlow::with('steps.role', 'steps.user.employee')
+        $flows = ApprovalFlow::with([
+                'steps.role:id,name',
+                'steps.user:id,name,email',
+                'steps.user.profile:id,user_id,avatar',
+                'steps.user.employee:id,user_id,employee_code,department_id,position_id',
+                'steps.user.employee.department:id,name',
+                'steps.user.employee.position:id,name',
+            ])
             ->withCount('steps')
             ->orderBy('module')
             ->orderBy('name')
@@ -39,7 +46,14 @@ class ApprovalFlowController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $flow = ApprovalFlow::with('steps.role', 'steps.user.employee')->find($id);
+        $flow = ApprovalFlow::with([
+            'steps.role:id,name',
+            'steps.user:id,name,email',
+            'steps.user.profile:id,user_id,avatar',
+            'steps.user.employee:id,user_id,employee_code,department_id,position_id',
+            'steps.user.employee.department:id,name',
+            'steps.user.employee.position:id,name',
+        ])->find($id);
 
         if (!$flow) {
             return ApiResponse::error('Approval flow not found', null, 404);
@@ -81,7 +95,14 @@ class ApprovalFlowController extends Controller
                 ]);
             }
 
-            return $flow->load('steps.role', 'steps.user.employee');
+            return $flow->load([
+                'steps.role:id,name',
+                'steps.user:id,name,email',
+                'steps.user.profile:id,user_id,avatar',
+                'steps.user.employee:id,user_id,employee_code,department_id,position_id',
+                'steps.user.employee.department:id,name',
+                'steps.user.employee.position:id,name',
+            ]);
         });
 
         return ApiResponse::success('Approval flow created successfully', $flow, 201);
@@ -127,7 +148,14 @@ class ApprovalFlowController extends Controller
                 }
             }
 
-            return $flow->fresh('steps.role', 'steps.user.employee');
+            return $flow->fresh([
+                'steps.role:id,name',
+                'steps.user:id,name,email',
+                'steps.user.profile:id,user_id,avatar',
+                'steps.user.employee:id,user_id,employee_code,department_id,position_id',
+                'steps.user.employee.department:id,name',
+                'steps.user.employee.position:id,name',
+            ]);
         });
 
         return ApiResponse::success('Approval flow updated successfully', $flow);

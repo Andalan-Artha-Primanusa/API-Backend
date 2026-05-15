@@ -45,7 +45,16 @@ class OrgStructureController extends Controller
             'order' => 'sometimes|string|in:asc,desc',
         ]);
 
-        $query = Employee::with(['user.profile', 'manager.profile', 'location', 'workSchedule']);
+        $query = Employee::with([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'department:id,name',
+            'position:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]);
 
         if (!empty($validated['search'])) {
             $search = $validated['search'];
@@ -97,7 +106,16 @@ class OrgStructureController extends Controller
             'location_id' => 'sometimes|integer|exists:locations,id',
         ]);
 
-        $query = Employee::with(['user.profile', 'manager.profile', 'location', 'workSchedule'])
+        $query = Employee::with([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'department:id,name',
+                'position:id,name',
+                'location:id,name',
+                'workSchedule:id,name,check_in_time,check_out_time',
+                'manager:id,name',
+                'manager.profile:id,user_id,avatar'
+            ])
             ->where('manager_id', $managerUserId);
 
         if (!empty($validated['department'])) {
@@ -133,7 +151,16 @@ class OrgStructureController extends Controller
             'location_id' => 'sometimes|integer|exists:locations,id',
         ]);
 
-        $query = Employee::with(['user.profile', 'manager.profile']);
+        $query = Employee::with([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'department:id,name',
+            'position:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]);
 
         if (!empty($validated['department'])) {
             $query->where('department', $validated['department']);
@@ -167,8 +194,8 @@ class OrgStructureController extends Controller
                 'user_id' => $employee->user_id,
                 'name' => $displayName,
                 'employee_code' => $employee->employee_code,
-                'position' => $employee->position,
-                'department' => $employee->department,
+                'position' => $employee->position?->name ?? $employee->position,
+                'department' => $employee->department?->name ?? $employee->department,
                 'status' => $employee->status,
                 'manager_user_id' => $employee->manager_id,
                 'manager_name' => $employee->manager?->profile?->full_name
@@ -199,7 +226,12 @@ class OrgStructureController extends Controller
             'location_id' => 'sometimes|integer|exists:locations,id',
         ]);
 
-        $query = Employee::with(['location', 'workSchedule']);
+        $query = Employee::with([
+            'department:id,name',
+            'position:id,name',
+            'location:id,name',
+            'workSchedule:id,name'
+        ]);
 
         if (!empty($validated['department'])) {
             $query->where('department', $validated['department']);

@@ -25,8 +25,11 @@ class KpiPeriodController extends Controller
             }
 
             $query = KpiPeriod::with([
-                'employee:id,user_id,position,department',
+                'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
                 'items',
             ]);
 
@@ -117,9 +120,14 @@ class KpiPeriodController extends Controller
     {
         try {
             $period = KpiPeriod::with([
-                'employee.user',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
                 'items',
-                'creator:id,name',
+                'creator:id,name,email',
+                'creator.profile:id,user_id,avatar'
             ])->findOrFail($id);
 
             $user = $request->user();
@@ -322,22 +330,52 @@ class KpiPeriodController extends Controller
                 return ApiResponse::success('Item KPI berhasil disetujui', $period->fresh(['employee.user', 'items']));
             }
 
-            // Approve all items if no item_id (legacy behavior)
-            if ($period->status !== 'submitted') {
-                return ApiResponse::error('Status tidak valid', 'Periode KPI harus diajukan terlebih dahulu', 400);
+            // Correct Flow Integration: Use ApprovalFlowService
+            try {
+                $approvalService = app(\App\Services\ApprovalFlowService::class);
+                $result = $approvalService->processApproval($period, $user, 'approved', $request->note);
+                
+                $period = $result['model'];
+                
+                // If final approval, ensure items are also marked
+                if ($result['final']) {
+                    foreach ($period->items as $item) {
+                        $item->calculateScore();
+                        $item->status = 'approved';
+                        $item->save();
+                    }
+                    $period->calculateOverallScore();
+                    $period->status = 'approved';
+                    $period->save();
+                }
+
+                $period->load([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'items'
+                ]);
+
+                return ApiResponse::success(
+                    $result['final'] ? 'Periode KPI berhasil disetujui sepenuhnya' : 'Periode KPI disetujui - menunggu tahap berikutnya', 
+                    $period
+                );
+            } catch (\Exception $e) {
+                // Fallback: simple single-step approval
+                foreach ($period->items as $item) {
+                    $item->calculateScore();
+                    $item->status = 'approved';
+                    $item->save();
+                }
+
+                $period->calculateOverallScore();
+                $period->status = 'approved';
+                $period->save();
+
+                return ApiResponse::success('Periode KPI berhasil disetujui', $period->fresh(['employee.user', 'items']));
             }
-
-            foreach ($period->items as $item) {
-                $item->calculateScore();
-                $item->status = 'approved';
-                $item->save();
-            }
-
-            $period->calculateOverallScore();
-            $period->status = 'approved';
-            $period->save();
-
-            return ApiResponse::success('Periode KPI berhasil disetujui', $period->fresh(['employee.user', 'items']));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return ApiResponse::error('Tidak ditemukan', 'Periode KPI tidak ditemukan', 404);
         } catch (\Exception $e) {

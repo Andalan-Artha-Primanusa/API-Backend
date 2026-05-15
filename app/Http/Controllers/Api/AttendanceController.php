@@ -39,7 +39,13 @@ class AttendanceController extends Controller
             return ApiResponse::success('Check-in successful', [
                 'location' => $result['location'],
                 'distance' => $result['distance'] . ' meter',
-                'data'     => $result['attendance'],
+                'data'     => $result['attendance']->load([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,avatar',
+                    'user.employee:id,user_id,department_id,position_id',
+                    'user.employee.departmentRel:id,name',
+                    'user.employee.positionRel:id,name',
+                ]),
                 'status'   => $result['attendance']->status,
             ]);
         } catch (\DomainException $e) {
@@ -71,7 +77,13 @@ class AttendanceController extends Controller
             }
 
             return ApiResponse::success($message, [
-                'attendance' => $result['attendance'],
+                'attendance' => $result['attendance']->load([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,avatar',
+                    'user.employee:id,user_id,department_id,position_id',
+                    'user.employee.departmentRel:id,name',
+                    'user.employee.positionRel:id,name',
+                ]),
                 'overtime_request' => $result['overtime_request'],
             ]);
         } catch (\DomainException $e) {
@@ -95,6 +107,17 @@ class AttendanceController extends Controller
 
         try {
             $data = $this->attendanceService->getHistory($request->user());
+            if ($data instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+                $data->getCollection()->transform(function ($item) {
+                    return $item->load([
+                        'user:id,name,email',
+                        'user.profile:id,user_id,avatar',
+                        'user.employee:id,user_id,department_id,position_id',
+                        'user.employee.department:id,name',
+                        'user.employee.position:id,name',
+                    ]);
+                });
+            }
 
             return ApiResponse::success('Attendance history', $data);
         } catch (\Exception $e) {
@@ -116,6 +139,15 @@ class AttendanceController extends Controller
 
         try {
             $attendance = $this->attendanceService->getToday($request->user());
+            if ($attendance) {
+                $attendance->load([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,avatar',
+                    'user.employee:id,user_id,department_id,position_id',
+                    'user.employee.departmentRel:id,name',
+                    'user.employee.positionRel:id,name',
+                ]);
+            }
 
             return ApiResponse::success('Today attendance', $attendance);
         } catch (\Exception $e) {
@@ -209,7 +241,7 @@ class AttendanceController extends Controller
             // Optimized query with eager loading
             $query = Attendance::with([
                 'user:id,name,email',
-                'user.profile:user_id,phone,address',
+                'user.profile:id,user_id,phone,address,avatar',
                 'user.employee:id,user_id,employee_code,department_id,position_id',
                 'user.employee.department:id,name',
                 'user.employee.position:id,name',
@@ -260,7 +292,7 @@ class AttendanceController extends Controller
             // Optimized query with eager loading
             $attendance = Attendance::with([
                 'user:id,name,email',
-                'user.profile:user_id,phone,address',
+                'user.profile:id,user_id,phone,address,avatar',
                 'user.employee:id,user_id,employee_code,department_id,position_id',
                 'user.employee.department:id,name',
                 'user.employee.position:id,name',

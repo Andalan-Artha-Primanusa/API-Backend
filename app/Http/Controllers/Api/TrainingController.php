@@ -39,7 +39,13 @@ class TrainingController extends Controller
             'search' => 'sometimes|string|max:255',
         ]);
 
-        $query = TrainingProgram::with('enrollments.employee.user')->latest();
+        $query = TrainingProgram::with([
+                'enrollments.employee:id,user_id,employee_code,department_id,position_id',
+                'enrollments.employee.user:id,name,email',
+                'enrollments.employee.user.profile:id,user_id,avatar',
+                'enrollments.employee.department:id,name',
+                'enrollments.employee.position:id,name',
+            ])->latest();
 
         if (!empty($validated['status'])) {
             $query->where('status', $validated['status']);
@@ -86,7 +92,15 @@ class TrainingController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $program = TrainingProgram::with(['enrollments.employee.user.profile', 'enrollments.employee.manager.profile'])->find($id);
+        $program = TrainingProgram::with([
+            'enrollments.employee:id,user_id,employee_code,department_id,position_id',
+            'enrollments.employee.user:id,name,email',
+            'enrollments.employee.user.profile:id,user_id,avatar',
+            'enrollments.employee.department:id,name',
+            'enrollments.employee.position:id,name',
+            'enrollments.employee.manager:id,name,email',
+            'enrollments.employee.manager.profile:id,user_id,avatar'
+        ])->find($id);
 
         if (!$program) {
             return ApiResponse::error('Training program not found', null, 404);
@@ -206,13 +220,29 @@ class TrainingController extends Controller
             }
         }
 
-        return ApiResponse::success('Employees enrolled successfully', $enrollments, 201);
+        $enrichedEnrollments = TrainingEnrollment::whereIn('id', collect($enrollments)->pluck('id'))
+            ->with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name'
+            ])->get();
+
+        return ApiResponse::success('Employees enrolled successfully', $enrichedEnrollments, 201);
     }
 
     public function myTrainings(Request $request): JsonResponse
     {
         if ($this->canUseAdminTrainingViews($request)) {
-            $data = TrainingEnrollment::with('program', 'employee.user.profile')
+            $data = TrainingEnrollment::with([
+                    'program:id,title,mode,start_date,end_date,status', 
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name'
+                ])
                 ->latest()
                 ->paginate($request->integer('per_page', 10))
                 ->withQueryString();
@@ -222,7 +252,14 @@ class TrainingController extends Controller
 
         $employee = $this->getAuthenticatedEmployee();
 
-        $data = TrainingEnrollment::with('program')
+        $data = TrainingEnrollment::with([
+                'program:id,title,mode,start_date,end_date,status',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name'
+            ])
             ->where('employee_id', $employee->id)
             ->latest()
             ->paginate($request->integer('per_page', 10))
@@ -274,7 +311,14 @@ class TrainingController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Training enrollment completed successfully', $enrollment->fresh(['program', 'employee.user.profile']));
+        return ApiResponse::success('Training enrollment completed successfully', $enrollment->fresh([
+            'program:id,title,mode,start_date,end_date,status', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function enrollmentsIndex(Request $request): JsonResponse
@@ -285,7 +329,16 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollments = TrainingEnrollment::with(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->latest()->paginate($request->integer('per_page', 10))->withQueryString();
+        $enrollments = TrainingEnrollment::with([
+                'program:id,title,mode,start_date,end_date,status', 
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'approvalFlow.steps.role', 
+                'approvalFlow.steps.user'
+            ])->latest()->paginate($request->integer('per_page', 10))->withQueryString();
 
         $service = app(ApprovalFlowService::class);
         $enrollments->getCollection()->transform(function ($item) use ($service, $user) {
@@ -361,7 +414,16 @@ class TrainingController extends Controller
             // If no approval flow configured, keep simple approval
         }
 
-        return ApiResponse::success('Successfully requested enrollment in training program. Waiting for approval.', $enrollment->fresh(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']), 201);
+        return ApiResponse::success('Successfully requested enrollment in training program. Waiting for approval.', $enrollment->fresh([
+            'program:id,title,mode,start_date,end_date,status', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approvalFlow.steps.role', 
+            'approvalFlow.steps.user'
+        ]), 201);
     }
 
     public function approveEnrollment(Request $request, int $id): JsonResponse
@@ -385,7 +447,16 @@ class TrainingController extends Controller
                 $result = $approvalService->processApproval($enrollment, $user, 'approved', $request->note);
 
                 $enrollment = $result['model'];
-                $enrollment->load(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+                $enrollment->load([
+                    'program:id,title,mode,start_date,end_date,status', 
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approvalFlow.steps.role', 
+                    'approvalFlow.steps.user'
+                ]);
 
                 if ($result['final']) {
                     $enrollment->update(['status' => 'enrolled']);
@@ -434,7 +505,14 @@ class TrainingController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Training enrollment approved', $enrollment->fresh(['program', 'employee.user.profile']));
+        return ApiResponse::success('Training enrollment approved', $enrollment->fresh([
+            'program:id,title,mode,start_date,end_date,status', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function rejectEnrollment(Request $request, int $id): JsonResponse
@@ -458,7 +536,16 @@ class TrainingController extends Controller
                 $result = $approvalService->processApproval($enrollment, $user, 'rejected', $request->note);
 
                 $enrollment = $result['model'];
-                $enrollment->load(['program', 'employee.user.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+                $enrollment->load([
+                    'program:id,title,mode,start_date,end_date,status', 
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approvalFlow.steps.role', 
+                    'approvalFlow.steps.user'
+                ]);
 
                 if ($enrollment->employee?->user) {
                     UserNotification::create([
@@ -501,6 +588,13 @@ class TrainingController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Training enrollment rejected', $enrollment->fresh(['program', 'employee.user.profile']));
+        return ApiResponse::success('Training enrollment rejected', $enrollment->fresh([
+            'program:id,title,mode,start_date,end_date,status', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 }

@@ -15,7 +15,7 @@ class WorkScheduleController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $schedules = WorkSchedule::latest()->get();
+        $schedules = WorkSchedule::latest()->paginate($request->integer('per_page', 10))->withQueryString();
 
         return ApiResponse::success('Work schedules list', $schedules);
     }

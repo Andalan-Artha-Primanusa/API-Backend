@@ -21,7 +21,11 @@ class RecruitmentController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $query = JobOpening::with(['location', 'creator:id,name,email'])
+        $query = JobOpening::with([
+                'location:id,name', 
+                'creator:id,name,email',
+                'creator.profile:id,user_id,avatar'
+            ])
             ->withCount('candidates')
             ->latest();
 
@@ -71,12 +75,22 @@ class RecruitmentController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Job opening created successfully', $opening->load(['location', 'creator:id,name,email']), 201);
+        return ApiResponse::success('Job opening created successfully', $opening->load([
+            'location:id,name', 
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function openingsShow(Request $request, int $id): JsonResponse
     {
-        $opening = JobOpening::with(['location', 'creator:id,name,email', 'candidates.assignee:id,name,email'])
+        $opening = JobOpening::with([
+                'location:id,name', 
+                'creator:id,name,email',
+                'creator.profile:id,user_id,avatar',
+                'candidates.assignee:id,name,email',
+                'candidates.assignee.profile:id,user_id,avatar'
+            ])
             ->withCount('candidates')
             ->find($id);
 
@@ -116,7 +130,11 @@ class RecruitmentController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Job opening updated successfully', $opening->fresh(['location', 'creator:id,name,email']));
+        return ApiResponse::success('Job opening updated successfully', $opening->fresh([
+            'location:id,name', 
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar'
+        ]));
     }
 
     public function openingsDestroy(Request $request, int $id): JsonResponse
@@ -145,7 +163,11 @@ class RecruitmentController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $query = Candidate::with(['opening:id,code,title,status', 'assignee:id,name,email'])
+        $query = Candidate::with([
+                'opening:id,code,title,status', 
+                'assignee:id,name,email',
+                'assignee.profile:id,user_id,avatar'
+            ])
             ->latest();
 
         if (!empty($validated['job_opening_id'])) {
@@ -203,12 +225,22 @@ class RecruitmentController extends Controller
             'last_activity_at' => $validated['last_activity_at'] ?? now(),
         ]);
 
-        return ApiResponse::success('Candidate created successfully', $candidate->load(['opening:id,code,title,status', 'assignee:id,name,email']), 201);
+        return ApiResponse::success('Candidate created successfully', $candidate->load([
+            'opening:id,code,title,status', 
+            'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function candidatesShow(Request $request, int $id): JsonResponse
     {
-        $candidate = Candidate::with(['opening.location', 'assignee:id,name,email', 'creator:id,name,email'])
+        $candidate = Candidate::with([
+                'opening.location', 
+                'assignee:id,name,email', 
+                'assignee.profile:id,user_id,avatar',
+                'creator:id,name,email',
+                'creator.profile:id,user_id,avatar'
+            ])
             ->find($id);
 
         if (!$candidate) {
@@ -250,7 +282,11 @@ class RecruitmentController extends Controller
             'last_activity_at' => $validated['last_activity_at'] ?? now(),
         ]);
 
-        return ApiResponse::success('Candidate updated successfully', $candidate->fresh(['opening:id,code,title,status', 'assignee:id,name,email']));
+        return ApiResponse::success('Candidate updated successfully', $candidate->fresh([
+            'opening:id,code,title,status', 
+            'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar'
+        ]));
     }
 
     public function candidatesMoveStage(Request $request, int $id): JsonResponse
@@ -278,7 +314,11 @@ class RecruitmentController extends Controller
                 : Candidate::STATUS_ACTIVE,
         ]);
 
-        return ApiResponse::success('Candidate stage updated successfully', $candidate->fresh(['opening:id,code,title,status', 'assignee:id,name,email']));
+        return ApiResponse::success('Candidate stage updated successfully', $candidate->fresh([
+            'opening:id,code,title,status', 
+            'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar'
+        ]));
     }
 
     public function candidatesDestroy(Request $request, int $id): JsonResponse

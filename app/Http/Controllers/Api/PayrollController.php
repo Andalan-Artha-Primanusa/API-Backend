@@ -33,7 +33,17 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])
+        $data = Payroll::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ])
             ->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -48,7 +58,17 @@ class PayrollController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])
+        $data = Payroll::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ])
             ->where('employee_id', $employee->id)
             ->latest()
             ->paginate($request->integer('per_page', 10))
@@ -62,7 +82,17 @@ class PayrollController extends Controller
 
     public function show(Request $request, $id): JsonResponse
     {
-        $data = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])->find($id);
+        $data = Payroll::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ])->find($id);
 
         if (!$data) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -115,7 +145,17 @@ class PayrollController extends Controller
 
                 return ApiResponse::success(
                     'Payroll created successfully',
-                    $payroll->load(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements']),
+                    $payroll->load([
+                        'employee:id,user_id,employee_code,department_id,position_id',
+                        'employee.user:id,name,email',
+                        'employee.user.profile:id,user_id,avatar',
+                        'employee.department:id,name',
+                        'employee.position:id,name',
+                        'employee.manager:id,name',
+                        'employee.manager.profile:id,user_id,avatar',
+                        'details',
+                        'reimbursements'
+                    ]),
                     201
                 );
             } catch (\DomainException $e) {
@@ -136,10 +176,20 @@ class PayrollController extends Controller
 
         try {
             $result = $this->payrollService->generateMonthlyBulk($request->period);
+            
+            // Hydrate with Mega-Full context
+            $hydrated = Payroll::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'details'
+            ])->whereIn('id', collect($result)->pluck('id'))->get();
 
             return ApiResponse::success('Payroll generation completed successfully', [
-                'total' => count($result),
-                'data'  => $result,
+                'total' => $hydrated->count(),
+                'data'  => $hydrated,
             ]);
         } catch (\Exception $e) {
             return ApiResponse::error('Error generating payroll', ['error' => $e->getMessage()], 500);
@@ -169,7 +219,17 @@ class PayrollController extends Controller
 
         $payroll->update($validated);
 
-        return ApiResponse::success('Payroll updated successfully', $payroll->fresh(['employee.user.profile', 'details']));
+        return ApiResponse::success('Payroll updated successfully', $payroll->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ]));
     }
 
     public function destroy($id): JsonResponse
@@ -233,7 +293,17 @@ class PayrollController extends Controller
             'manager_approved_at' => now(),
         ]);
 
-        return ApiResponse::success('Payroll approved by manager — awaiting HR final approval', $payroll->fresh(['employee.user.profile', 'details']));
+        return ApiResponse::success('Payroll approved by manager — awaiting HR final approval', $payroll->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ]));
     }
 
     /**
@@ -272,7 +342,17 @@ class PayrollController extends Controller
             'hr_approved_at'  => now(),
         ]);
 
-        return ApiResponse::success('Payroll approved by HR — ready for payment', $payroll->fresh(['employee.user.profile', 'details']));
+        return ApiResponse::success('Payroll approved by HR — ready for payment', $payroll->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ]));
     }
 
     /**
@@ -313,7 +393,17 @@ class PayrollController extends Controller
             'rejected_reason' => $request->reason,
         ]);
 
-        return ApiResponse::success('Payroll rejected', $payroll->fresh(['employee.user.profile', 'details']));
+        return ApiResponse::success('Payroll rejected', $payroll->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ]));
     }
 
     /**
@@ -367,7 +457,17 @@ class PayrollController extends Controller
             'paid_at' => now(),
         ]);
 
-        return ApiResponse::success('Payroll paid', $payroll->fresh(['employee.user.profile', 'details']));
+        return ApiResponse::success('Payroll paid', $payroll->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ]));
     }
 
     /**
@@ -411,6 +511,14 @@ class PayrollController extends Controller
         return ApiResponse::success("Bulk pay completed for period {$period}", [
             'period' => $period,
             'total_paid' => $payrolls->count(),
+            'data' => $payrolls->load([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'details'
+            ])
         ]);
     }
 
@@ -422,7 +530,17 @@ class PayrollController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $payroll = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])
+        $payroll = Payroll::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'employee.manager:id,name',
+                'employee.manager.profile:id,user_id,avatar',
+                'details',
+                'reimbursements'
+            ])
             ->where('id', $id)
             ->where('employee_id', $employee->id)
             ->first();
@@ -442,7 +560,17 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $payroll = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details', 'reimbursements'])->find($id);
+        $payroll = Payroll::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id,avatar',
+            'details',
+            'reimbursements'
+        ])->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -454,7 +582,14 @@ class PayrollController extends Controller
     public function exportSlipCsv(Request $request, int $id)
     {
         $user    = $request->user();
-        $payroll = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details'])->find($id);
+        $payroll = Payroll::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'details'
+        ])->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -500,7 +635,14 @@ class PayrollController extends Controller
     public function exportSlipPdf(Request $request, int $id)
     {
         $user    = $request->user();
-        $payroll = Payroll::with(['employee.user.profile', 'employee.manager.profile', 'details'])->find($id);
+        $payroll = Payroll::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'details'
+        ])->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -608,7 +750,13 @@ class PayrollController extends Controller
         $request->validate(['period' => 'required|string|max:50']);
 
         $period   = $request->input('period');
-        $payrolls = Payroll::with(['employee.user.profile', 'employee.user'])
+        $payrolls = Payroll::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+            ])
             ->where('period', $period)
             ->get();
 
@@ -630,8 +778,8 @@ class PayrollController extends Controller
                 $index + 1,
                 $payroll->employee?->employee_code ?? '',
                 $payroll->employee?->user?->name ?? '',
-                $payroll->employee?->department ?? '',
-                $payroll->employee?->position ?? '',
+                $payroll->employee?->department?->name ?? '',
+                $payroll->employee?->position?->name ?? '',
                 $profile?->bank_name ?? '',
                 $profile?->bank_account_number ?? '',
                 $profile?->bank_account_name ?? '',
@@ -697,8 +845,8 @@ class PayrollController extends Controller
                 'employee_code' => $payroll->employee?->employee_code,
                 'name'          => $payroll->employee?->user?->name,
                 'email'         => $payroll->employee?->user?->email,
-                'department'    => $payroll->employee?->department,
-                'position'      => $payroll->employee?->position,
+                'department'    => $payroll->employee?->department?->name,
+                'position'      => $payroll->employee?->position?->name,
             ],
             'summary'  => [
                 'basic_salary'          => (float) $payroll->basic_salary,

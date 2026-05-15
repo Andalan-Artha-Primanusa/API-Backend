@@ -47,7 +47,7 @@ class Reimbursement extends Model
     // 🔥 Reimbursement milik employee
     public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class)->withDefault();
     }
 
     // 🔥 Linked payroll
@@ -59,7 +59,7 @@ class Reimbursement extends Model
     // 🔥 Approved by user
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by')->withDefault();
     }
 
     // 🔥 Approval flow

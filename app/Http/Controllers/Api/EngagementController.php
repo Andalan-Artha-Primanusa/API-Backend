@@ -32,7 +32,13 @@ class EngagementController extends Controller
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $data = DB::table('engagement_surveys')->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
+        $data = DB::table('engagement_surveys as s')
+            ->leftJoin('users as u', 'u.id', '=', 's.created_by')
+            ->leftJoin('user_profiles as p', 'p.user_id', '=', 'u.id')
+            ->select('s.*', 'u.name as creator_name', 'p.avatar as creator_avatar')
+            ->orderByDesc('s.id')
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
         return ApiResponse::success('Engagement surveys retrieved successfully', $data);
     }
 
@@ -135,10 +141,22 @@ class EngagementController extends Controller
             ? round((($enps->promoters / $enps->total) * 100) - (($enps->detractors / $enps->total) * 100), 2)
             : 0;
 
+        $byDept = DB::table('engagement_survey_responses as r')
+            ->join('employees as e', 'e.id', '=', 'r.employee_id')
+            ->join('departments as d', 'd.id', '=', 'e.department_id')
+            ->where('r.survey_id', $surveyId)
+            ->whereNotNull('r.rating_value')
+            ->select('d.name as department_name')
+            ->selectRaw('AVG(r.rating_value) as avg_rating')
+            ->selectRaw('COUNT(DISTINCT r.employee_id) as total_participants')
+            ->groupBy('d.id', 'd.name')
+            ->get();
+
         return ApiResponse::success('Survey analytics retrieved successfully', [
             'total_responses' => $totalResponses,
             'average_rating' => $avgRating ? round((float) $avgRating, 2) : 0,
             'enps_score' => $enpsScore,
+            'by_department' => $byDept,
         ]);
     }
 }

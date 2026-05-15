@@ -36,7 +36,17 @@ class EmployeeDocumentController extends Controller
         $from = now()->startOfDay();
         $until = now()->addDays($days)->endOfDay();
 
-        $query = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email'])
+        $query = EmployeeDocument::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'uploader:id,name,email',
+                'uploader.profile:id,user_id,avatar',
+                'reviewer:id,name,email',
+                'reviewer.profile:id,user_id,avatar'
+            ])
             ->where(function ($builder) {
                 $builder->where('category', 'contract')
                     ->orWhere('document_type', 'contract')
@@ -132,7 +142,17 @@ class EmployeeDocumentController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $query = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email'])
+        $query = EmployeeDocument::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'uploader:id,name,email',
+                'uploader.profile:id,user_id,avatar',
+                'reviewer:id,name,email',
+                'reviewer.profile:id,user_id,avatar'
+            ])
             ->where('employee_id', $employee->id)
             ->latest();
 
@@ -209,12 +229,30 @@ class EmployeeDocumentController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Employee document created successfully', $document->load(['employee.user.profile', 'uploader:id,name,email']), 201);
+        return ApiResponse::success('Employee document created successfully', $document->load([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'uploader:id,name,email',
+            'uploader.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $document = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email'])->find($id);
+        $document = EmployeeDocument::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'uploader:id,name,email',
+            'uploader.profile:id,user_id,avatar',
+            'reviewer:id,name,email',
+            'reviewer.profile:id,user_id,avatar'
+        ])->find($id);
 
         if (!$document) {
             return ApiResponse::error('Document not found', null, 404);
@@ -269,7 +307,17 @@ class EmployeeDocumentController extends Controller
         $document->fill($validated);
         $document->save();
 
-        return ApiResponse::success('Employee document updated successfully', $document->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+        return ApiResponse::success('Employee document updated successfully', $document->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'uploader:id,name,email',
+            'uploader.profile:id,user_id,avatar',
+            'reviewer:id,name,email',
+            'reviewer.profile:id,user_id,avatar'
+        ]));
     }
 
     public function destroy(Request $request, int $id): JsonResponse
@@ -333,7 +381,17 @@ class EmployeeDocumentController extends Controller
                     ]);
                 }
 
-                return ApiResponse::success('Employee document reviewed successfully', $result['model']->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+                return ApiResponse::success('Employee document reviewed successfully', $result['model']->fresh([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'uploader:id,name,email',
+                    'uploader.profile:id,user_id,avatar',
+                    'reviewer:id,name,email',
+                    'reviewer.profile:id,user_id,avatar'
+                ]));
             } catch (\DomainException $e) {
                 return ApiResponse::error($e->getMessage(), null, 403);
             } catch (\RuntimeException $e) {
@@ -363,7 +421,17 @@ class EmployeeDocumentController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Employee document reviewed successfully', $document->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+        return ApiResponse::success('Employee document reviewed successfully', $document->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'uploader:id,name,email',
+            'uploader.profile:id,user_id,avatar',
+            'reviewer:id,name,email',
+            'reviewer.profile:id,user_id,avatar'
+        ]));
     }
 
     public function approveDocument(Request $request, int $id): JsonResponse
@@ -394,7 +462,17 @@ class EmployeeDocumentController extends Controller
                 ]);
             }
 
-            return ApiResponse::success('Document approved', $result['model']->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+            return ApiResponse::success('Document approved', $result['model']->fresh([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'uploader:id,name,email',
+                'uploader.profile:id,user_id,avatar',
+                'reviewer:id,name,email',
+                'reviewer.profile:id,user_id,avatar'
+            ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
         } catch (\RuntimeException $e) {
@@ -430,7 +508,17 @@ class EmployeeDocumentController extends Controller
                 ]);
             }
 
-            return ApiResponse::success('Document rejected', $result['model']->fresh(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email']));
+            return ApiResponse::success('Document rejected', $result['model']->fresh([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'uploader:id,name,email',
+                'uploader.profile:id,user_id,avatar',
+                'reviewer:id,name,email',
+                'reviewer.profile:id,user_id,avatar'
+            ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
         } catch (\RuntimeException $e) {
@@ -450,7 +538,15 @@ class EmployeeDocumentController extends Controller
 
         $days = $validated['days'] ?? 30;
 
-        $documents = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email'])
+        $documents = EmployeeDocument::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'uploader:id,name,email',
+                'uploader.profile:id,user_id,avatar'
+            ])
             ->whereNotNull('expires_at')
             ->whereBetween('expires_at', [now()->startOfDay(), now()->addDays($days)->endOfDay()])
             ->orderBy('expires_at')
@@ -461,7 +557,19 @@ class EmployeeDocumentController extends Controller
 
     protected function buildQuery(Request $request)
     {
-        $query = EmployeeDocument::with(['employee.user.profile', 'uploader:id,name,email', 'reviewer:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->latest();
+        $query = EmployeeDocument::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'uploader:id,name,email',
+                'uploader.profile:id,user_id,avatar',
+                'reviewer:id,name,email',
+                'reviewer.profile:id,user_id,avatar',
+                'approvalFlow.steps.role',
+                'approvalFlow.steps.user'
+            ])->latest();
 
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->integer('employee_id'));
@@ -499,9 +607,10 @@ class EmployeeDocumentController extends Controller
         return $document->employee?->user_id === $user->id;
     }
 
-    public function download($filename)
+    public function download(Request $request, int $id)
     {
-        $path = "employee-documents/1/" . $filename;
+        $document = EmployeeDocument::findOrFail($id);
+        $path = $document->file_path;
 
         if (!Storage::disk('public')->exists($path)) {
             return response()->json([

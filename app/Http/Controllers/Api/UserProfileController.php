@@ -16,11 +16,16 @@ class UserProfileController extends Controller
      * Optimized relation graph for profile queries
      */
     private const PROFILE_RELATIONS = [
-        'user:id,name,email,created_at',
-        'user.roles:id,name',
-        'user.roles.permissions:id,name',
-        'employee:id,user_id,position,department,manager_id',
+        'user:id,name,email',
+        'user.roles',
+        'user.roles.permissions',
+        'employee:id,user_id,employee_code,department_id,position_id',
+        'employee.department:id,name',
+        'employee.position:id,name',
         'employee.manager:id,name,email',
+        'employee.manager.profile:id,user_id,avatar',
+        'employee.manager.employee:id,user_id,position_id',
+        'employee.manager.employee.position:id,name',
     ];
 
     /**
@@ -54,10 +59,6 @@ class UserProfileController extends Controller
 
             if ($user->hasPermission('profile.view_all')) {
                 $profiles = UserProfile::with(self::PROFILE_RELATIONS)
-                    ->select([
-                        'id', 'user_id', 'phone', 'address', 'gender',
-                        'birth_date', 'nationality', 'id_number', 'created_at'
-                    ])
                     ->latest()
                     ->paginate($request->integer('per_page', 10))
                     ->withQueryString();
@@ -68,10 +69,6 @@ class UserProfileController extends Controller
             // Default: own profile only
             $profile = UserProfile::with(self::PROFILE_RELATIONS)
                 ->where('user_id', $user->id)
-                ->select([
-                    'id', 'user_id', 'phone', 'address', 'gender',
-                    'birth_date', 'nationality', 'id_number', 'created_at'
-                ])
                 ->first();
 
             return ApiResponse::success('Own profile', $profile);
@@ -149,14 +146,6 @@ class UserProfileController extends Controller
             }
 
             $profile = UserProfile::with(self::PROFILE_RELATIONS)
-                ->select([
-                    'id', 'user_id', 'phone', 'address', 'gender', 'birth_date',
-                    'marital_status', 'religion', 'nationality', 'id_number',
-                    'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation',
-                    'current_address', 'permanent_address', 'bank_name', 'bank_account_number',
-                    'bank_account_name', 'tax_number', 'last_education', 'institution_name',
-                    'graduation_year', 'profile_photo_path'
-                ])
                 ->findOrFail($id);
 
             $user = $request->user();
@@ -225,9 +214,7 @@ class UserProfileController extends Controller
                 throw ValidationException::withMessages(['id' => 'Invalid profile ID']);
             }
 
-            $profile = UserProfile::select([
-                'id', 'user_id', 'phone', 'address', 'gender', 'birth_date'
-            ])->findOrFail($id);
+            $profile = UserProfile::findOrFail($id);
 
             $user = $request->user();
             $isOwner = $profile->user_id === $user->id;

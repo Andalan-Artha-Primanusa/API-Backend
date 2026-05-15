@@ -73,7 +73,13 @@ class BenefitController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $benefit = Benefit::with('employeeBenefits.employee.user.profile')->find($id);
+        $benefit = Benefit::with([
+            'employeeBenefits.employee:id,user_id,employee_code,department_id,position_id',
+            'employeeBenefits.employee.user:id,name,email',
+            'employeeBenefits.employee.user.profile:id,user_id,avatar',
+            'employeeBenefits.employee.department:id,name',
+            'employeeBenefits.employee.position:id,name'
+        ])->find($id);
 
         if (!$benefit) {
             return ApiResponse::error('Benefit not found', null, 404);
@@ -161,7 +167,20 @@ class BenefitController extends Controller
             // No approval flow configured — fall back to direct assignment
         }
 
-        return ApiResponse::success('Benefit assigned successfully', $assignment->load(['benefit', 'employee.user.profile', 'assigner:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']), 201);
+        return ApiResponse::success('Benefit assigned successfully', $assignment->load([
+            'benefit', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'assigner:id,name,email', 
+            'assigner.profile:id,user_id,avatar',
+            'assigner.employee:id,user_id,position_id',
+            'assigner.employee.position:id,name',
+            'approvalFlow.steps.role', 
+            'approvalFlow.steps.user'
+        ]), 201);
     }
 
     public function approveBenefitAssignment(Request $request, int $assignmentId): JsonResponse
@@ -242,7 +261,13 @@ class BenefitController extends Controller
             return $item;
         });
 
-        return ApiResponse::success('Employee benefits retrieved successfully', $benefits);
+        return ApiResponse::success('Employee benefits retrieved successfully', $benefits->load([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function myBenefits(Request $request): JsonResponse
@@ -253,7 +278,13 @@ class BenefitController extends Controller
             ->where('employee_id', $employee->id)
             ->latest();
 
-        return ApiResponse::success('My benefits retrieved successfully', $query->paginate($request->integer('per_page', 10))->withQueryString());
+        return ApiResponse::success('My benefits retrieved successfully', $query->paginate($request->integer('per_page', 10))->withQueryString()->load([
+            'benefit', 
+            'assigner:id,name,email',
+            'assigner.profile:id,user_id,avatar',
+            'assigner.employee:id,user_id,position_id',
+            'assigner.employee.position:id,name'
+        ]));
     }
 
     private function authorizeManage(Request $request, string $permission): void

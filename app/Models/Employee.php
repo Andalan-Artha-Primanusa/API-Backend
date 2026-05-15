@@ -46,7 +46,7 @@ class Employee extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withDefault();
     }
 
     /**
@@ -54,7 +54,7 @@ class Employee extends Model
      */
     public function manager(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(User::class, 'manager_id')->withDefault();
     }
 
     public function location(): BelongsTo
@@ -62,14 +62,24 @@ class Employee extends Model
         return $this->belongsTo(Location::class);
     }
 
+    public function departmentRel(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function positionRel(): BelongsTo
+    {
+        return $this->belongsTo(Position::class, 'position_id');
+    }
+
     public function department(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->departmentRel();
     }
 
     public function position(): BelongsTo
     {
-        return $this->belongsTo(Position::class);
+        return $this->positionRel();
     }
 
     public function workSchedule(): BelongsTo

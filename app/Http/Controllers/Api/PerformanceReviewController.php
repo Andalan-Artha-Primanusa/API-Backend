@@ -22,7 +22,12 @@ class PerformanceReviewController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $query = ReviewCycle::withCount('reviews')->latest();
+        $query = ReviewCycle::with([
+                'creator:id,name,email',
+                'creator.profile:id,user_id,avatar'
+            ])
+            ->withCount('reviews')
+            ->latest();
 
         if (!empty($validated['status'])) {
             $query->where('status', $validated['status']);
@@ -58,12 +63,25 @@ class PerformanceReviewController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Review cycle created successfully', $cycle, 201);
+        return ApiResponse::success('Review cycle created successfully', $cycle->load([
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function cyclesShow(Request $request, int $id): JsonResponse
     {
-        $cycle = ReviewCycle::with(['reviews.employee.user.profile', 'reviews.reviewer:id,name,email'])
+        $cycle = ReviewCycle::with([
+                'reviews.employee:id,user_id,employee_code,department_id,position_id',
+                'reviews.employee.user:id,name,email',
+                'reviews.employee.user.profile:id,user_id,avatar',
+                'reviews.employee.department:id,name',
+                'reviews.employee.position:id,name',
+                'reviews.reviewer:id,name,email',
+                'reviews.reviewer.profile:id,user_id,avatar',
+                'creator:id,name,email',
+                'creator.profile:id,user_id,avatar'
+            ])
             ->withCount('reviews')
             ->find($id);
 
@@ -100,7 +118,10 @@ class PerformanceReviewController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Review cycle updated successfully', $cycle->fresh());
+        return ApiResponse::success('Review cycle updated successfully', $cycle->fresh([
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar'
+        ]));
     }
 
     public function cyclesClose(Request $request, int $id): JsonResponse
@@ -118,7 +139,10 @@ class PerformanceReviewController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Review cycle closed successfully', $cycle->fresh());
+        return ApiResponse::success('Review cycle closed successfully', $cycle->fresh([
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar'
+        ]));
     }
 
     public function reviewsIndex(Request $request): JsonResponse
@@ -131,7 +155,17 @@ class PerformanceReviewController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $query = PerformanceReview::with(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi'])
+        $query = PerformanceReview::with([
+                'cycle:id,name,period_type,year', 
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'reviewer:id,name,email', 
+                'reviewer.profile:id,user_id,avatar',
+                'kpi:id,title,target,achievement,score'
+            ])
             ->latest();
 
         if (!empty($validated['review_cycle_id'])) {
@@ -177,12 +211,32 @@ class PerformanceReviewController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Performance review created successfully', $review->load(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi']), 201);
+        return ApiResponse::success('Performance review created successfully', $review->load([
+            'cycle:id,name,period_type,year', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'reviewer:id,name,email', 
+            'reviewer.profile:id,user_id,avatar',
+            'kpi:id,title,target,achievement,score'
+        ]), 201);
     }
 
     public function reviewsShow(Request $request, int $id): JsonResponse
     {
-        $review = PerformanceReview::with(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi'])
+        $review = PerformanceReview::with([
+            'cycle:id,name,period_type,year', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'reviewer:id,name,email', 
+            'reviewer.profile:id,user_id,avatar',
+            'kpi:id,title,target,achievement,score'
+        ])
             ->find($id);
 
         if (!$review) {
@@ -225,7 +279,17 @@ class PerformanceReviewController extends Controller
             'updated_by' => $user->id,
         ]);
 
-        return ApiResponse::success('Performance review updated successfully', $review->fresh(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi']));
+        return ApiResponse::success('Performance review updated successfully', $review->fresh([
+            'cycle:id,name,period_type,year', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'reviewer:id,name,email', 
+            'reviewer.profile:id,user_id,avatar',
+            'kpi:id,title,target,achievement,score'
+        ]));
     }
 
     public function submit(Request $request, int $id): JsonResponse
@@ -252,7 +316,17 @@ class PerformanceReviewController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::success('Performance review submitted successfully', $review->fresh(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi']));
+        return ApiResponse::success('Performance review submitted successfully', $review->fresh([
+            'cycle:id,name,period_type,year', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'reviewer:id,name,email', 
+            'reviewer.profile:id,user_id,avatar',
+            'kpi:id,title,target,achievement,score'
+        ]));
     }
 
     public function review(Request $request, int $id): JsonResponse
@@ -284,7 +358,17 @@ class PerformanceReviewController extends Controller
             'updated_by' => $user->id,
         ]);
 
-        return ApiResponse::success('Performance review marked as reviewed', $record->fresh(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi']));
+        return ApiResponse::success('Performance review marked as reviewed', $record->fresh([
+            'cycle:id,name,period_type,year', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'reviewer:id,name,email', 
+            'reviewer.profile:id,user_id,avatar',
+            'kpi:id,title,target,achievement,score'
+        ]));
     }
 
     public function approve(Request $request, int $id): JsonResponse
@@ -311,14 +395,34 @@ class PerformanceReviewController extends Controller
             'updated_by' => $user->id,
         ]);
 
-        return ApiResponse::success('Performance review approved successfully', $record->fresh(['cycle', 'employee.user.profile', 'reviewer:id,name,email', 'kpi']));
+        return ApiResponse::success('Performance review approved successfully', $record->fresh([
+            'cycle:id,name,period_type,year', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'reviewer:id,name,email', 
+            'reviewer.profile:id,user_id,avatar',
+            'kpi:id,title,target,achievement,score'
+        ]));
     }
 
     public function myReviews(Request $request): JsonResponse
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $reviews = PerformanceReview::with(['cycle', 'reviewer:id,name,email', 'kpi'])
+        $reviews = PerformanceReview::with([
+                'cycle:id,name,period_type,year', 
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'reviewer:id,name,email', 
+                'reviewer.profile:id,user_id,avatar',
+                'kpi:id,title,target,achievement,score'
+            ])
             ->where('employee_id', $employee->id)
             ->latest()
             ->paginate($request->integer('per_page', 10))

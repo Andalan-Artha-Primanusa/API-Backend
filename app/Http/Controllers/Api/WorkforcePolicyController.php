@@ -248,7 +248,20 @@ class WorkforcePolicyController extends Controller
     {
         $user = $request->user();
 
-        $data = ShiftSwapRequest::with(['requester.user', 'target.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
+        $data = ShiftSwapRequest::with([
+            'requester:id,user_id,employee_code,department_id,position_id',
+            'requester.user:id,name,email',
+            'requester.user.profile:id,user_id,avatar',
+            'requester.department:id,name',
+            'requester.position:id,name',
+            'target:id,user_id,employee_code,department_id,position_id',
+            'target.user:id,name,email',
+            'target.user.profile:id,user_id,avatar',
+            'target.department:id,name',
+            'target.position:id,name',
+            'approvalFlow.steps.role',
+            'approvalFlow.steps.user'
+        ])->orderByDesc('id')->paginate($request->integer('per_page', 10))->withQueryString();
         $service = app(ApprovalFlowService::class);
         $data->getCollection()->transform(function ($item) use ($service, $user) {
             $item->can_act = $service->canUserAct($item, $user);
@@ -283,7 +296,18 @@ class WorkforcePolicyController extends Controller
             // No approval flow configured — fall back to direct pending status
         }
 
-        return ApiResponse::success('Shift swap request created successfully', ShiftSwapRequest::with(['requester.user', 'target.user'])->find($id), 201);
+        return ApiResponse::success('Shift swap request created successfully', ShiftSwapRequest::with([
+            'requester:id,user_id,employee_code,department_id,position_id',
+            'requester.user:id,name,email',
+            'requester.user.profile:id,user_id,avatar',
+            'requester.department:id,name',
+            'requester.position:id,name',
+            'target:id,user_id,employee_code,department_id,position_id',
+            'target.user:id,name,email',
+            'target.user.profile:id,user_id,avatar',
+            'target.department:id,name',
+            'target.position:id,name',
+        ])->find($id), 201);
     }
 
     public function shiftSwapApprove(Request $request, int $id): JsonResponse
@@ -303,7 +327,18 @@ class WorkforcePolicyController extends Controller
             'updated_at' => now(),
         ]);
 
-        return ApiResponse::success('Shift swap request updated successfully', DB::table('shift_swap_requests')->where('id', $id)->first());
+        return ApiResponse::success('Shift swap request updated successfully', ShiftSwapRequest::with([
+            'requester:id,user_id,employee_code,department_id,position_id',
+            'requester.user:id,name,email',
+            'requester.user.profile:id,user_id,avatar',
+            'requester.department:id,name',
+            'requester.position:id,name',
+            'target:id,user_id,employee_code,department_id,position_id',
+            'target.user:id,name,email',
+            'target.user.profile:id,user_id,avatar',
+            'target.department:id,name',
+            'target.position:id,name',
+        ])->find($id));
     }
 
     public function shiftSwapApproveAction(Request $request, int $id): JsonResponse
@@ -317,7 +352,18 @@ class WorkforcePolicyController extends Controller
         try {
             $approvalService = app(ApprovalFlowService::class);
             $result = $approvalService->processApproval($swap, $request->user(), 'approved', $request->note);
-            return ApiResponse::success('Shift swap approved', $result['model']->fresh());
+            return ApiResponse::success('Shift swap approved', $result['model']->fresh([
+                'requester:id,user_id,employee_code,department_id,position_id',
+                'requester.user:id,name,email',
+                'requester.user.profile:id,user_id,avatar',
+                'requester.department:id,name',
+                'requester.position:id,name',
+                'target:id,user_id,employee_code,department_id,position_id',
+                'target.user:id,name,email',
+                'target.user.profile:id,user_id,avatar',
+                'target.department:id,name',
+                'target.position:id,name',
+            ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
         } catch (\RuntimeException $e) {
@@ -336,7 +382,18 @@ class WorkforcePolicyController extends Controller
         try {
             $approvalService = app(ApprovalFlowService::class);
             $result = $approvalService->processApproval($swap, $request->user(), 'rejected', $request->note ?? $request->input('note'));
-            return ApiResponse::success('Shift swap rejected', $result['model']->fresh());
+            return ApiResponse::success('Shift swap rejected', $result['model']->fresh([
+                'requester:id,user_id,employee_code,department_id,position_id',
+                'requester.user:id,name,email',
+                'requester.user.profile:id,user_id,avatar',
+                'requester.department:id,name',
+                'requester.position:id,name',
+                'target:id,user_id,employee_code,department_id,position_id',
+                'target.user:id,name,email',
+                'target.user.profile:id,user_id,avatar',
+                'target.department:id,name',
+                'target.position:id,name',
+            ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
         } catch (\RuntimeException $e) {

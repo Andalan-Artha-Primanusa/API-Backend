@@ -12,7 +12,18 @@ class TaskController
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Task::with(['assignedBy.profile', 'assignedTo.profile']);
+        $query = Task::with([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ]);
 
         if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.view')) {
             $query->where('assigned_to', $user->id);
@@ -61,14 +72,36 @@ class TaskController
             'status' => 'pending',
         ]);
 
-        $task->load(['assignedBy.profile', 'assignedTo.profile']);
+        $task->load([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ]);
         return ApiResponse::success('Task created successfully', $task, 201);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $task = Task::with(['assignedBy.profile', 'assignedTo.profile'])->findOrFail($id);
+        $task = Task::with([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ])->findOrFail($id);
 
         if ($task->assigned_to !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('task.view')) {
             return ApiResponse::error('Forbidden', null, 403);
@@ -100,7 +133,18 @@ class TaskController
         }
 
         $task->update($validated);
-        $task->load(['assignedBy.profile', 'assignedTo.profile']);
+        $task->load([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id,avatar',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id,avatar',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ]);
         return ApiResponse::success('Task updated successfully', $task);
     }
 
@@ -130,7 +174,13 @@ class TaskController
             'cancelled' => (clone $baseQuery)->where('status', 'cancelled')->count(),
         ];
 
-        $tasks = (clone $baseQuery)->with(['assignedBy.profile'])
+        $tasks = (clone $baseQuery)->with([
+                'assignedBy:id,name,email',
+                'assignedBy.profile:id,user_id,avatar',
+                'assignedBy.employee:id,user_id,department_id,position_id',
+                'assignedBy.employee.department:id,name',
+                'assignedBy.employee.position:id,name',
+            ])
             ->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();

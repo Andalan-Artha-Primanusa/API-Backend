@@ -15,7 +15,16 @@ class EmployeeService
      */
     public function getFilteredList(Request $request): LengthAwarePaginator
     {
-        $query = Employee::with(['user.profile', 'manager.profile']);
+        $query = Employee::with([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]);
 
         // Filter by department
         if ($request->filled('department')) {
@@ -32,7 +41,7 @@ class EmployeeService
         }
 
         // Sort with whitelist
-        $allowedSort = ['id', 'department', 'salary', 'hire_date', 'employee_code'];
+        $allowedSort = ['id', 'department', 'position', 'salary', 'hire_date', 'employee_code'];
         $sort = in_array($request->get('sort'), $allowedSort)
             ? $request->get('sort')
             : 'id';
@@ -48,7 +57,16 @@ class EmployeeService
      */
     public function findWithUser(int|string $id): Employee
     {
-        return Employee::with(['user.profile', 'manager.profile'])->findOrFail($id);
+        return Employee::with([
+            'user:id,name,email',
+            'user.profile:id,user_id,phone,address,gender,avatar',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ])->findOrFail($id);
     }
 
     /**
@@ -71,7 +89,16 @@ class EmployeeService
             }
         }
 
-        return Employee::create($data)->load(['user.profile', 'manager.profile']);
+        return Employee::create($data)->load([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]);
     }
 
     /**
@@ -97,7 +124,16 @@ class EmployeeService
         $employee = Employee::findOrFail($id);
         $employee->update($data);
 
-        return $employee->fresh(['user.profile', 'manager.profile']);
+        return $employee->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]);
     }
 
     /**

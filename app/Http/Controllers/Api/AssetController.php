@@ -29,7 +29,13 @@ class AssetController extends Controller
             'search' => 'sometimes|string|max:255',
         ]);
 
-        $query = InventoryAsset::with('assignments.employee.user')->latest();
+        $query = InventoryAsset::with([
+                'assignments.employee:id,user_id,employee_code,department_id,position_id',
+                'assignments.employee.user:id,name,email',
+                'assignments.employee.user.profile:id,user_id,avatar',
+                'assignments.employee.department:id,name',
+                'assignments.employee.position:id,name',
+            ])->latest();
 
         if (!empty($validated['status'])) {
             $query->where('status', $validated['status']);
@@ -82,7 +88,15 @@ class AssetController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $asset = InventoryAsset::with('assignments.employee.user.profile', 'assignments.assignedBy:id,name,email')->find($id);
+        $asset = InventoryAsset::with([
+            'assignments.employee:id,user_id,employee_code,department_id,position_id',
+            'assignments.employee.user:id,name,email',
+            'assignments.employee.user.profile:id,user_id,avatar',
+            'assignments.employee.department:id,name',
+            'assignments.employee.position:id,name',
+            'assignments.assignedBy:id,name,email',
+            'assignments.assignedBy.profile:id,user_id,avatar'
+        ])->find($id);
 
         if (!$asset) {
             return ApiResponse::error('Asset not found', null, 404);
@@ -218,7 +232,18 @@ class AssetController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Asset assigned successfully', $assignment->load('asset', 'employee.user.profile', 'assignedBy:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user'), 201);
+        return ApiResponse::success('Asset assigned successfully', $assignment->load([
+            'asset:id,code,name,brand,model', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'assignedBy:id,name,email', 
+            'assignedBy.profile:id,user_id,avatar',
+            'approvalFlow.steps.role', 
+            'approvalFlow.steps.user'
+        ]), 201);
     }
 
     public function approveAssignment(Request $request, int $assignmentId): JsonResponse
@@ -243,7 +268,18 @@ class AssetController extends Controller
                 $assignment->asset->update(['status' => 'assigned']);
             }
 
-            return ApiResponse::success('Asset assignment approved', $result['model']->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+            return ApiResponse::success('Asset assignment approved', $result['model']->fresh([
+                'asset:id,code,name,brand,model', 
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'assignedBy:id,name,email', 
+                'assignedBy.profile:id,user_id,avatar',
+                'approvalFlow.steps.role', 
+                'approvalFlow.steps.user'
+            ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
         } catch (\RuntimeException $e) {
@@ -271,7 +307,18 @@ class AssetController extends Controller
 
             $assignment->asset->update(['status' => 'available']);
 
-            return ApiResponse::success('Asset assignment rejected', $result['model']->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+            return ApiResponse::success('Asset assignment rejected', $result['model']->fresh([
+                'asset:id,code,name,brand,model', 
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'assignedBy:id,name,email', 
+                'assignedBy.profile:id,user_id,avatar',
+                'approvalFlow.steps.role', 
+                'approvalFlow.steps.user'
+            ]));
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 403);
         } catch (\RuntimeException $e) {
@@ -330,7 +377,16 @@ class AssetController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Asset returned successfully', $assignment->fresh(['asset', 'employee.user.profile', 'assignedBy:id,name,email']));
+        return ApiResponse::success('Asset returned successfully', $assignment->fresh([
+            'asset:id,code,name,brand,model', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'assignedBy:id,name,email', 
+            'assignedBy.profile:id,user_id,avatar'
+        ]));
     }
 
     public function returnAssetByEmployee(Request $request, int $assignmentId): JsonResponse
@@ -388,9 +444,14 @@ class AssetController extends Controller
         ]);
 
         $query = InventoryAssetAssignment::with([
-            'asset',
+            'asset:id,code,name,brand,model', 
+            'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'assignedBy:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'assignedBy:id,name,email', 
+            'assignedBy.profile:id,user_id,avatar',
             'approvalFlow.steps.role',
             'approvalFlow.steps.user',
         ])->latest();
@@ -421,7 +482,11 @@ class AssetController extends Controller
             return ApiResponse::success('My assets retrieved successfully', []);
         }
 
-        $assignments = InventoryAssetAssignment::with(['asset', 'assignedBy:id,name,email'])
+        $assignments = InventoryAssetAssignment::with([
+                'asset:id,code,name,brand,model', 
+                'assignedBy:id,name,email',
+                'assignedBy.profile:id,user_id,avatar'
+            ])
             ->where('employee_id', $employee->id)
             ->latest()
             ->paginate($request->integer('per_page', 10));

@@ -26,7 +26,19 @@ class OvertimeController extends Controller
         }
 
         $requests = OvertimeRequest::where('employee_id', $employee->id)
-            ->with(['attendance', 'approver:id,name', 'evidences'])
+            ->with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'attendance', 
+                'approver:id,name,email',
+                'approver.profile:id,user_id,avatar',
+                'approver.employee:id,user_id,position_id',
+                'approver.employee.position:id,name',
+                'evidences'
+            ])
             ->latest('date')
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -74,7 +86,20 @@ class OvertimeController extends Controller
         }
 
         try {
-            $query = OvertimeRequest::with(['employee', 'attendance', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
+            $query = OvertimeRequest::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'attendance',
+                'approver:id,name,email',
+                'approver.profile:id,user_id,avatar',
+                'approver.employee:id,user_id,position_id',
+                'approver.employee.position:id,name',
+                'approvalFlow.steps.role',
+                'approvalFlow.steps.user'
+            ])
                 ->latest('date');
 
             if ($request->has('status')) {
@@ -107,7 +132,20 @@ class OvertimeController extends Controller
 
         try {
             $requests = OvertimeRequest::where('status', 'pending')
-                ->with(['employee', 'attendance', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
+                ->with([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'attendance',
+                    'approver:id,name,email',
+                    'approver.profile:id,user_id,avatar',
+                    'approver.employee:id,user_id,position_id',
+                    'approver.employee.position:id,name',
+                    'approvalFlow.steps.role',
+                    'approvalFlow.steps.user'
+                ])
                 ->latest('date')
                 ->paginate($request->integer('per_page', 10))
                 ->withQueryString();
@@ -156,7 +194,18 @@ class OvertimeController extends Controller
                 $result = $approvalService->processApproval($overtimeRequest, $user, 'approved', $request->note);
 
                 $overtimeRequest = $result['model'];
-                $overtimeRequest->load(['employee.user', 'approver', 'evidences', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+                $overtimeRequest->load([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approver:id,name,email',
+                    'approver.profile:id,user_id,avatar',
+                    'evidences',
+                    'approvalFlow.steps.role',
+                    'approvalFlow.steps.user'
+                ]);
 
                 if ($result['final']) {
                     // Send notification
@@ -202,7 +251,16 @@ class OvertimeController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Overtime request approved', $overtimeRequest->fresh(['employee.user', 'approver', 'evidences']));
+        return ApiResponse::success('Overtime request approved', $overtimeRequest->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'evidences'
+        ]));
     }
 
     /**
@@ -229,7 +287,17 @@ class OvertimeController extends Controller
                 $result = $approvalService->processApproval($overtimeRequest, $user, 'rejected', $validated['reject_reason'] ?? null);
 
                 $overtimeRequest = $result['model'];
-                $overtimeRequest->load(['employee.user', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+                $overtimeRequest->load([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approver:id,name,email',
+                    'approver.profile:id,user_id,avatar',
+                    'approvalFlow.steps.role',
+                    'approvalFlow.steps.user'
+                ]);
 
                 // Send notification
                 if ($overtimeRequest->employee && $overtimeRequest->employee->user) {
@@ -273,7 +341,15 @@ class OvertimeController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Overtime request rejected', $overtimeRequest->fresh(['employee.user', 'approver']));
+        return ApiResponse::success('Overtime request rejected', $overtimeRequest->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar'
+        ]));
     }
 
     /**

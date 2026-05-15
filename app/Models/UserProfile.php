@@ -38,6 +38,30 @@ class UserProfile extends Model
     ];
 
     /**
+     * 🔥 SULTAN ACCESSORS
+     * Resolves the conflict between 'profile_photo_path' in DB and 'avatar' in API.
+     */
+    protected $appends = ['avatar', 'avatar_url'];
+
+    public function getAvatarAttribute(): ?string
+    {
+        return $this->profile_photo_path;
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->profile_photo_path) {
+            return 'https://ui-avatars.com/api/?name=' . urlencode($this->user?->name ?? 'User') . '&color=7F9CF5&background=EBF4FF';
+        }
+
+        if (filter_var($this->profile_photo_path, FILTER_VALIDATE_URL)) {
+            return $this->profile_photo_path;
+        }
+
+        return asset('storage/' . $this->profile_photo_path);
+    }
+
+    /**
      * Evaluate custom formula (simple PHP eval, only for trusted input!)
      * Example: "(base_salary * 0.1) + 50000"
      * @param array $variables

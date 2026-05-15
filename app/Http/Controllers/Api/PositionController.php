@@ -102,7 +102,13 @@ class PositionController extends Controller
                 throw ValidationException::withMessages(['id' => 'Invalid position ID']);
             }
 
-            $position = Position::with(['department:id,name', 'employees:id,employee_code'])
+            $position = Position::with([
+                'department:id,name', 
+                'employees:id,user_id,employee_code,department_id,position_id',
+                'employees.user:id,name,email',
+                'employees.user.profile:id,user_id,avatar',
+                'employees.department:id,name'
+            ])
                 ->withCount('employees')
                 ->findOrFail($id);
 
@@ -143,7 +149,7 @@ class PositionController extends Controller
             $position->update($validated);
             $position->load('department');
 
-            return ApiResponse::success('Position updated successfully', $position->fresh());
+            return ApiResponse::success('Position updated successfully', $position->fresh(['department:id,name']));
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return ApiResponse::error('Not found', 'Position not found', 404);

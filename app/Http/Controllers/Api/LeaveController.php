@@ -32,10 +32,32 @@ class LeaveController extends Controller
     public function myLeaves(Request $request): JsonResponse
     {
         // Using user_id here as Leave is tied contextually to user mapping in current DB
-        $employee = $this->getAuthenticatedEmployee();
+        $user = $request->user();
+        $employee = $user->employee;
+
+        if (!$employee) {
+            if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('leave.view')) {
+                $emptyLeaves = Leave::whereRaw('1 = 0')
+                    ->paginate($request->integer('per_page', 10))
+                    ->withQueryString();
+
+                return ApiResponse::success('My Leaves', $emptyLeaves);
+            }
+
+            return ApiResponse::error('Forbidden: User is not an employee', null, 403);
+        }
 
         $leaves = Leave::where('employee_id', $employee->id)
-            ->with(['user.profile', 'employee.user.profile', 'approver.profile'])
+            ->with([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'leaveType:id,name'
+            ])
             ->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -49,6 +71,8 @@ class LeaveController extends Controller
 
         try {
             $balance = $this->leaveService->getLeaveBalance($user);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
         } catch (\RuntimeException $e) {
             return ApiResponse::error($e->getMessage(), null, 500);
         }
@@ -66,12 +90,11 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('leave.view')) {
+        if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('leave.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
         $leaves = $this->leaveService->getLeavesByRole($user)->withQueryString();
-
         return ApiResponse::success('Leave list', $leaves);
     }
 
@@ -84,6 +107,8 @@ class LeaveController extends Controller
             );
 
             return ApiResponse::success('Leave request submitted', $leave, 201);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 400);
         } catch (\RuntimeException $e) {
             return ApiResponse::error($e->getMessage(), null, 500);
         }
@@ -91,7 +116,22 @@ class LeaveController extends Controller
 
     public function show(Request $request, $id): JsonResponse
     {
-        $leave = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType'])->findOrFail($id);
+        $leave = Leave::with([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'leaveType:id,name',
+                'flow.steps.role:id,name',
+                'approver:id,name,email',
+                'approver.profile:id,user_id,avatar',
+                'approver.employee:id,user_id,position_id',
+                'approver.employee.position:id,name'
+            ])
+            ->findOrFail($id);
 
         $user = $request->user();
 
@@ -105,7 +145,13 @@ class LeaveController extends Controller
     public function calendar(Request $request): JsonResponse
     {
         // Viewable based on filters
-        $query = Leave::with('employee.user.profile');
+        $query = Leave::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]);
 
         if ($request->has('employee_id')) {
             $query->where('employee_id', $request->employee_id);
@@ -114,12 +160,23 @@ class LeaveController extends Controller
         $leaves = $query->get();
 
         $data = $leaves->map(function ($leave) {
+            $name = $leave->employee?->user?->name ?? 'User';
+            $dept = $leave->employee?->department?->name ?? 'N/A';
+            $pos = $leave->employee?->position?->name ?? 'N/A';
+            
             return [
                 'id' => $leave->id,
-                'title' => strtoupper($leave->type) . ' - ' . ($leave->employee?->user?->name ?? 'User'),
+                'title' => strtoupper($leave->type) . " - $name ($dept - $pos)",
                 'start' => $leave->start_date,
                 'end'   => $leave->end_date,
-                'status' => $leave->status
+                'status' => $leave->status,
+                'employee' => [
+                    'id' => $leave->employee_id,
+                    'name' => $name,
+                    'department' => $dept,
+                    'position' => $pos,
+                    'avatar' => $leave->employee?->user?->profile?->avatar
+                ]
             ];
         });
 
@@ -154,7 +211,16 @@ class LeaveController extends Controller
             return ApiResponse::error($e->getMessage(), null, 400);
         }
 
-        return ApiResponse::success('Leave updated successfully', $leave);
+        return ApiResponse::success('Leave updated successfully', $leave->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'leaveType:id,name'
+        ]));
     }
 
     public function destroy(Request $request, $id): JsonResponse
@@ -169,7 +235,17 @@ class LeaveController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $deleted = $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role'])->toArray();
+        $deleted = $leave->load([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver.profile:id,user_id,avatar',
+            'flow.steps.role:id,name'
+        ])->toArray();
 
         try {
             $this->leaveService->deletePendingLeave($leave);
@@ -190,10 +266,24 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        $query = Leave::with(['user.profile', 'employee.user.profile', 'flow.steps.role', 'flow.steps.user'])
-            ->where('status', LeaveStatus::Pending);
+        $query = Leave::with([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'leaveType:id,name',
+                'flow.steps.role:id,name',
+                'approver:id,name,email',
+                'approver.profile:id,user_id,avatar',
+                'approver.employee:id,user_id,position_id',
+                'approver.employee.position:id,name'
+            ])
+            ->where('status', LeaveStatus::Pending->value);
 
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->hasPermission('leave.approve')) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isHR() || $user->hasPermission('leave.approve')) {
             $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
             
             $leaves->getCollection()->transform(function ($leave) {
@@ -310,6 +400,20 @@ class LeaveController extends Controller
             return ApiResponse::error($e->getMessage(), null, 500);
         }
 
-        return ApiResponse::success('Leave rejected successfully', $result['leave']->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']));
+        return ApiResponse::success('Leave rejected successfully', $result['leave']->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'leaveType:id,name',
+            'flow.steps.role:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name'
+        ]));
     }
 }

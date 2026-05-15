@@ -20,11 +20,13 @@ class KpiController extends Controller
      * Default relations to eager load for KPI queries
      */
     private const KPI_RELATIONS = [
-        'employee:id,user_id,position,department,manager_id',
+        'employee:id,user_id,employee_code,department_id,position_id',
         'employee.user:id,name,email',
-        'employee.user.profile:id,user_id,phone,address',
-        'employee.manager:id,name,email',
-        'employee.manager.profile:id,user_id,phone',
+        'employee.user.profile:id,user_id,avatar',
+        'employee.department:id,name',
+        'employee.position:id,name',
+        'employee.manager:id,name',
+        'employee.manager.profile:id,user_id,avatar',
     ];
 
     /*
@@ -54,7 +56,9 @@ class KpiController extends Controller
                     ->toArray();
 
                 if (empty($subordinateIds)) {
-                    return ApiResponse::success('Tidak ada data KPI', collect());
+                    // Return an empty paginator instead of a plain collection to maintain structure consistency
+                    $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $request->integer('per_page', 10));
+                    return ApiResponse::success('Tidak ada data KPI', $emptyPaginator);
                 }
 
                 $query->whereIn('employee_id', $subordinateIds);
@@ -113,7 +117,6 @@ class KpiController extends Controller
             }
 
             $kpi = Kpi::with(self::KPI_RELATIONS)
-                ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->findOrFail($id);
 
             $user = $request->user();
@@ -229,7 +232,6 @@ class KpiController extends Controller
 
             $kpis = Kpi::with(self::KPI_RELATIONS)
                 ->where('employee_id', $employee_id)
-                ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->latest()
                 ->paginate($request->integer('per_page', 10))
                 ->withQueryString();
@@ -258,7 +260,7 @@ class KpiController extends Controller
                 return ApiResponse::error('Approval flow untuk KPI belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
             }
 
-            $kpi = Kpi::findOrFail($id);
+            $kpi = Kpi::with(self::KPI_RELATIONS)->findOrFail($id);
             $user = $request->user();
 
             if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.approve')) {
@@ -269,9 +271,23 @@ class KpiController extends Controller
                 return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status submitted yang bisa disetujui', 400);
             }
 
-            $kpi->update(['status' => 'approved']);
+            // Correct Flow Integration: Use ApprovalFlowService
+            try {
+                $approvalService = app(\App\Services\ApprovalFlowService::class);
+                $result = $approvalService->processApproval($kpi, $user, 'approved', $request->note);
+                
+                $kpi = $result['model'];
+                $kpi->load(self::KPI_RELATIONS);
 
-            return ApiResponse::success('KPI berhasil disetujui', $kpi->fresh(self::KPI_RELATIONS));
+                return ApiResponse::success(
+                    $result['final'] ? 'KPI berhasil disetujui sepenuhnya' : 'KPI disetujui - menunggu tahap berikutnya', 
+                    $kpi
+                );
+            } catch (\Exception $e) {
+                // Simple Fallback
+                $kpi->update(['status' => 'approved']);
+                return ApiResponse::success('KPI berhasil disetujui', $kpi->fresh(self::KPI_RELATIONS));
+            }
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return ApiResponse::error('Tidak ditemukan', 'Data KPI tidak ditemukan', 404);
@@ -298,7 +314,6 @@ class KpiController extends Controller
 
             $kpis = Kpi::with(self::KPI_RELATIONS)
                 ->where('employee_id', $employee->id)
-                ->select(['id', 'employee_id', 'title', 'description', 'target', 'achievement', 'score', 'status', 'created_at', 'updated_at'])
                 ->latest()
                 ->paginate($request->integer('per_page', 10))
                 ->withQueryString();

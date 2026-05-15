@@ -27,12 +27,15 @@ class LeaveService
         $flow = ApprovalFlow::where('module', 'leave')->where('is_active', true)->first();
 
         if (!$flow) {
-            throw new \RuntimeException('Leave approval flow has not been configured.');
+            throw new \DomainException('Leave approval flow has not been configured.');
         }
 
         $employee = $user->employee;
         if (!$employee) {
-            throw new \RuntimeException('Employee record not found for this user.');
+            if ($user->isAdmin() || $user->isSuperAdmin()) {
+                throw new \DomainException('Super Admin must be linked to an Employee profile to request leaves.');
+            }
+            throw new \DomainException('Employee record not found for this user.');
         }
 
         $totalDays = Leave::calculateDays($data['start_date'], $data['end_date']);
@@ -42,20 +45,20 @@ class LeaveService
         if ($leaveTypeId) {
             $leaveTypeModel = LeaveType::find($leaveTypeId);
             if (!$leaveTypeModel) {
-                throw new \RuntimeException('Selected leave type not found.');
+                throw new \DomainException('Selected leave type not found.');
             }
             $leaveTypeCode = $leaveTypeModel->code;
         }
 
         if (!$leaveTypeCode) {
-            throw new \RuntimeException('Leave type is required.');
+            throw new \DomainException('Leave type is required.');
         }
 
         return DB::transaction(function () use ($user, $data, $flow, $employee, $totalDays, $leaveTypeCode, $leaveTypeId) {
             $balance = $this->getOrCreateAnnualBalance($employee->id, (int) date('Y', strtotime($data['start_date'])));
 
             if ($balance->availableDays() < $totalDays) {
-                throw new \RuntimeException('Insufficient leave balance for this request.');
+                throw new \DomainException('Insufficient leave balance for this request.');
             }
 
             $balance->increment('pending_days', $totalDays);
@@ -88,7 +91,18 @@ class LeaveService
                 ]);
             }
 
-            return $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType']);
+            return $leave->load([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'leaveType:id,name',
+                'flow.steps.role:id,name',
+                'approver.profile:id,user_id,avatar'
+            ]);
         });
     }
 
@@ -102,7 +116,18 @@ class LeaveService
      */
     public function getLeavesByRole(User $user): LengthAwarePaginator
     {
-        $query = Leave::with(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role', 'leaveType']);
+        $query = Leave::with([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'leaveType:id,name',
+            'flow.steps.role:id,name',
+            'approver.profile:id,user_id,avatar'
+        ]);
 
         // Admin/HR/SuperAdmin — see all (no filter)
         if ($user->isAdmin() || $user->isHR()) {
@@ -148,7 +173,18 @@ class LeaveService
             $this->recordHistory($leave, $approver, 'approved', null);
 
             return [
-                'leave' => $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
+                'leave' => $leave->fresh([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,avatar',
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'leaveType:id,name',
+                    'flow.steps.role:id,name',
+                    'approver.profile:id,user_id,avatar'
+                ]),
                 'final' => true,
                 'action' => 'approved',
                 'override' => true,
@@ -157,7 +193,7 @@ class LeaveService
         }
 
         if (!$leave->flow) {
-            throw new \RuntimeException('Approval flow not found.');
+            throw new \DomainException('Approval flow not found.');
         }
 
         $step = $leave->flow->steps
@@ -165,7 +201,7 @@ class LeaveService
             ->first();
 
         if (!$step) {
-            throw new \RuntimeException('Approval step not found.');
+            throw new \DomainException('Approval step not found.');
         }
 
         if (!$approver->hasRole($step->role->name)) {
@@ -196,7 +232,18 @@ class LeaveService
             $this->recordHistory($leave, $approver, 'rejected', $note);
 
             return [
-                'leave'  => $leave->fresh(),
+                'leave'  => $leave->fresh([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,avatar',
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'leaveType:id,name',
+                    'flow.steps.role:id,name',
+                    'approver.profile:id,user_id,avatar'
+                ]),
                 'final'  => true,
                 'action' => 'rejected',
             ];
@@ -215,7 +262,18 @@ class LeaveService
             $this->recordPendingHistory($leave, $nextStep);
 
             return [
-                'leave'        => $leave->load(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
+                'leave' => $leave->load([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,avatar',
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'leaveType:id,name',
+                    'flow.steps.role:id,name',
+                    'approver.profile:id,user_id,avatar'
+                ]),
                 'final'        => false,
                 'action'       => 'approved',
                 'current_step' => $leave->current_step,
@@ -234,11 +292,21 @@ class LeaveService
         $this->recordHistory($leave, $approver, 'approved', $note, $step);
 
         return [
-            'leave'  => $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']),
+            'leave' => $leave->fresh([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'leaveType:id,name',
+                'flow.steps.role:id,name',
+                'approver.profile:id,user_id,avatar'
+            ]),
             'final'  => true,
             'action' => 'approved',
         ];
-    }
     }
 
     private function recordHistory(Leave $leave, User $approver, string $action, ?string $note, $step = null): void
@@ -285,7 +353,16 @@ class LeaveService
         $employee = $user->employee;
 
         if (!$employee) {
-            throw new \RuntimeException('Employee record not found for this user.');
+            return [
+                'policy' => null,
+                'balance' => [
+                    'allocated_days' => 0,
+                    'carry_over_days' => 0,
+                    'used_days' => 0,
+                    'pending_days' => 0,
+                    'available_days' => 0,
+                ],
+            ];
         }
 
         $year = (int) date('Y');
@@ -310,7 +387,7 @@ class LeaveService
         $actualPolicy = $balance->fresh('policy')->policy ?? $policy;
 
         return [
-            'policy' => $actualPolicy,
+            'policy' => $policy,
             'balance' => [
                 'allocated_days' => $balance->allocated_days,
                 'carry_over_days' => $balance->carry_over_days,
@@ -336,7 +413,7 @@ class LeaveService
             $balance = $this->getOrCreateAnnualBalance($leave->employee_id, (int) date('Y', strtotime($newStart)));
             $balance->decrement('pending_days', $oldDays);
             if ($balance->availableDays() < $newDays) {
-                throw new \RuntimeException('Insufficient leave balance for this update.');
+                throw new \DomainException('Insufficient leave balance for this update.');
             }
             $balance->increment('pending_days', $newDays);
 
@@ -347,7 +424,18 @@ class LeaveService
                 'reason' => $data['reason'] ?? $leave->reason,
             ]);
 
-            return $leave->fresh(['user.profile', 'employee.user.profile', 'approver.profile', 'flow.steps.role']);
+            return $leave->fresh([
+                'user:id,name,email',
+                'user.profile:id,user_id,avatar',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'leaveType:id,name',
+                'flow.steps.role:id,name',
+                'approver.profile:id,user_id,avatar'
+            ]);
         });
     }
 

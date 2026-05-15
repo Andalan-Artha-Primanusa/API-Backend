@@ -119,10 +119,17 @@ class HrServiceRequestController extends Controller
         ]);
 
         $query = \App\Models\HrServiceRequest::with([
-            'employee.user.profile',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
             'creator:id,name,email',
+            'creator.profile:id,user_id,avatar',
             'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar',
             'comments.user:id,name,email',
+            'comments.user.profile:id,user_id,avatar',
         ])->latest();
 
         if (!empty($validated['status'])) {
@@ -153,7 +160,17 @@ class HrServiceRequestController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $requests = \App\Models\HrServiceRequest::with(['assignee:id,name,email', 'comments.user:id,name,email'])
+        $requests = \App\Models\HrServiceRequest::with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'assignee:id,name,email', 
+                'assignee.profile:id,user_id,avatar',
+                'comments.user:id,name,email',
+                'comments.user.profile:id,user_id,avatar'
+            ])
             ->where('employee_id', $employee->id)
             ->latest()
             ->paginate($request->integer('per_page', 10))
@@ -219,16 +236,33 @@ class HrServiceRequestController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Helpdesk request created successfully', $requestTicket->load(['employee.user.profile', 'creator:id,name,email', 'assignee:id,name,email']), 201);
+        return ApiResponse::success('Helpdesk request created successfully', $requestTicket->load([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar',
+            'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
         $ticket = \App\Models\HrServiceRequest::with([
-            'employee.user.profile',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
             'creator:id,name,email',
+            'creator.profile:id,user_id,avatar',
             'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar',
             'comments.user:id,name,email',
+            'comments.user.profile:id,user_id,avatar',
         ])->find($id);
 
         if (!$ticket) {
@@ -280,7 +314,17 @@ class HrServiceRequestController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Helpdesk request assigned successfully', $ticket->fresh(['employee.user.profile', 'creator:id,name,email', 'assignee:id,name,email']));
+        return ApiResponse::success('Helpdesk request assigned successfully', $ticket->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar',
+            'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar'
+        ]));
     }
 
     public function updateStatus(Request $request, int $id): JsonResponse
@@ -327,7 +371,17 @@ class HrServiceRequestController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Helpdesk request status updated successfully', $ticket->fresh(['employee.user.profile', 'creator:id,name,email', 'assignee:id,name,email']));
+        return ApiResponse::success('Helpdesk request status updated successfully', $ticket->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'creator:id,name,email',
+            'creator.profile:id,user_id,avatar',
+            'assignee:id,name,email',
+            'assignee.profile:id,user_id,avatar'
+        ]));
     }
 
     public function comment(Request $request, int $id): JsonResponse
@@ -369,7 +423,10 @@ class HrServiceRequestController extends Controller
             ]);
         }
 
-        return ApiResponse::success('Comment added successfully', $comment->load('user:id,name,email'), 201);
+        return ApiResponse::success('Comment added successfully', $comment->load([
+            'user:id,name,email', 
+            'user.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function destroy(Request $request, int $id): JsonResponse

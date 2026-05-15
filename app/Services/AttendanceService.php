@@ -288,10 +288,24 @@ class AttendanceService
      */
     public function getEmployeeIntelligence(int $userId, int $days = 30): array
     {
-        $user = User::with('employee.workSchedule')->findOrFail($userId);
+        $user = User::with('employee.workSchedule')->find($userId);
 
-        if (!$user->employee || !$user->employee->workSchedule) {
-            throw new \RuntimeException('No employee or work schedule found for this user.');
+        if (!$user || !$user->employee || !$user->employee->workSchedule) {
+            return [
+                'employee' => $user ? [
+                    'user_id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ] : null,
+                'summary' => [
+                    'present_count' => 0,
+                    'absent_count' => 0,
+                    'late_count' => 0,
+                    'early_checkout_count' => 0,
+                    'attendance_rate' => 0,
+                ],
+                'records' => [],
+            ];
         }
 
         $fromDate = now()->subDays(max(1, $days - 1))->startOfDay();

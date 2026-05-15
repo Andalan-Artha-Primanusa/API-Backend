@@ -24,7 +24,18 @@ class ReimbursementController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+        $query = Reimbursement::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name',
+            'approvalFlow.steps.role:id,name'
+        ]);
 
         // Scope by manager subordinates if not admin/hr
         if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('reimbursement.view')) {
@@ -67,12 +78,32 @@ class ReimbursementController extends Controller
             ['status' => 'draft']
         ));
 
-        return ApiResponse::success('Reimbursement created successfully', $reimbursement->load(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        return ApiResponse::success('Reimbursement created successfully', $reimbursement->load([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name'
+        ]));
     }
 
     public function show($id): JsonResponse
     {
-        $reimbursement = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])->findOrFail($id);
+        $reimbursement = Reimbursement::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name'
+        ])->findOrFail($id);
 
         return ApiResponse::success('Reimbursement details', $reimbursement);
     }
@@ -98,12 +129,22 @@ class ReimbursementController extends Controller
             'title', 'description', 'amount', 'category', 'expense_date', 'receipt_path'
         ]));
 
-        return ApiResponse::success('Reimbursement updated successfully', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        return ApiResponse::success('Reimbursement updated successfully', $reimbursement->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name'
+        ]));
     }
 
     public function destroy($id): JsonResponse
     {
-        $reimbursement = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])->findOrFail($id);
+        $reimbursement = Reimbursement::with(['employee.user', 'approver'])->findOrFail($id);
 
         if (!$reimbursement->isDraft()) {
             return ApiResponse::error('Submitted reimbursement cannot be deleted', null, 400);
@@ -131,8 +172,16 @@ class ReimbursementController extends Controller
                 $result = $approvalService->processApproval($reimbursement, $user, 'approved', $request->note);
 
                 $reimbursement = $result['model'];
-                $reimbursement->load(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
-
+                $reimbursement->load([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approver.profile:id,user_id,avatar',
+                    'approvalFlow.steps'
+                ]);
+                
                 if ($result['final']) {
                     return ApiResponse::success('Reimbursement fully approved', $reimbursement);
                 }
@@ -152,7 +201,18 @@ class ReimbursementController extends Controller
 
         $reimbursement->approve($user->id, $request->note);
 
-        return ApiResponse::success('Reimbursement approved', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        return ApiResponse::success('Reimbursement approved', $reimbursement->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name',
+            'approvalFlow.steps'
+        ]));
     }
 
     public function reject(Request $request, $id): JsonResponse
@@ -170,7 +230,15 @@ class ReimbursementController extends Controller
                 $approvalService = app(ApprovalFlowService::class);
                 $result = $approvalService->processApproval($reimbursement, $user, 'rejected', $request->note ?? $request->input('note'));
 
-                return ApiResponse::success('Reimbursement rejected', $result['model']->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+                return ApiResponse::success('Reimbursement rejected', $result['model']->fresh([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approver.profile:id,user_id,avatar',
+                    'approvalFlow.steps'
+                ]));
             } catch (\DomainException $e) {
                 return ApiResponse::error($e->getMessage(), null, 403);
             } catch (\RuntimeException $e) {
@@ -189,7 +257,15 @@ class ReimbursementController extends Controller
 
         $reimbursement->reject($user->id, $request->note);
 
-        return ApiResponse::success('Reimbursement rejected', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        return ApiResponse::success('Reimbursement rejected', $reimbursement->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver.profile:id,user_id,avatar',
+            'approvalFlow.steps'
+        ]));
     }
 
     public function markAsPaid(Request $request, $id): JsonResponse
@@ -207,14 +283,35 @@ class ReimbursementController extends Controller
 
         $reimbursement->markAsPaid();
 
-        return ApiResponse::success('Reimbursement marked as paid', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        return ApiResponse::success('Reimbursement marked as paid', $reimbursement->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name'
+        ]));
     }
 
     public function pending(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        $reimbursements = Reimbursement::with(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user'])
+        $reimbursements = Reimbursement::with([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name',
+            'approvalFlow.steps.role:id,name'
+        ])
             ->where('status', 'submitted')
             ->latest()
             ->paginate($request->integer('per_page', 10))
@@ -232,7 +329,14 @@ class ReimbursementController extends Controller
     public function byEmployee(Request $request, $employee_id): JsonResponse
     {
         $reimbursements = Reimbursement::where('employee_id', $employee_id)
-            ->with(['employee.user.profile', 'employee.manager.profile', 'approver.profile'])
+            ->with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'approver.profile:id,user_id,avatar'
+            ])
             ->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -271,7 +375,14 @@ class ReimbursementController extends Controller
         $employee = $this->getAuthenticatedEmployee();
 
         $query = Reimbursement::where('employee_id', $employee->id)
-            ->with(['employee.user.profile', 'employee.manager.profile', 'approver.profile']);
+            ->with([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'approver.profile:id,user_id,avatar'
+            ]);
 
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
@@ -305,7 +416,18 @@ class ReimbursementController extends Controller
             // If no approval flow configured, keep simple approval
         }
 
-        return ApiResponse::success('Reimbursement submitted', $reimbursement->fresh(['employee.user.profile', 'employee.manager.profile', 'approver.profile', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+        return ApiResponse::success('Reimbursement submitted', $reimbursement->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'approver.employee:id,user_id,position_id',
+            'approver.employee.position:id,name',
+            'approvalFlow.steps.role:id,name'
+        ]));
     }
 
     public function createMyReimbursement(StoreReimbursementRequest $request): JsonResponse
@@ -320,6 +442,13 @@ class ReimbursementController extends Controller
             ]
         ));
 
-        return ApiResponse::success('My Reimbursement created successfully', $reimbursement->load(['employee.user.profile', 'employee.manager.profile', 'approver.profile']));
+        return ApiResponse::success('My Reimbursement created successfully', $reimbursement->load([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
+            'approver.profile:id,user_id,avatar'
+        ]));
     }
 }

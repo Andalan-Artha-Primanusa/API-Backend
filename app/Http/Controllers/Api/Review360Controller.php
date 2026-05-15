@@ -46,7 +46,18 @@ class Review360Controller extends Controller
             $query->where('status', $request->string('status'));
         }
 
-        $reviews = $query->with(['cycle', 'employee', 'manager', 'feeders'])
+        $reviews = $query->with([
+                'cycle:id,title,start_date,end_date',
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'manager:id,name,email',
+                'manager.profile:id,user_id,avatar',
+                'feeders.feeder:id,name,email',
+                'feeders.feeder.profile:id,user_id,avatar'
+            ])
             ->orderByDesc('created_at')
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -74,7 +85,16 @@ class Review360Controller extends Controller
 
         $review = Review360::create($validated);
 
-        return ApiResponse::success('360 Review created successfully', $review->load(['cycle', 'employee', 'manager']), 201);
+        return ApiResponse::success('360 Review created successfully', $review->load([
+            'cycle:id,title', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'manager:id,name,email',
+            'manager.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function show(Request $request, $id): JsonResponse
@@ -83,7 +103,18 @@ class Review360Controller extends Controller
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $review = Review360::with(['cycle', 'employee', 'manager', 'feeders.feeder'])->findOrFail($id);
+        $review = Review360::with([
+            'cycle:id,title,start_date,end_date', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'manager:id,name,email',
+            'manager.profile:id,user_id,avatar',
+            'feeders.feeder:id,name,email',
+            'feeders.feeder.profile:id,user_id,avatar'
+        ])->findOrFail($id);
         return ApiResponse::success('360 Review retrieved successfully', $review);
     }
 
@@ -113,7 +144,10 @@ class Review360Controller extends Controller
 
         $review->update(['feeders_received' => 0]);
 
-        return ApiResponse::success('Feeders assigned successfully', $review->fresh(['feeders']));
+        return ApiResponse::success('Feeders assigned successfully', $review->fresh([
+            'feeders.feeder:id,name,email',
+            'feeders.feeder.profile:id,user_id,avatar'
+        ]));
     }
 
     public function submitFeederFeedback(Request $request, $reviewId, $feederId): JsonResponse
@@ -145,7 +179,10 @@ class Review360Controller extends Controller
             ->count();
         $review->update(['feeders_received' => $receivedCount]);
 
-        return ApiResponse::success('Feedback submitted successfully', $feeder->fresh());
+        return ApiResponse::success('Feedback submitted successfully', $feeder->fresh([
+            'feeder:id,name,email',
+            'feeder.profile:id,user_id,avatar'
+        ]));
     }
 
     public function submitSelfAssessment(Request $request, $id): JsonResponse
@@ -162,7 +199,13 @@ class Review360Controller extends Controller
 
         $review->update($validated);
 
-        return ApiResponse::success('Self assessment submitted', $review->fresh());
+        return ApiResponse::success('Self assessment submitted', $review->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function submitManagerAssessment(Request $request, $id): JsonResponse
@@ -181,7 +224,10 @@ class Review360Controller extends Controller
 
         $review->update($validated);
 
-        return ApiResponse::success('Manager assessment submitted', $review->fresh());
+        return ApiResponse::success('Manager assessment submitted', $review->fresh([
+            'manager:id,name,email',
+            'manager.profile:id,user_id,avatar'
+        ]));
     }
 
     public function completeReview(Request $request, $id): JsonResponse
@@ -194,7 +240,13 @@ class Review360Controller extends Controller
 
         $review->markComplete();
 
-        return ApiResponse::success('360 Review marked as completed', $review->fresh());
+        return ApiResponse::success('360 Review marked as completed', $review->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function submitForReview(Request $request, $id): JsonResponse
@@ -211,7 +263,13 @@ class Review360Controller extends Controller
 
         $review->submitForReview();
 
-        return ApiResponse::success('360 Review submitted for review', $review->fresh());
+        return ApiResponse::success('360 Review submitted for review', $review->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function approveReview(Request $request, $id): JsonResponse
@@ -228,7 +286,13 @@ class Review360Controller extends Controller
 
         $review->approve();
 
-        return ApiResponse::success('360 Review approved', $review->fresh());
+        return ApiResponse::success('360 Review approved', $review->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function getFeederStatus(Request $request, $id): JsonResponse
@@ -237,7 +301,10 @@ class Review360Controller extends Controller
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $review = Review360::with('feeders.feeder')->findOrFail($id);
+        $review = Review360::with([
+            'feeders.feeder:id,name,email',
+            'feeders.feeder.profile:id,user_id,avatar'
+        ])->findOrFail($id);
 
         $feeders = $review->feeders->map(function ($feeder) {
             return [

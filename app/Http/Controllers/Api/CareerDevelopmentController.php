@@ -32,7 +32,17 @@ class CareerDevelopmentController extends Controller
         $data = DB::table('individual_development_plans as i')
             ->leftJoin('employees as e', 'e.id', '=', 'i.employee_id')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
-            ->select('i.*', 'u.name as employee_name')
+            ->leftJoin('user_profiles as p', 'p.user_id', '=', 'u.id')
+            ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
+            ->leftJoin('positions as pos', 'pos.id', '=', 'e.position_id')
+            ->select(
+                'i.*', 
+                'u.name as employee_name', 
+                'u.email as employee_email',
+                'p.avatar as employee_avatar',
+                'd.name as department_name',
+                'pos.name as position_name'
+            )
             ->orderByDesc('i.created_at')
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -102,7 +112,17 @@ class CareerDevelopmentController extends Controller
         $data = DB::table('succession_candidates as s')
             ->leftJoin('employees as e', 'e.id', '=', 's.employee_id')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
-            ->select('s.*', 'u.name as employee_name', 'e.position', 'e.department')
+            ->leftJoin('user_profiles as p', 'p.user_id', '=', 'u.id')
+            ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
+            ->leftJoin('positions as pos', 'pos.id', '=', 'e.position_id')
+            ->select(
+                's.*', 
+                'u.name as employee_name', 
+                'u.email as employee_email',
+                'p.avatar as employee_avatar',
+                'd.name as department_name',
+                'pos.name as position_name'
+            )
             ->orderByDesc('s.talent_score')
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();

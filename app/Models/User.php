@@ -37,6 +37,24 @@ class User extends Authenticatable
     ];
 
     /**
+     * 🔥 SULTAN ACCESSORS
+     */
+    protected $appends = ['display_role', 'is_onboarded'];
+
+    public function getDisplayRoleAttribute(): string
+    {
+        // Use the first role name or default to Guest
+        $role = $this->roles->first()?->name ?? 'Guest';
+        return ucwords(str_replace(['_', '-'], ' ', $role));
+    }
+
+    public function getIsOnboardedAttribute(): bool
+    {
+        // A user is considered onboarded if they have both profile and employee record
+        return $this->profile()->exists() && $this->employee()->exists();
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>

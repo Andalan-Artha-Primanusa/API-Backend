@@ -40,7 +40,16 @@ class EmployeeController extends Controller
             );
         }
 
-        return ApiResponse::success('Own employee data', $user->employee->load(['user.profile', 'manager.profile']));
+        return ApiResponse::success('Own employee data', $user->employee->load([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar,phone,address,gender',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]));
     }
 
     /**
@@ -140,7 +149,16 @@ class EmployeeController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Employee onboarding started successfully', $employee->fresh(['user.profile', 'manager.profile']));
+        return ApiResponse::success('Employee onboarding started successfully', $employee->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar,phone,address,gender',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]));
     }
 
     /**
@@ -172,7 +190,16 @@ class EmployeeController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Employee onboarding completed successfully', $employee->fresh(['user.profile', 'manager.profile']));
+        return ApiResponse::success('Employee onboarding completed successfully', $employee->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar,phone,address,gender',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]));
     }
 
     /**
@@ -211,7 +238,16 @@ class EmployeeController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Employee offboarding started successfully', $employee->fresh(['user.profile', 'manager.profile']));
+        return ApiResponse::success('Employee offboarding started successfully', $employee->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar,phone,address,gender',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]));
     }
 
     /**
@@ -247,6 +283,15 @@ class EmployeeController extends Controller
             ],
         ]);
 
-        return ApiResponse::success('Employee offboarding completed successfully', $employee->fresh(['user.profile', 'manager.profile']));
+        return ApiResponse::success('Employee offboarding completed successfully', $employee->fresh([
+            'user:id,name,email',
+            'user.profile:id,user_id,avatar,phone,address,gender',
+            'departmentRel:id,name',
+            'positionRel:id,name',
+            'location:id,name',
+            'workSchedule:id,name,check_in_time,check_out_time',
+            'manager:id,name',
+            'manager.profile:id,user_id,avatar'
+        ]));
     }
 }

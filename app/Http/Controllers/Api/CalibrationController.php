@@ -42,7 +42,16 @@ class CalibrationController extends Controller
             $query->where('status', $request->string('status'));
         }
 
-        $sessions = $query->with(['cycle', 'facilitator', 'participants'])
+        $sessions = $query->with([
+                'cycle:id,title',
+                'facilitator:id,name,email',
+                'facilitator.profile:id,user_id,avatar',
+                'participants.manager:id,name,email',
+                'participants.manager.profile:id,user_id,avatar',
+                'participants.manager.employee:id,user_id,department_id,position_id',
+                'participants.manager.employee.department:id,name',
+                'participants.manager.employee.position:id,name'
+            ])
             ->orderByDesc('scheduled_at')
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -68,7 +77,11 @@ class CalibrationController extends Controller
 
         $session = CalibrationSession::create($validated);
 
-        return ApiResponse::success('Calibration session created', $session->load(['cycle', 'facilitator']), 201);
+        return ApiResponse::success('Calibration session created', $session->load([
+            'cycle:id,title', 
+            'facilitator:id,name,email',
+            'facilitator.profile:id,user_id,avatar'
+        ]), 201);
     }
 
     public function show(Request $request, $id): JsonResponse
@@ -77,8 +90,23 @@ class CalibrationController extends Controller
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $session = CalibrationSession::with(['cycle', 'facilitator', 'participants.manager', 'employeeReviews'])
-            ->findOrFail($id);
+        $session = CalibrationSession::with([
+            'cycle:id,title', 
+            'facilitator:id,name,email',
+            'facilitator.profile:id,user_id,avatar',
+            'participants.manager:id,name,email',
+            'participants.manager.profile:id,user_id,avatar',
+            'participants.manager.employee:id,user_id,department_id,position_id',
+            'participants.manager.employee.department:id,name',
+            'participants.manager.employee.position:id,name',
+            'employeeReviews.employee:id,user_id,employee_code,department_id,position_id',
+            'employeeReviews.employee.user:id,name,email',
+            'employeeReviews.employee.user.profile:id,user_id,avatar',
+            'employeeReviews.employee.department:id,name',
+            'employeeReviews.employee.position:id,name',
+            'employeeReviews.review360:id,overall_score,status'
+        ])
+        ->findOrFail($id);
 
         return ApiResponse::success('Calibration session retrieved', $session);
     }
@@ -106,7 +134,13 @@ class CalibrationController extends Controller
 
         $session->update(['participants_count' => $session->participants()->count()]);
 
-        return ApiResponse::success('Participants added', $session->fresh(['participants.manager']));
+        return ApiResponse::success('Participants added', $session->fresh([
+            'participants.manager:id,name,email',
+            'participants.manager.profile:id,user_id,avatar',
+            'participants.manager.employee:id,user_id,department_id,position_id',
+            'participants.manager.employee.department:id,name',
+            'participants.manager.employee.position:id,name'
+        ]));
     }
 
     public function addReviewsForCalibration(Request $request, $id): JsonResponse
@@ -134,7 +168,13 @@ class CalibrationController extends Controller
             );
         }
 
-        return ApiResponse::success('Reviews added for calibration', $session->fresh(['employeeReviews']));
+        return ApiResponse::success('Reviews added for calibration', $session->fresh([
+            'employeeReviews.employee:id,user_id,employee_code,department_id,position_id',
+            'employeeReviews.employee.user:id,name,email',
+            'employeeReviews.employee.user.profile:id,user_id,avatar',
+            'employeeReviews.employee.department:id,name',
+            'employeeReviews.employee.position:id,name'
+        ]));
     }
 
     public function startSession(Request $request, $id): JsonResponse
@@ -151,7 +191,10 @@ class CalibrationController extends Controller
 
         $session->start();
 
-        return ApiResponse::success('Calibration session started', $session->fresh());
+        return ApiResponse::success('Calibration session started', $session->fresh([
+            'facilitator:id,name,email',
+            'facilitator.profile:id,user_id,avatar'
+        ]));
     }
 
     public function calibrateEmployee(Request $request, $sessionId, $calibrationReviewId): JsonResponse
@@ -175,7 +218,13 @@ class CalibrationController extends Controller
 
         $calibrationReview->update($validated);
 
-        return ApiResponse::success('Employee review calibrated', $calibrationReview->fresh());
+        return ApiResponse::success('Employee review calibrated', $calibrationReview->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
     }
 
     public function getCalibrationReport(Request $request, $id): JsonResponse
@@ -184,7 +233,14 @@ class CalibrationController extends Controller
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $session = CalibrationSession::with(['employeeReviews.employee', 'employeeReviews.review360'])
+        $session = CalibrationSession::with([
+                'employeeReviews.employee:id,user_id,employee_code,department_id,position_id',
+                'employeeReviews.employee.user:id,name,email',
+                'employeeReviews.employee.user.profile:id,user_id,avatar',
+                'employeeReviews.employee.department:id,name',
+                'employeeReviews.employee.position:id,name',
+                'employeeReviews.review360:id,overall_score'
+            ])
             ->findOrFail($id);
 
         $report = [
@@ -195,6 +251,9 @@ class CalibrationController extends Controller
                 return [
                     'employee_id' => $calReview->employee_id,
                     'employee_name' => $calReview->employee->user->name ?? 'N/A',
+                    'employee_avatar' => $calReview->employee->user->profile->avatar ?? null,
+                    'department' => $calReview->employee->department->name ?? 'N/A',
+                    'position' => $calReview->employee->position->name ?? 'N/A',
                     'initial_score' => $calReview->initial_score,
                     'calibrated_score' => $calReview->calibrated_score,
                     'rating_category' => $calReview->rating_category,

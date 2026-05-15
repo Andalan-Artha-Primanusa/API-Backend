@@ -16,10 +16,20 @@ class PromotionController
     {
         $user = $request->user();
         $query = EmployeeLifecycleEvent::with([
-            'employee.user',
-            'initiator.user',
-            'approver',
-            'reportApprover',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'initiator:id,user_id,employee_code,department_id,position_id',
+            'initiator.user:id,name,email',
+            'initiator.user.profile:id,user_id,avatar',
+            'initiator.department:id,name',
+            'initiator.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'reportApprover:id,name,email',
+            'reportApprover.profile:id,user_id,avatar',
             'approvalFlow.steps.role',
             'approvalFlow.steps.user',
         ])
@@ -112,7 +122,20 @@ class PromotionController
             }
 
             DB::commit();
-            return ApiResponse::success('Pengajuan promosi berhasil dibuat', $event->fresh(['employee.user', 'initiator.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user']), 201);
+            return ApiResponse::success('Pengajuan promosi berhasil dibuat', $event->fresh([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'initiator:id,user_id,employee_code,department_id,position_id',
+                'initiator.user:id,name,email',
+                'initiator.user.profile:id,user_id,avatar',
+                'initiator.department:id,name',
+                'initiator.position:id,name',
+                'approvalFlow.steps.role', 
+                'approvalFlow.steps.user'
+            ]), 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponse::error('Gagal membuat pengajuan promosi', $e->getMessage(), 500);
@@ -138,7 +161,17 @@ class PromotionController
                 $result = $approvalService->processApproval($event, $user, 'approved', $request->notes);
 
                 $event = $result['model'];
-                $event->load(['employee.user', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user']);
+                $event->load([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approver:id,name,email',
+                    'approver.profile:id,user_id,avatar',
+                    'approvalFlow.steps.role', 
+                    'approvalFlow.steps.user'
+                ]);
 
                 if ($result['final']) {
                     // Apply promotion changes to employee record
@@ -171,7 +204,15 @@ class PromotionController
                 'approved_by_id' => $user->id,
                 'approval_date' => now(),
             ]);
-            $event->load(['employee.user', 'approver']);
+            $event->load([
+                'employee:id,user_id,employee_code,department_id,position_id',
+                'employee.user:id,name,email',
+                'employee.user.profile:id,user_id,avatar',
+                'employee.department:id,name',
+                'employee.position:id,name',
+                'approver:id,name,email',
+                'approver.profile:id,user_id,avatar'
+            ]);
 
             DB::commit();
             return ApiResponse::success('Promosi disetujui', $event);
@@ -202,7 +243,17 @@ class PromotionController
                 $approvalService = app(ApprovalFlowService::class);
                 $result = $approvalService->processApproval($event, $user, 'rejected', $validated['remarks'] ?? null);
 
-                return ApiResponse::success('Promosi ditolak', $result['model']->fresh(['employee.user', 'approver', 'approvalFlow.steps.role', 'approvalFlow.steps.user']));
+                return ApiResponse::success('Promosi ditolak', $result['model']->fresh([
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,avatar',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'approver:id,name,email',
+                    'approver.profile:id,user_id,avatar',
+                    'approvalFlow.steps.role', 
+                    'approvalFlow.steps.user'
+                ]));
             } catch (\DomainException $e) {
                 return ApiResponse::error($e->getMessage(), null, 403);
             } catch (\RuntimeException $e) {
@@ -226,7 +277,15 @@ class PromotionController
             'remarks' => $validated['remarks'] ?? $event->remarks,
         ]);
 
-        return ApiResponse::success('Promosi ditolak', $event);
+        return ApiResponse::success('Promosi ditolak', $event->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar'
+        ]));
     }
 
     /**
@@ -276,10 +335,20 @@ class PromotionController
         $employee = $user->employee;
 
         $query = EmployeeLifecycleEvent::with([
-            'employee.user',
-            'approver',
-            'initiator.user',
-            'reportApprover',
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'initiator:id,user_id,employee_code,department_id,position_id',
+            'initiator.user:id,name,email',
+            'initiator.user.profile:id,user_id,avatar',
+            'initiator.department:id,name',
+            'initiator.position:id,name',
+            'reportApprover:id,name,email',
+            'reportApprover.profile:id,user_id,avatar',
         ])
         ->where('event_type', 'promotion');
 
@@ -342,7 +411,15 @@ class PromotionController
             'report_status' => 'submitted',
         ]);
 
-        return ApiResponse::success('Activity report submitted', $event->fresh(['employee.user', 'approver']));
+        return ApiResponse::success('Activity report submitted', $event->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar'
+        ]));
     }
 
     public function approveReport(Request $request, int $id): JsonResponse
@@ -372,7 +449,17 @@ class PromotionController
             'status' => 'completed',
         ]);
 
-        return ApiResponse::success('Activity report approved. Promotion completed!', $event->fresh(['employee.user', 'approver', 'reportApprover']));
+        return ApiResponse::success('Activity report approved. Promotion completed!', $event->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'reportApprover:id,name,email',
+            'reportApprover.profile:id,user_id,avatar'
+        ]));
     }
 
     public function rejectReport(Request $request, int $id): JsonResponse
@@ -403,6 +490,16 @@ class PromotionController
             'report_rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        return ApiResponse::success('Activity report rejected', $event->fresh(['employee.user', 'approver', 'reportApprover']));
+        return ApiResponse::success('Activity report rejected', $event->fresh([
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,avatar',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'approver:id,name,email',
+            'approver.profile:id,user_id,avatar',
+            'reportApprover:id,name,email',
+            'reportApprover.profile:id,user_id,avatar'
+        ]));
     }
 }
