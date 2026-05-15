@@ -20,7 +20,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'superadmin@gmail.com',
             'name'          => 'Super Admin',
-            'role'          => User::ROLE_SUPER_ADMIN,
+            'role'          => 'super_admin',
             'employee_code' => 'ADM-001',
             'position'      => 'Super Administrator',
             'department'    => 'Management',
@@ -31,7 +31,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'raul@gmail.com',
             'name'          => 'Raul',
-            'role'          => User::ROLE_SUPER_ADMIN,
+            'role'          => 'super_admin',
             'employee_code' => 'ADM-003',
             'position'      => 'Super Administrator',
             'department'    => 'Management',
@@ -42,7 +42,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'ryas@gmail.com',
             'name'          => 'Ryas',
-            'role'          => User::ROLE_SUPER_ADMIN,
+            'role'          => 'super_admin',
             'employee_code' => 'ADM-004',
             'position'      => 'Super Administrator',
             'department'    => 'Management',
@@ -53,7 +53,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'iqbal@gmail.com',
             'name'          => 'Iqbal',
-            'role'          => User::ROLE_SUPER_ADMIN,
+            'role'          => 'super_admin',
             'employee_code' => 'ADM-005',
             'position'      => 'Super Administrator',
             'department'    => 'Management',
@@ -64,7 +64,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'admin@gmail.com',
             'name'          => 'Admin',
-            'role'          => User::ROLE_ADMIN,
+            'role'          => 'admin',
             'employee_code' => 'ADM-002',
             'position'      => 'Administrator',
             'department'    => 'Management',
@@ -75,7 +75,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'hr@gmail.com',
             'name'          => 'HR',
-            'role'          => User::ROLE_HR,
+            'role'          => 'hr',
             'employee_code' => 'HR-001',
             'position'      => 'HR Officer',
             'department'    => 'Human Resources',
@@ -86,7 +86,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'manager@gmail.com',
             'name'          => 'Manager',
-            'role'          => User::ROLE_MANAGER,
+            'role'          => 'manager',
             'employee_code' => 'MGR-001',
             'position'      => 'Team Manager',
             'department'    => 'Management',
@@ -97,7 +97,7 @@ class AdminSeeder extends Seeder
         [
             'email'         => 'employee@gmail.com',
             'name'          => 'Employee',
-            'role'          => User::ROLE_EMPLOYEE,
+            'role'          => 'employee',
             'employee_code' => 'EMP-001',
             'position'      => 'Employee',
             'department'    => 'General',
@@ -113,11 +113,11 @@ class AdminSeeder extends Seeder
         DB::transaction(function () {
             // Cache roles to avoid repeated queries
             $roles = Role::whereIn('name', [
-                User::ROLE_SUPER_ADMIN,
-                User::ROLE_ADMIN,
-                User::ROLE_HR,
-                User::ROLE_MANAGER,
-                User::ROLE_EMPLOYEE,
+                'super_admin',
+                'admin',
+                'hr',
+                'manager',
+                'employee',
             ])->get()->keyBy('name');
 
             if ($roles->isEmpty()) {

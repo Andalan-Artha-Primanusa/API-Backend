@@ -17,13 +17,13 @@ class DataImportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.import.execute')) {
+        if (!$user->hasPermission('admin.import.execute')) {
             return ApiResponse::error('Forbidden', 'Missing admin import capability', 403);
         }
 
         $validated = $request->validate([
             'file' => 'required|file|mimes:csv,xlsx,json|max:5120', // Max 5MB
-            'role' => 'required|string|in:' . implode(',', [User::ROLE_EMPLOYEE, User::ROLE_MANAGER, User::ROLE_HR]),
+            'role' => 'required|string|exists:roles,name',
         ]);
 
         try {
@@ -49,7 +49,7 @@ class DataImportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.import.execute')) {
+        if (!$user->hasPermission('admin.import.execute')) {
             return ApiResponse::error('Forbidden', 'Missing admin import capability', 403);
         }
 
@@ -301,7 +301,7 @@ class DataImportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.import.execute')) {
+        if (!$user->hasPermission('admin.import.execute')) {
             return ApiResponse::error('Forbidden', 'Missing admin import capability', 403);
         }
 

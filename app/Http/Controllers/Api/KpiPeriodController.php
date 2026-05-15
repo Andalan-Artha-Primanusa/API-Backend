@@ -20,7 +20,7 @@ class KpiPeriodController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+            if (!$user->hasPermission('kpi.view')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
@@ -56,7 +56,7 @@ class KpiPeriodController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.create')) {
+            if (!$user->hasPermission('kpi.create')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
@@ -133,7 +133,7 @@ class KpiPeriodController extends Controller
             $user = $request->user();
             $isOwner = $period->employee?->user_id === $user->id;
 
-            if (!$isOwner && !$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.view')) {
+            if (!$isOwner && !$user->hasPermission('kpi.view')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
@@ -153,7 +153,7 @@ class KpiPeriodController extends Controller
             $period = KpiPeriod::findOrFail($id);
             $user = $request->user();
 
-            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.update')) {
+            if (!$user->hasPermission('kpi.update')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
@@ -292,7 +292,7 @@ class KpiPeriodController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.approve')) {
+            if (!$user->hasPermission('kpi.approve')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
@@ -388,7 +388,7 @@ class KpiPeriodController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('kpi.delete')) {
+            if (!$user->hasPermission('kpi.delete')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 

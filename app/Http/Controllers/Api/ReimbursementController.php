@@ -160,7 +160,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR() && !$user->hasPermission('reimbursement.approve')) {
+        if (!$user->hasPermission('reimbursement.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
@@ -219,7 +219,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR() && !$user->hasPermission('reimbursement.approve')) {
+        if (!$user->hasPermission('reimbursement.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
@@ -272,7 +272,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('reimbursement.pay')))  {
+        if (!$user->hasPermission('reimbursement.pay')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $reimbursement = Reimbursement::findOrFail($id);

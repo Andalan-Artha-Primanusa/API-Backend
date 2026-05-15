@@ -34,7 +34,7 @@ class LeavePolicyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('leave.policy.manage'))) {
+        if (!$user->hasPermission('leave.policy.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -62,7 +62,7 @@ class LeavePolicyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('leave.policy.manage'))) {
+        if (!$user->hasPermission('leave.policy.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -96,7 +96,7 @@ class LeavePolicyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->hasPermission('leave.policy.manage'))) {
+        if (!$user->hasPermission('leave.policy.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

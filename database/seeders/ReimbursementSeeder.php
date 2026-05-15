@@ -15,7 +15,7 @@ class ReimbursementSeeder extends Seeder
 
         // Find an admin user via pivot-based RBAC (not deprecated 'role' column)
         $admin = User::whereHas('roles', function ($q) {
-            $q->where('name', User::ROLE_ADMIN);
+            $q->where('name', 'admin');
         })->first() ?? User::first();
 
         if ($employees->isEmpty()) {

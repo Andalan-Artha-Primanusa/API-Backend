@@ -19,7 +19,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.view'))) {
+        if (!$user->hasPermission('competency.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -51,7 +51,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.create'))) {
+        if (!$user->hasPermission('competency.create')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -83,7 +83,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.update'))) {
+        if (!$user->hasPermission('competency.update')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -110,7 +110,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.delete'))) {
+        if (!$user->hasPermission('competency.delete')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -130,7 +130,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.assign'))) {
+        if (!$user->hasPermission('competency.assign')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -181,7 +181,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.assign'))) {
+        if (!$user->hasPermission('competency.assign')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -223,7 +223,7 @@ class CompetencyController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('competency.view'))) {
+        if (!$user->hasPermission('competency.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

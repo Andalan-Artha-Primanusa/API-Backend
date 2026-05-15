@@ -36,7 +36,7 @@ class LeaveController extends Controller
         $employee = $user->employee;
 
         if (!$employee) {
-            if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('leave.view')) {
+            if ($user->hasPermission('leave.view')) {
                 $emptyLeaves = Leave::whereRaw('1 = 0')
                     ->paginate($request->integer('per_page', 10))
                     ->withQueryString();
@@ -90,7 +90,7 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('leave.view')) {
+        if (!$user->hasPermission('leave.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -135,7 +135,7 @@ class LeaveController extends Controller
 
         $user = $request->user();
 
-        if ($leave->user_id !== $user->id && !$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('leave.view')) {
+        if ($leave->user_id !== $user->id && !$user->hasPermission('leave.view')) {
             return ApiResponse::error('Forbidden', 'No permission to view this leave', 403);
         }
 
@@ -194,7 +194,7 @@ class LeaveController extends Controller
         // Ensure user owns the leave or is admin
         $user = $request->user();
 
-        if ($leave->user_id !== $user->id && !$user->isAdmin() && !$user->hasPermission('leave.update')) {
+        if ($leave->user_id !== $user->id && !$user->hasPermission('leave.update')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -231,7 +231,7 @@ class LeaveController extends Controller
             return ApiResponse::error('Only pending leaves can be deleted', null, 400);
         }
 
-        if ($leave->user_id !== $request->user()->id && !$request->user()->isAdmin() && !$request->user()->hasPermission('leave.delete')) {
+        if ($leave->user_id !== $request->user()->id && !$request->user()->hasPermission('leave.delete')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -283,7 +283,7 @@ class LeaveController extends Controller
             ])
             ->where('status', LeaveStatus::Pending->value);
 
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isHR() || $user->hasPermission('leave.approve')) {
+        if ($user->hasPermission('leave.approve')) {
             $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
             
             $leaves->getCollection()->transform(function ($leave) {
@@ -326,8 +326,10 @@ class LeaveController extends Controller
                 foreach ($validSteps as $step) {
                     $q->orWhere(function ($sq) use ($step, $subordinateUserIds) {
                         $sq->where('current_step', $step->step_order);
-                        // Jika role yang ditugaskan untuk step ini adalah manager, batasi ke subordinate
-                        if ($step->role->name === 'manager') {
+                        // Dynamic scope: jika role step tidak punya HR-level permission, batasi ke subordinate
+                        $step->role->loadMissing('permissions');
+                        $hasBroadScope = $step->role->permissions->contains('name', 'employee.delete');
+                        if (!$hasBroadScope) {
                             $sq->whereIn('user_id', $subordinateUserIds);
                         }
                     });
@@ -349,7 +351,7 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR() && !$user->hasPermission('leave.approve')) {
+        if (!$user->hasPermission('leave.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
         $leave = Leave::with('flow.steps.role')->findOrFail($id);
@@ -378,7 +380,7 @@ class LeaveController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isManager() && !$user->isHR() && !$user->hasPermission('leave.approve')) {
+        if (!$user->hasPermission('leave.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 

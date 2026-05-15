@@ -16,14 +16,10 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * Role name constants — used in seeders and role checks.
-     * These reference the `roles.name` column via the user_roles pivot table.
+     * Role name constants — hanya super_admin yg di-hardcode sebagai special case.
+     * Untuk role lainnya, gunakan permission-based checking.
      */
     const ROLE_SUPER_ADMIN = 'super_admin';
-    const ROLE_ADMIN = 'admin';
-    const ROLE_HR = 'hr';
-    const ROLE_MANAGER = 'manager';
-    const ROLE_EMPLOYEE = 'employee';
 
     /**
      * The attributes that are mass assignable.
@@ -143,24 +139,40 @@ class User extends Authenticatable
         return $this->roles()->whereIn('name', $roleNames)->exists();
     }
 
+    public function hasAnyPermission(array $permissions): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $this->loadMissing('roles.permissions');
+
+        $userPermNames = $this->roles
+            ->flatMap(fn($role) => $role->permissions)
+            ->pluck('name')
+            ->toArray();
+
+        return !empty(array_intersect($permissions, $userPermNames));
+    }
+
     public function isEmployee(): bool
     {
-        return $this->hasRole(self::ROLE_EMPLOYEE);
+        return $this->hasAnyPermission(config('rbac.level_indicators.employee', []));
     }
 
     public function isManager(): bool
     {
-        return $this->hasRole(self::ROLE_MANAGER);
+        return $this->isSuperAdmin() || $this->hasAnyPermission(config('rbac.level_indicators.manager', []));
     }
 
     public function isHR(): bool
     {
-        return $this->hasRole(self::ROLE_HR);
+        return $this->isSuperAdmin() || $this->hasAnyPermission(config('rbac.level_indicators.hr', []));
     }
 
     public function isAdmin(): bool
     {
-        return $this->hasAnyRole([self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN]);
+        return $this->isSuperAdmin() || $this->hasAnyPermission(config('rbac.level_indicators.admin', []));
     }
 
     public function isSuperAdmin(): bool

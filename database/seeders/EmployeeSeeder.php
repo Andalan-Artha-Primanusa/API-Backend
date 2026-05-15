@@ -11,7 +11,7 @@ class EmployeeSeeder extends Seeder
     public function run(): void
     {
         $managers = User::whereHas('roles', function ($q) {
-            $q->where('name', User::ROLE_MANAGER);
+            $q->where('name', 'manager');
         })->get();
 
         $allUsers = User::all();

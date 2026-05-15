@@ -20,7 +20,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -157,7 +157,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isManager() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -192,7 +192,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -239,7 +239,7 @@ class NotificationController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+            if (!$user->hasPermission('admin.email.manage')) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
@@ -278,7 +278,7 @@ class NotificationController extends Controller
     public function emailTemplateUpdate(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -324,7 +324,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -339,7 +339,7 @@ class NotificationController extends Controller
         $user = $request->user();
 
         // Hanya admin & HR yang boleh kirim email
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -421,7 +421,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -450,7 +450,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.email.manage')) {
+        if (!$user->hasPermission('admin.email.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

@@ -124,7 +124,7 @@ class EmployeeDocumentController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('document.view'))) {
+        if (!$user->hasPermission('document.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -162,7 +162,7 @@ class EmployeeDocumentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        $isPrivileged = $user->isAdmin() || $user->isHR() || $user->hasPermission('document.create');
+        $isPrivileged = $user->hasPermission('document.create');
 
         $validated = $request->validate([
             'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
@@ -600,7 +600,7 @@ class EmployeeDocumentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('document.view')) {
+        if ($user->hasPermission('document.view')) {
             return true;
         }
 
@@ -627,34 +627,34 @@ class EmployeeDocumentController extends Controller
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('document.view'));
+        return $user && $user->hasPermission('document.view');
     }
 
     private function canManageDocuments(Request $request): bool
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('document.view'));
+        return $user && $user->hasPermission('document.view');
     }
 
     private function canUpdateDocuments(Request $request): bool
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('document.update'));
+        return $user && $user->hasPermission('document.update');
     }
 
     private function canDeleteDocuments(Request $request): bool
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('document.delete'));
+        return $user && $user->hasPermission('document.delete');
     }
 
     private function canReviewDocuments(Request $request): bool
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('document.review'));
+        return $user && $user->hasPermission('document.review');
     }
 }

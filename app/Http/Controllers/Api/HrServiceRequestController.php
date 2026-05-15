@@ -192,7 +192,7 @@ class HrServiceRequestController extends Controller
             'due_at' => 'nullable|date',
         ]);
 
-        if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('hr_request.create')) {
+        if ($user->hasPermission('hr_request.create')) {
             if (empty($validated['employee_id'])) {
                 return ApiResponse::error('Validation error', ['employee_id' => ['The employee_id field is required.']], 422);
             }
@@ -451,7 +451,7 @@ class HrServiceRequestController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('hr_request.view')) {
+        if ($user->hasPermission('hr_request.view')) {
             return true;
         }
 
@@ -462,20 +462,20 @@ class HrServiceRequestController extends Controller
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('hr_request.view'));
+        return $user && $user->hasPermission('hr_request.view');
     }
 
     private function canAssignTickets(Request $request): bool
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('hr_request.assign'));
+        return $user && $user->hasPermission('hr_request.assign');
     }
 
     private function canManageTickets(Request $request): bool
     {
         $user = $request->user();
 
-        return $user && ($user->isAdmin() || $user->isHR() || $user->hasPermission('hr_request.manage'));
+        return $user && $user->hasPermission('hr_request.manage');
     }
 }

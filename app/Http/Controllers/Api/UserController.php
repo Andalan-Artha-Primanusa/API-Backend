@@ -77,7 +77,7 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('user.view')) {
+        if (!$user->hasPermission('user.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

@@ -231,7 +231,7 @@ class BenefitController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('benefit.view'))) {
+        if (!$user->hasPermission('benefit.view')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -291,7 +291,7 @@ class BenefitController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission($permission))) {
+        if (!$user->hasPermission($permission)) {
             abort(403, 'No permission');
         }
     }

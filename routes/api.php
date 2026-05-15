@@ -137,7 +137,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::post('promotions/{id}/reject', [PromotionController::class, 'reject']);
     Route::delete('promotions/{id}', [PromotionController::class, 'destroy']);
 
-    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         // Backward-compatible single-endpoint approval (accepts JSON { id })
         Route::match(['get', 'post', 'put'], '/overtime/approval', [OvertimeController::class, 'approveByBody']);
         Route::get('/overtime/requests', [OvertimeController::class, 'index']);
@@ -240,7 +240,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::delete('/{id}', [NotificationController::class, 'destroy']);
     });
 
-    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         Route::prefix('organization')->group(function () {
             Route::get('/directory', [OrgStructureController::class, 'directory']);
             Route::get('/summary', [OrgStructureController::class, 'summary']);
@@ -251,7 +251,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     });
 
 // Approval Flows - admin/HR/super_admin can manage
-Route::middleware('role:admin,hr,super_admin')->prefix('approval-flows')->group(function () {
+Route::middleware('role:*')->prefix('approval-flows')->group(function () {
     Route::get('/', [ApprovalFlowController::class, 'index']);
     Route::post('/', [ApprovalFlowController::class, 'store']);
     Route::get('/{id}', [ApprovalFlowController::class, 'show']);
@@ -264,7 +264,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     Route::get('/{module}/{moduleId}', [ApprovalFlowController::class, 'history']);
 });
 
-    Route::middleware('role:admin,hr,manager,super_admin')->prefix('compliance')->group(function () {
+    Route::middleware('role:*')->prefix('compliance')->group(function () {
         Route::get('/overview', [ComplianceController::class, 'overview']);
         Route::get('/audit-summary', [ComplianceController::class, 'auditSummary']);
         Route::get('/expiring-documents', [ComplianceController::class, 'expiringDocuments']);
@@ -282,7 +282,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         // Backward-compatible reporting route: /api/attendance/reports
         Route::get('/reports', [ReportingController::class, 'attendanceAnalytics']);
 
-        Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+        Route::middleware('role:*')->group(function () {
             Route::get('/all', [AttendanceController::class, 'all']);
             Route::get('/{id}', [AttendanceController::class, 'show'])->whereNumber('id');
             Route::delete('/{id}', [AttendanceController::class, 'destroy'])->whereNumber('id');
@@ -290,7 +290,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     });
 
     // MANAGER / HR / ADMIN (Role based grouped endpoints)
-    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
 
         // APPROVALS FOR MANAGERS / HR (LEAVES)
         Route::prefix('leaves')->group(function () {
@@ -625,14 +625,14 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     */
 
     // ATTENDANCE (Admin/Manager/HR)
-    Route::middleware('role:admin,manager,hr,super_admin')->prefix('attendance')->group(function () {
+    Route::middleware('role:*')->prefix('attendance')->group(function () {
         Route::get('/all', [AttendanceController::class, 'all']);
         Route::get('/{id}', [AttendanceController::class, 'show']);
         Route::delete('/{id}', [AttendanceController::class, 'destroy']);
     });
 
     // EMPLOYEE MANAGEMENT (Admin/Manager/HR)
-    Route::middleware('role:admin,manager,hr,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         Route::apiResource('employees', EmployeeController::class);
 
         Route::prefix('employees')->group(function () {
@@ -644,7 +644,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     });
 
     // PAYROLL (HR / Admin / Manager)
-    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         Route::prefix('payroll')->group(function () {
             Route::get('/', [PayrollController::class, 'index']);
             Route::post('/', [PayrollController::class, 'store']);
@@ -675,7 +675,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     });
 
     // MASTER DATA & SYSTEM SETTINGS (Super Admin & Admin/HR/Manager)
-    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         Route::prefix('admin/notifications')->group(function () {
             Route::get('/summary', [NotificationController::class, 'summary']);
             Route::post('/broadcast', [NotificationController::class, 'broadcast']);
@@ -702,14 +702,14 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         });
     });
 
-    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         Route::prefix('admin/notifications')->group(function () {
             Route::post('/', [NotificationController::class, 'store']);
         });
     });
 
-    // MENU PERMISSIONS (accessible to admin/hr who can manage roles)
-    Route::middleware('role:admin,super_admin')->prefix('admin/menus')->group(function () {
+    // MENU PERMISSIONS — accessible by PERMISSION via explicit map (role.assign_permission)
+    Route::prefix('admin/menus')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\MenuController::class, 'definitions']);
         Route::post('/assign-role', [\App\Http\Controllers\Api\MenuController::class, 'assignRole']);
         Route::delete('/{menuKey}/roles/{roleId}', [\App\Http\Controllers\Api\MenuController::class, 'removeRole']);
@@ -718,7 +718,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
     // USER MENUS (accessible to all authenticated users)
     Route::get('/user/menus', [\App\Http\Controllers\Api\MenuController::class, 'userMenus']);
 
-    Route::middleware('role:admin,hr,manager,super_admin')->group(function () {
+    Route::middleware('role:*')->group(function () {
         Route::apiResource('locations', LocationController::class);
 
         Route::apiResource('departments', DepartmentController::class);
@@ -739,33 +739,34 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::post('/devices', [BiometricIntegrationController::class, 'deviceStore']);
             Route::post('/sync-attendance', [BiometricIntegrationController::class, 'syncAttendance']);
         });
+    });
 
-        Route::prefix('admin')->group(function () {
-            Route::get('/audit-logs', [AuditLogController::class, 'index']);
-            Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
+    // Admin RBAC Routes — tanpa hardcode role name, controller & explicit map handle permission
+    Route::prefix('admin')->group(function () {
+        Route::get('/audit-logs', [AuditLogController::class, 'index']);
+        Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
 
-            // RBAC Management
-            Route::get('/roles', [RoleController::class, 'index']);
-            Route::get('/roles/{id}', [RoleController::class, 'show']);
-            Route::post('/roles', [RoleController::class, 'store']);
-            Route::put('/roles/{id}', [RoleController::class, 'update']);
-            Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
-            Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
-            Route::delete('/roles/{id}/remove-permission/{permissionId}', [RoleController::class, 'removePermission']);
-            Route::get('/roles/{id}/can-modify', [RoleController::class, 'canModify']);
-            Route::get('/roles/{id}/can-assign', [RoleController::class, 'canAssign']);
-            Route::get('/permissions', [PermissionController::class, 'index']);
-            Route::get('/permissions/{id}', [PermissionController::class, 'show']);
-            Route::get('/users', [UserController::class, 'index']);
-            Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
-            Route::delete('/users/{id}/remove-role/{roleId}', [UserController::class, 'removeRole']);
+        // RBAC Management
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::get('/roles/{id}', [RoleController::class, 'show']);
+        Route::post('/roles', [RoleController::class, 'store']);
+        Route::put('/roles/{id}', [RoleController::class, 'update']);
+        Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+        Route::post('/roles/{id}/assign-permission', [RoleController::class, 'assignPermission']);
+        Route::delete('/roles/{id}/remove-permission/{permissionId}', [RoleController::class, 'removePermission']);
+        Route::get('/roles/{id}/can-modify', [RoleController::class, 'canModify']);
+        Route::get('/roles/{id}/can-assign', [RoleController::class, 'canAssign']);
+        Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/permissions/{id}', [PermissionController::class, 'show']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
+        Route::delete('/users/{id}/remove-role/{roleId}', [UserController::class, 'removeRole']);
 
-            // Data Import
-            Route::prefix('import')->group(function () {
-                Route::post('/users', [DataImportController::class, 'importUsers']);
-                Route::post('/employees', [DataImportController::class, 'importEmployees']);
-                Route::get('/template', [DataImportController::class, 'getImportTemplate']);
-            });
+        // Data Import
+        Route::prefix('import')->group(function () {
+            Route::post('/users', [DataImportController::class, 'importUsers']);
+            Route::post('/employees', [DataImportController::class, 'importEmployees']);
+            Route::get('/template', [DataImportController::class, 'getImportTemplate']);
         });
     });
 

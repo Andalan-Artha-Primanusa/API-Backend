@@ -18,7 +18,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('admin.approval_flow.manage')) {
+        if (!$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -42,7 +42,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->hasPermission('admin.approval_flow.manage')) {
+        if (!$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -66,7 +66,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.approval_flow.manage')) {
+        if (!$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -112,7 +112,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.approval_flow.manage')) {
+        if (!$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -165,7 +165,7 @@ class ApprovalFlowController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->hasPermission('admin.approval_flow.manage')) {
+        if (!$user->hasPermission('admin.approval_flow.manage')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 

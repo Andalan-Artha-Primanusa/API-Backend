@@ -212,7 +212,10 @@ class LeaveService
             throw new \DomainException('This request is assigned to a specific approver.');
         }
 
-        if ($step->role->name === 'manager') {
+        // Dynamic scope: jika role step tidak punya HR-level permission, batasi ke subordinate
+        $step->role->loadMissing('permissions');
+        $hasBroadScope = $step->role->permissions->contains('name', 'employee.delete');
+        if (!$hasBroadScope) {
             $subordinates = $approver->teamMembers()->pluck('user_id');
             if (!$subordinates->contains($leave->user_id)) {
                 throw new \DomainException('You can only approve requests for your direct subordinates.');

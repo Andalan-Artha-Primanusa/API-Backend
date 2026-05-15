@@ -35,7 +35,7 @@ class PromotionController
         ])
         ->where('event_type', 'promotion');
 
-        if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->hasPermission('career.promotion.view')) {
+        if ($user->hasPermission('career.promotion.view')) {
             // Admin/HR/SuperAdmin/explicit-permission: see all
         } elseif ($user->isManager()) {
             $employeeId = $user->employee?->id;
@@ -78,7 +78,7 @@ class PromotionController
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('career.promotion.create')) {
+        if (!$user->hasPermission('career.promotion.create')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -150,7 +150,7 @@ class PromotionController
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('career.promotion.approve')) {
+        if (!$user->hasPermission('career.promotion.approve')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -230,7 +230,7 @@ class PromotionController
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('career.promotion.approve')) {
+        if (!$user->hasPermission('career.promotion.approve')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -318,7 +318,7 @@ class PromotionController
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
         }
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('career.promotion.delete')) {
+        if (!$user->hasPermission('career.promotion.delete')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
         if ($event->status !== 'pending') {
@@ -352,7 +352,7 @@ class PromotionController
         ])
         ->where('event_type', 'promotion');
 
-        if ($user->isAdmin() || $user->isHR() || $user->isSuperAdmin() || $user->isManager() || $user->hasPermission('career.promotion.view')) {
+        if ($user->hasPermission('career.promotion.view')) {
             // Admin/HR/Manager/explicit-permission: see all promotions
         } else {
             // Regular user: see promotions where they are the employee OR they initiated it
@@ -426,7 +426,7 @@ class PromotionController
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('career.promotion.approve')) {
+        if (!$user->hasPermission('career.promotion.approve')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 
@@ -466,7 +466,7 @@ class PromotionController
     {
         $user = $request->user();
 
-        if (!$user->isAdmin() && !$user->isHR() && !$user->isSuperAdmin() && !$user->isManager() && !$user->hasPermission('career.promotion.approve')) {
+        if (!$user->hasPermission('career.promotion.approve')) {
             return ApiResponse::error('Forbidden', null, 403);
         }
 

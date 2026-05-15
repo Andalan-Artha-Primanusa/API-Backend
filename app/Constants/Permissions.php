@@ -324,133 +324,31 @@ class Permissions
 
     // ==========================================
     // ROLE PERMISSION MAPPINGS
-    // Maps roles to their default permissions
-    // Super Admin can customize via API later
+    // Default permissions per role — now reads from config/rbac.php
+    // Super Admin can customize via API later (POST /admin/roles/{id}/assign-permission)
+    // super_admin always gets ALL permissions (hardcoded)
     // ==========================================
 
+    /**
+     * Get default permissions for all roles.
+     * Reads from config/rbac.php. super_admin always gets ALL.
+     */
     public static function roleDefaultPermissions(): array
     {
-        return [
-            'super_admin' => array_keys(self::all()),
+        $defaults = [];
+        $roleConfigs = config('rbac.roles', []);
 
-            'admin' => array_merge(
-                array_keys(self::EMPLOYEE),
-                array_keys(self::LEAVE),
-                array_keys(self::ATTENDANCE),
-                array_keys(self::PAYROLL),
-                array_keys(self::KPI),
-                array_keys(self::REIMBURSEMENT),
-                array_keys(self::OVERTIME),
-                array_keys(self::TRAINING),
-                array_keys(self::COMPETENCY),
-                array_keys(self::ASSET),
-                array_keys(self::DOCUMENT),
-                array_keys(self::ASSIGNMENT_LETTER),
-                array_keys(self::HR_REQUEST),
-                array_keys(self::TASK),
-                array_keys(self::RECRUITMENT),
-                array_keys(self::BENEFIT),
-                array_keys(self::PERFORMANCE),
-                array_keys(self::OKR),
-                array_keys(self::REVIEW360),
-                array_keys(self::CALIBRATION),
-                array_keys(self::CAREER),
-                array_keys(self::ENGAGEMENT),
-                array_keys(self::ORGANIZATION),
-                array_keys(self::COMPLIANCE),
-                array_keys(self::REPORTING),
-                array_keys(self::ADMIN_SYSTEM),
-                array_keys(self::ADMIN_SETTINGS),
-                array_keys(self::ADMIN_DATA),
-            ),
+        foreach ($roleConfigs as $roleName => $perms) {
+            if ($roleName === 'super_admin') {
+                $defaults[$roleName] = array_keys(self::all());
+            } elseif (is_array($perms)) {
+                // Ensure permissions actually exist in the registry
+                $allPerms = self::all();
+                $defaults[$roleName] = array_values(array_intersect($perms, array_keys($allPerms)));
+            }
+        }
 
-            'hr' => array_merge(
-                array_keys(self::EMPLOYEE),
-                array_keys(self::LEAVE),
-                array_keys(self::ATTENDANCE),
-                array_keys(self::PAYROLL),
-                array_keys(self::KPI),
-                array_keys(self::REIMBURSEMENT),
-                array_keys(self::OVERTIME),
-                array_keys(self::TRAINING),
-                array_keys(self::COMPETENCY),
-                array_keys(self::DOCUMENT),
-                array_keys(self::ASSIGNMENT_LETTER),
-                array_keys(self::HR_REQUEST),
-                array_keys(self::TASK),
-                array_keys(self::RECRUITMENT),
-                array_keys(self::BENEFIT),
-                array_keys(self::PERFORMANCE),
-                array_keys(self::OKR),
-                array_keys(self::REVIEW360),
-                array_keys(self::CALIBRATION),
-                array_keys(self::CAREER),
-                array_keys(self::ORGANIZATION),
-                array_keys(self::COMPLIANCE),
-                array_keys(self::REPORTING),
-                array_keys(self::ADMIN_DATA),
-                ['admin.email.manage', 'profile.view_all', 'profile.update'],
-            ),
-
-            'manager' => array_merge(
-                ['employee.view', 'employee.update'],
-                array_keys(self::LEAVE),
-                array_keys(self::ATTENDANCE),
-                array_keys(self::PAYROLL),
-                array_keys(self::KPI),
-                array_keys(self::REIMBURSEMENT),
-                array_keys(self::OVERTIME),
-                ['training.view', 'training.enroll'],
-                array_keys(self::COMPETENCY),
-                array_keys(self::ASSET),
-                array_keys(self::DOCUMENT),
-                array_keys(self::ASSIGNMENT_LETTER),
-                ['task.view', 'task.complete'],
-                ['employee.onboard', 'employee.offboard'],
-                ['user.view'],
-                ['role.view'],
-                ['permission.view'],
-                ['location.view', 'department.view', 'position.view', 'profile.view_all'],
-                ['performance.review.view', 'performance.review.approve'],
-                ['okr.view', 'okr.approve'],
-                ['review360.view', 'review360.approve'],
-                array_keys(self::ORGANIZATION),
-                array_keys(self::COMPLIANCE),
-                array_keys(self::REPORTING),
-            ),
-
-            'employee' => [
-                'leave.view',
-                'leave.create',
-                'attendance.check_in',
-                'attendance.check_out',
-                'attendance.view_own',
-                'overtime.create',
-                'overtime.view',
-                'kpi.view',
-                'reimbursement.view',
-                'reimbursement.create',
-                'training.view',
-                'competency.view',
-                'asset.view',
-                'document.view',
-                'assignment_letter.view',
-                'assignment_letter.create',
-                'assignment_letter.export',
-                'task.view',
-                'task.create',
-                'task.update',
-                'hr_request.view',
-                'hr_request.create',
-                'benefit.view',
-                'performance.review.view',
-                'okr.view',
-                'review360.view',
-                'career.idp.view',
-                'engagement.survey.respond',
-                'engagement.survey.view',
-            ],
-        ];
+        return $defaults;
     }
 
     /**
@@ -462,10 +360,12 @@ class Permissions
     }
 
     /**
-     * Get all permissions for a role (default)
+     * Get default permissions for a single role.
+     * Falls back to empty array if role not found.
      */
     public static function forRole(string $role): array
     {
-        return self::roleDefaultPermissions()[$role] ?? [];
+        $defaults = self::roleDefaultPermissions();
+        return $defaults[$role] ?? [];
     }
 }

@@ -24,10 +24,11 @@ class UserService
             'password' => Hash::make($data['password']),
         ]);
 
-        // Assign default employee role via RBAC pivot table
-        $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
-        if ($employeeRole) {
-            $user->roles()->syncWithoutDetaching([$employeeRole->id]);
+        // Assign default role via RBAC pivot table (configurable via rbac.php)
+        $defaultRoleName = config('rbac.default_role', 'employee');
+        $defaultRole = Role::where('name', $defaultRoleName)->first();
+        if ($defaultRole) {
+            $user->roles()->syncWithoutDetaching([$defaultRole->id]);
         }
 
         return $user->load([
@@ -65,10 +66,11 @@ class UserService
             'password' => Hash::make(Str::random(32)),
         ]);
 
-        // assign role
-        $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
-        if ($employeeRole) {
-            $user->roles()->syncWithoutDetaching([$employeeRole->id]);
+        // assign default role
+        $defaultRoleName = config('rbac.default_role', 'employee');
+        $defaultRole = Role::where('name', $defaultRoleName)->first();
+        if ($defaultRole) {
+            $user->roles()->syncWithoutDetaching([$defaultRole->id]);
         }
     }
 

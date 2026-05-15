@@ -28,11 +28,12 @@ class RbacSeeder extends Seeder
         // 1. CREATE ROLES
         // ======================
         echo "  ✓ Creating roles...\n";
-        
-        $roles = ['super_admin', 'admin', 'hr', 'manager', 'employee'];
-        
-        foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role]);
+
+        $roleConfigs = config('rbac.roles', []);
+        $roleNames = array_keys($roleConfigs);
+
+        foreach ($roleNames as $roleName) {
+            Role::firstOrCreate(['name' => $roleName]);
         }
 
         // ======================

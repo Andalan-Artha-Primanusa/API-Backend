@@ -258,7 +258,7 @@ class PerformanceReviewController extends Controller
         $employee = $this->getAuthenticatedEmployee();
         $isOwner = $employee->id === $review->employee_id;
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $isOwner || $user->hasPermission('performance.review.update'))) {
+        if (!($isOwner || $user->hasPermission('performance.review.update'))) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -333,7 +333,7 @@ class PerformanceReviewController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('performance.review.update'))) {
+        if (!$user->hasPermission('performance.review.update')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -375,7 +375,7 @@ class PerformanceReviewController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission('performance.review.approve'))) {
+        if (!$user->hasPermission('performance.review.approve')) {
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
@@ -462,7 +462,7 @@ class PerformanceReviewController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isAdmin() || $user->isHR() || $user->isManager() || $user->hasPermission($permission))) {
+        if (!$user->hasPermission($permission)) {
             abort(403, 'No permission');
         }
     }

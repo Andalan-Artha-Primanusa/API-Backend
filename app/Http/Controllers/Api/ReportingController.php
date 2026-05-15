@@ -138,7 +138,7 @@ class ReportingController extends Controller
     {
         $user = $request->user();
 
-        if (!($user->isHR() || $user->isAdmin() || $user->hasRole('super_admin') || $user->isManager() || $user->hasPermission('reporting.dashboard'))) {
+        if (!$user->hasPermission('reporting.dashboard')) {
             abort(403, 'Unauthorized to access reporting');
         }
     }

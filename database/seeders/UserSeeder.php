@@ -10,9 +10,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $hrRole = Role::where('name', User::ROLE_HR)->first();
-        $managerRole = Role::where('name', User::ROLE_MANAGER)->first();
-        $employeeRole = Role::where('name', User::ROLE_EMPLOYEE)->first();
+        $hrRole = Role::where('name', 'hr')->first();
+        $managerRole = Role::where('name', 'manager')->first();
+        $employeeRole = Role::where('name', 'employee')->first();
 
         if (!$hrRole || !$managerRole || !$employeeRole) {
             $this->command?->error('Roles not found! Run RbacSeeder first.');
