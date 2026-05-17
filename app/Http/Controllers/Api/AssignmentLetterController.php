@@ -115,10 +115,11 @@ class AssignmentLetterController
             }
             $step = $letter->approvalFlow?->steps->where('step_order', $letter->current_step)->first();
             if (!$step) {
-                return ApiResponse::error('Approval step not found', null, 500);
+                $availableSteps = $letter->approvalFlow?->steps->pluck('step_order')->join(', ');
+                return ApiResponse::error('Approval step not found (letter_id: ' . $letter->id . ', approval_flow_id: ' . ($letter->approval_flow_id ?? 'null') . ', current_step: ' . ($letter->current_step ?? 'null') . ', available step_orders: ' . ($availableSteps ?: 'none') . ')', null, 500);
             }
             if (!$step->role) {
-                return ApiResponse::error('Approval step role not found', null, 500);
+                return ApiResponse::error('Approval step role not found (step_id: ' . $step->id . ', role_id: ' . ($step->role_id ?? 'null') . ')', null, 500);
             }
             if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
                 return ApiResponse::error('It is not your turn to approve', null, 403);
@@ -174,10 +175,11 @@ class AssignmentLetterController
             }
             $step = $letter->approvalFlow?->steps->where('step_order', $letter->current_step)->first();
             if (!$step) {
-                return ApiResponse::error('Approval step not found', null, 500);
+                $availableSteps = $letter->approvalFlow?->steps->pluck('step_order')->join(', ');
+                return ApiResponse::error('Approval step not found (letter_id: ' . $letter->id . ', approval_flow_id: ' . ($letter->approval_flow_id ?? 'null') . ', current_step: ' . ($letter->current_step ?? 'null') . ', available step_orders: ' . ($availableSteps ?: 'none') . ')', null, 500);
             }
             if (!$step->role) {
-                return ApiResponse::error('Approval step role not found', null, 500);
+                return ApiResponse::error('Approval step role not found (step_id: ' . $step->id . ', role_id: ' . ($step->role_id ?? 'null') . ')', null, 500);
             }
             if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
                 return ApiResponse::error('It is not your turn to approve', null, 403);
