@@ -118,8 +118,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::get('assignment-letters', [AssignmentLetterController::class, 'index']);
     Route::post('assignment-letters', [AssignmentLetterController::class, 'store']);
     Route::get('assignment-letters/{id}', [AssignmentLetterController::class, 'show']);
-    Route::post('assignment-letters/{id}/approve', [AssignmentLetterController::class, 'approve']);
-    Route::post('assignment-letters/{id}/reject', [AssignmentLetterController::class, 'reject']);
+    Route::match(['post', 'put'], 'assignment-letters/{id}/approve', [AssignmentLetterController::class, 'approve']);
+    Route::match(['post', 'put'], 'assignment-letters/{id}/reject', [AssignmentLetterController::class, 'reject']);
     Route::get('assignment-letters/{id}/pdf', [AssignmentLetterController::class, 'generatePdf']);
 
     // Task Management
