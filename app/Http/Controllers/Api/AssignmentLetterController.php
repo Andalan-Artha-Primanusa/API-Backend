@@ -113,9 +113,12 @@ class AssignmentLetterController
             if ($letter->status !== 'pending') {
                 return ApiResponse::error('Assignment letter already processed', null, 400);
             }
-            $step = $letter->approvalFlow->steps->where('step_order', $letter->current_step)->first();
+            $step = $letter->approvalFlow?->steps->where('step_order', $letter->current_step)->first();
             if (!$step) {
                 return ApiResponse::error('Approval step not found', null, 500);
+            }
+            if (!$step->role) {
+                return ApiResponse::error('Approval step role not found', null, 500);
             }
             if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
                 return ApiResponse::error('It is not your turn to approve', null, 403);
@@ -169,9 +172,12 @@ class AssignmentLetterController
             if ($letter->status !== 'pending') {
                 return ApiResponse::error('Assignment letter already processed', null, 400);
             }
-            $step = $letter->approvalFlow->steps->where('step_order', $letter->current_step)->first();
+            $step = $letter->approvalFlow?->steps->where('step_order', $letter->current_step)->first();
             if (!$step) {
                 return ApiResponse::error('Approval step not found', null, 500);
+            }
+            if (!$step->role) {
+                return ApiResponse::error('Approval step role not found', null, 500);
             }
             if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
                 return ApiResponse::error('It is not your turn to approve', null, 403);
