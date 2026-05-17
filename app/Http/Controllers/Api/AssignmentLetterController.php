@@ -113,6 +113,16 @@ class AssignmentLetterController
             if ($letter->status !== 'pending') {
                 return ApiResponse::error('Assignment letter already processed', null, 400);
             }
+
+            if (!$letter->approvalFlow) {
+                $flow = ApprovalFlow::where('module', 'assignment_letter')->where('is_active', true)->first();
+                if (!$flow) {
+                    return ApiResponse::error('Approval flow for assignment letter not configured', null, 500);
+                }
+                $letter->update(['approval_flow_id' => $flow->id]);
+                $letter->load('approvalFlow.steps.role', 'approvalFlow.steps.user');
+            }
+
             $step = $letter->approvalFlow?->steps->where('step_order', $letter->current_step)->first();
             if (!$step) {
                 $availableSteps = $letter->approvalFlow?->steps->pluck('step_order')->join(', ');
@@ -173,6 +183,16 @@ class AssignmentLetterController
             if ($letter->status !== 'pending') {
                 return ApiResponse::error('Assignment letter already processed', null, 400);
             }
+
+            if (!$letter->approvalFlow) {
+                $flow = ApprovalFlow::where('module', 'assignment_letter')->where('is_active', true)->first();
+                if (!$flow) {
+                    return ApiResponse::error('Approval flow for assignment letter not configured', null, 500);
+                }
+                $letter->update(['approval_flow_id' => $flow->id]);
+                $letter->load('approvalFlow.steps.role', 'approvalFlow.steps.user');
+            }
+
             $step = $letter->approvalFlow?->steps->where('step_order', $letter->current_step)->first();
             if (!$step) {
                 $availableSteps = $letter->approvalFlow?->steps->pluck('step_order')->join(', ');
