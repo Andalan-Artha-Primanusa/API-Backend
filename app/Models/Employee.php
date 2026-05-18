@@ -37,6 +37,13 @@ class Employee extends Model
         'salary'    => 'decimal:2', // Matches migration decimal(12,2)
     ];
 
+    protected $appends = ['has_letter'];
+
+    public function getHasLetterAttribute(): bool
+    {
+        return ($this->letter_count ?? 0) > 0;
+    }
+
     public const STATUS_ONBOARDING = 'onboarding';
     public const STATUS_ACTIVE = 'active';
     public const STATUS_PROBATION = 'probation';

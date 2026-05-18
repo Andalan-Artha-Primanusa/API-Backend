@@ -24,7 +24,9 @@ class EmployeeService
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
             'manager.profile:id,user_id,profile_photo_path'
-        ]);
+        ])->withCount(['documents as letter_count' => function ($q) {
+            $q->where('category', 'letter');
+        }]);
 
         // Filter by department
         if ($request->filled('department')) {
@@ -66,7 +68,9 @@ class EmployeeService
             'workSchedule:id,name,check_in_time,check_out_time',
             'manager:id,name',
             'manager.profile:id,user_id,profile_photo_path'
-        ])->findOrFail($id);
+        ])->withCount(['documents as letter_count' => function ($q) {
+            $q->where('category', 'letter');
+        }])->findOrFail($id);
     }
 
     /**

@@ -13,14 +13,19 @@ use Illuminate\Support\Str;
 
 class EmploymentLetterController
 {
-    public function generateExperienceLetter(Request $request, int $employeeId): JsonResponse
-    {
+    private function generateLetter(
+        Request $request,
+        int $employeeId,
+        string $type,
+        string $title,
+        string $view,
+    ): JsonResponse {
         $employee = Employee::with(['user.profile', 'manager'])->findOrFail($employeeId);
         $profile = $employee->user->profile;
         $now = now();
-        $filename = 'experience-letter-' . $employee->id . '-' . $now->format('YmdHis') . '.pdf';
+        $filename = $type . '-' . $employee->id . '-' . $now->format('YmdHis') . '.pdf';
 
-        $pdf = Pdf::loadView('pdf.experience-letter', [
+        $pdf = Pdf::loadView($view, [
             'employee' => $employee,
             'profile' => $profile,
             'date' => $now->toDateString(),
@@ -29,51 +34,37 @@ class EmploymentLetterController
         $storedPath = 'employee-documents/' . $employee->id . '/' . $filename;
         Storage::disk('public')->put($storedPath, $pdfContent);
 
-        $document = EmployeeDocument::create([
-            'employee_id' => $employee->id,
-            'uploaded_by' => $request->user()->id,
-            'title' => 'Surat Pengalaman Kerja',
-            'document_type' => 'experience_letter',
-            'category' => 'letter',
-            'status' => EmployeeDocument::STATUS_APPROVED,
-            'file_name' => $filename,
-            'file_path' => $storedPath,
-            'file_mime' => 'application/pdf',
-            'file_size' => strlen($pdfContent),
-        ]);
+        $existing = EmployeeDocument::where('employee_id', $employee->id)
+            ->where('document_type', $type)
+            ->first();
+        if ($existing && $existing->file_path) {
+            Storage::disk('public')->delete($existing->file_path);
+        }
 
-        return ApiResponse::success('Surat pengalaman kerja berhasil dibuat', $document->load(['employee.user.profile']), 201);
+        $document = EmployeeDocument::updateOrCreate(
+            ['employee_id' => $employee->id, 'document_type' => $type],
+            [
+                'uploaded_by' => $request->user()->id,
+                'title' => $title,
+                'category' => 'letter',
+                'status' => EmployeeDocument::STATUS_APPROVED,
+                'file_name' => $filename,
+                'file_path' => $storedPath,
+                'file_mime' => 'application/pdf',
+                'file_size' => strlen($pdfContent),
+            ]
+        );
+
+        return ApiResponse::success($title . ' berhasil dibuat', $document->load(['employee.user.profile']), 201);
+    }
+
+    public function generateExperienceLetter(Request $request, int $employeeId): JsonResponse
+    {
+        return $this->generateLetter($request, $employeeId, 'experience_letter', 'Surat Pengalaman Kerja', 'pdf.experience-letter');
     }
 
     public function generateEmploymentLetter(Request $request, int $employeeId): JsonResponse
     {
-        $employee = Employee::with(['user.profile', 'manager'])->findOrFail($employeeId);
-        $profile = $employee->user->profile;
-        $now = now();
-        $filename = 'employment-letter-' . $employee->id . '-' . $now->format('YmdHis') . '.pdf';
-
-        $pdf = Pdf::loadView('pdf.employment-letter', [
-            'employee' => $employee,
-            'profile' => $profile,
-            'date' => $now->toDateString(),
-        ]);
-        $pdfContent = $pdf->output();
-        $storedPath = 'employee-documents/' . $employee->id . '/' . $filename;
-        Storage::disk('public')->put($storedPath, $pdfContent);
-
-        $document = EmployeeDocument::create([
-            'employee_id' => $employee->id,
-            'uploaded_by' => $request->user()->id,
-            'title' => 'Surat Keterangan Bekerja',
-            'document_type' => 'employment_letter',
-            'category' => 'letter',
-            'status' => EmployeeDocument::STATUS_APPROVED,
-            'file_name' => $filename,
-            'file_path' => $storedPath,
-            'file_mime' => 'application/pdf',
-            'file_size' => strlen($pdfContent),
-        ]);
-
-        return ApiResponse::success('Surat keterangan bekerja berhasil dibuat', $document->load(['employee.user.profile']), 201);
+        return $this->generateLetter($request, $employeeId, 'employment_letter', 'Surat Keterangan Bekerja', 'pdf.employment-letter');
     }
 }
