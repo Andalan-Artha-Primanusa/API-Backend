@@ -370,6 +370,8 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::post('/programs/{id}/enroll', [TrainingController::class, 'enroll']);
             Route::get('/enrollments', [TrainingController::class, 'enrollmentsIndex']);
             Route::put('/enrollments/{id}/complete', [TrainingController::class, 'complete']);
+            Route::put('/enrollments/{id}/progress', [TrainingController::class, 'updateProgress']);
+            Route::get('/enrollments/{id}/progress-history', [TrainingController::class, 'progressHistory']);
             Route::put('/enrollments/{id}/approve', [TrainingController::class, 'approveEnrollment']);
             Route::put('/enrollments/{id}/reject', [TrainingController::class, 'rejectEnrollment']);
         });

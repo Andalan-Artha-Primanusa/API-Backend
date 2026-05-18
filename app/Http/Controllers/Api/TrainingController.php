@@ -6,6 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\TrainingEnrollment;
+use App\Models\TrainingProgressHistory;
 use App\Models\TrainingProgram;
 use App\Models\UserNotification;
 use App\Services\ApprovalFlowService;
@@ -296,12 +297,25 @@ class TrainingController extends Controller
             return ApiResponse::error('Training enrollment not found', null, 404);
         }
 
+        $oldScore = $enrollment->score;
+        $oldStatus = $enrollment->status;
+
         $enrollment->update([
             'status' => 'completed',
             'score' => $validated['score'] ?? $enrollment->score,
             'certificate_path' => $validated['certificate_path'] ?? $enrollment->certificate_path,
             'notes' => $validated['notes'] ?? $enrollment->notes,
             'completed_at' => now(),
+        ]);
+
+        TrainingProgressHistory::create([
+            'training_enrollment_id' => $enrollment->id,
+            'user_id' => $user->id,
+            'old_score' => $oldScore,
+            'new_score' => $enrollment->score,
+            'old_status' => $oldStatus,
+            'new_status' => 'completed',
+            'notes' => $validated['notes'] ?? 'Pelatihan ditandai selesai',
         ]);
 
         if ($enrollment->employee?->user) {
@@ -327,6 +341,72 @@ class TrainingController extends Controller
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
+    }
+
+    public function updateProgress(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('training.update')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'score' => 'required|numeric|min:0|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+
+        if (!$enrollment) {
+            return ApiResponse::error('Training enrollment not found', null, 404);
+        }
+
+        $oldScore = $enrollment->score;
+        $oldStatus = $enrollment->status;
+        $newStatus = $oldStatus === 'pending' ? 'in_progress' : $oldStatus;
+
+        $enrollment->update([
+            'score' => $validated['score'],
+            'status' => $newStatus,
+            'notes' => $validated['notes'] ?? $enrollment->notes,
+        ]);
+
+        TrainingProgressHistory::create([
+            'training_enrollment_id' => $enrollment->id,
+            'user_id' => $user->id,
+            'old_score' => $oldScore,
+            'new_score' => $validated['score'],
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'notes' => $validated['notes'] ?? 'Progress diupdate',
+        ]);
+
+        return ApiResponse::success('Training progress updated successfully', $enrollment->fresh([
+            'program:id,title,category,mode,start_date,end_date,status', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
+    }
+
+    public function progressHistory(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$this->canUseAdminTrainingViews($request)) {
+            $employee = $this->getAuthenticatedEmployee();
+            $enrollment = TrainingEnrollment::find($id);
+            if (!$enrollment || $enrollment->employee_id !== $employee->id) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+        }
+
+        $histories = TrainingProgressHistory::with('user:id,name')->where('training_enrollment_id', $id)->latest()->get();
+
+        return ApiResponse::success('Progress histories retrieved', $histories);
     }
 
     public function enrollmentsIndex(Request $request): JsonResponse
