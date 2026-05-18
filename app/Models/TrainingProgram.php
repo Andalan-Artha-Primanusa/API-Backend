@@ -9,6 +9,7 @@ class TrainingProgram extends Model
 {
     protected $fillable = [
         'title',
+        'category',
         'description',
         'provider',
         'mode',
