@@ -373,7 +373,18 @@ class OvertimeController extends Controller
         }
 
         $validated = $request->validate([
-            'file' => 'required|file|max:10240', // 10MB max
+            // Batasi tipe file yang diizinkan (whitelist MIME) dan ukuran maksimal 5MB.
+            // Ini mencegah upload file berbahaya seperti .php, .exe, .sh, dll.
+            'file' => [
+                'required',
+                'file',
+                'max:5120', // 5MB max (diturunkan dari 10MB)
+                'mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx',
+            ],
+        ], [
+            'file.mimes'    => 'Format file tidak didukung. Gunakan: JPG, PNG, PDF, DOC, DOCX, XLS, atau XLSX.',
+            'file.max'      => 'Ukuran file maksimal 5MB.',
+            'file.required' => 'File bukti wajib diupload.',
         ]);
 
         $file = $request->file('file');

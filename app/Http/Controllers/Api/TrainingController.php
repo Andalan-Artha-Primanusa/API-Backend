@@ -44,7 +44,7 @@ class TrainingController extends Controller
         $query = TrainingProgram::with([
                 'enrollments.employee:id,user_id,employee_code,department_id,position_id',
                 'enrollments.employee.user:id,name,email',
-                'enrollments.employee.user.profile:id,user_id,profile_photo_path',
+                'enrollments.employee.user.profile:id,user_id',
                 'enrollments.employee.department:id,name',
                 'enrollments.employee.position:id,name',
             ])->latest();
@@ -103,11 +103,11 @@ class TrainingController extends Controller
         $program = TrainingProgram::with([
             'enrollments.employee:id,user_id,employee_code,department_id,position_id',
             'enrollments.employee.user:id,name,email',
-            'enrollments.employee.user.profile:id,user_id,profile_photo_path',
+            'enrollments.employee.user.profile:id,user_id',
             'enrollments.employee.department:id,name',
             'enrollments.employee.position:id,name',
             'enrollments.employee.manager:id,name,email',
-            'enrollments.employee.manager.profile:id,user_id,profile_photo_path'
+            'enrollments.employee.manager.profile:id,user_id'
         ])->find($id);
 
         if (!$program) {
@@ -233,7 +233,7 @@ class TrainingController extends Controller
             ->with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name'
             ])->get();
@@ -248,7 +248,7 @@ class TrainingController extends Controller
                     'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name'
                 ])
@@ -265,7 +265,7 @@ class TrainingController extends Controller
                 'program:id,title,category,mode,start_date,end_date,status',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name'
             ])
@@ -337,7 +337,7 @@ class TrainingController extends Controller
             'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -386,7 +386,7 @@ class TrainingController extends Controller
             'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -421,7 +421,7 @@ class TrainingController extends Controller
                 'program:id,title,category,mode,start_date,end_date,status', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'approvalFlow.steps.role', 
@@ -506,7 +506,7 @@ class TrainingController extends Controller
             'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name',
             'approvalFlow.steps.role', 
@@ -539,7 +539,7 @@ class TrainingController extends Controller
                     'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approvalFlow.steps.role', 
@@ -597,7 +597,7 @@ class TrainingController extends Controller
             'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -628,7 +628,7 @@ class TrainingController extends Controller
                     'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approvalFlow.steps.role', 
@@ -680,7 +680,7 @@ class TrainingController extends Controller
             'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));

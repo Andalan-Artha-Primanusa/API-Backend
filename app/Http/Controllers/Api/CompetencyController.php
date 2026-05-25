@@ -211,7 +211,7 @@ class CompetencyController extends Controller
     {
         $employee = $this->getAuthenticatedEmployee();
 
-        $data = EmployeeCompetency::with('competency')
+        $data = EmployeeCompetency::with(['competency', 'assessor:id,name,email'])
             ->where('employee_id', $employee->id)
             ->latest()
             ->get();
@@ -233,7 +233,7 @@ class CompetencyController extends Controller
             return ApiResponse::error('Employee not found', null, 404);
         }
 
-        $data = EmployeeCompetency::with('competency')
+        $data = EmployeeCompetency::with(['competency', 'assessor:id,name,email'])
             ->where('employee_id', $employee->id)
             ->latest()
             ->get();
@@ -241,3 +241,6 @@ class CompetencyController extends Controller
         return ApiResponse::success('Employee competencies retrieved successfully', $data);
     }
 }
+
+
+
