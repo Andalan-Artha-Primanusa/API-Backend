@@ -41,6 +41,10 @@ class Employee extends Model
 
     public function getHasLetterAttribute(): bool
     {
+        if ($this->relationLoaded('documents')) {
+            return $this->documents->where('category', 'letter')->isNotEmpty();
+        }
+        
         return ($this->letter_count ?? 0) > 0;
     }
 
