@@ -287,6 +287,12 @@ class OvertimeController extends Controller
                 $result = $approvalService->processApproval($overtimeRequest, $user, 'rejected', $validated['reject_reason'] ?? null);
 
                 $overtimeRequest = $result['model'];
+                $overtimeRequest->update([
+                    'reject_reason' => $validated['reject_reason'] ?? null,
+                    'rejected_by' => $user->id,
+                    'rejected_at' => now(),
+                ]);
+
                 $overtimeRequest->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
@@ -326,8 +332,8 @@ class OvertimeController extends Controller
         $overtimeRequest->update([
             'status' => 'rejected',
             'reject_reason' => $validated['reject_reason'] ?? null,
-            'approved_by' => $user->id,
-            'approved_at' => now(),
+            'rejected_by' => $user->id,
+            'rejected_at' => now(),
         ]);
 
         // Send notification to employee

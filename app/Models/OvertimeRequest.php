@@ -22,12 +22,15 @@ class OvertimeRequest extends Model
         'approved_at',
         'approval_flow_id',
         'current_step',
+        'rejected_by',
+        'rejected_at',
     ];
 
     protected $casts = [
         'date' => 'date',
         'overtime_minutes' => 'integer',
         'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function employee(): BelongsTo
@@ -43,6 +46,11 @@ class OvertimeRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     public function evidences()
