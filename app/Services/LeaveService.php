@@ -93,15 +93,15 @@ class LeaveService
 
             return $leave->load([
                 'user:id,name,email',
-                'user.profile:id,user_id,profile_photo_path',
+                'user.profile:id,user_id',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
-                'approver.profile:id,user_id,profile_photo_path'
+                'approver.profile:id,user_id'
             ]);
         });
     }
@@ -118,15 +118,15 @@ class LeaveService
     {
         $query = Leave::with([
             'user:id,name,email',
-            'user.profile:id,user_id,profile_photo_path',
+            'user.profile:id,user_id',
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name',
             'leaveType:id,name',
             'flow.steps.role:id,name',
-            'approver.profile:id,user_id,profile_photo_path'
+            'approver.profile:id,user_id'
         ]);
 
         // Admin/HR/SuperAdmin — see all (no filter)
@@ -175,15 +175,15 @@ class LeaveService
             return [
                 'leave' => $leave->fresh([
                     'user:id,name,email',
-                    'user.profile:id,user_id,profile_photo_path',
+                    'user.profile:id,user_id',
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'leaveType:id,name',
                     'flow.steps.role:id,name',
-                    'approver.profile:id,user_id,profile_photo_path'
+                    'approver.profile:id,user_id'
                 ]),
                 'final' => true,
                 'action' => 'approved',
@@ -237,15 +237,15 @@ class LeaveService
             return [
                 'leave'  => $leave->fresh([
                     'user:id,name,email',
-                    'user.profile:id,user_id,profile_photo_path',
+                    'user.profile:id,user_id',
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'leaveType:id,name',
                     'flow.steps.role:id,name',
-                    'approver.profile:id,user_id,profile_photo_path'
+                    'approver.profile:id,user_id'
                 ]),
                 'final'  => true,
                 'action' => 'rejected',
@@ -267,15 +267,15 @@ class LeaveService
             return [
                 'leave' => $leave->load([
                     'user:id,name,email',
-                    'user.profile:id,user_id,profile_photo_path',
+                    'user.profile:id,user_id',
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'leaveType:id,name',
                     'flow.steps.role:id,name',
-                    'approver.profile:id,user_id,profile_photo_path'
+                    'approver.profile:id,user_id'
                 ]),
                 'final'        => false,
                 'action'       => 'approved',
@@ -297,15 +297,15 @@ class LeaveService
         return [
             'leave' => $leave->fresh([
                 'user:id,name,email',
-                'user.profile:id,user_id,profile_photo_path',
+                'user.profile:id,user_id',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
-                'approver.profile:id,user_id,profile_photo_path'
+                'approver.profile:id,user_id'
             ]),
             'final'  => true,
             'action' => 'approved',
@@ -429,15 +429,15 @@ class LeaveService
 
             return $leave->fresh([
                 'user:id,name,email',
-                'user.profile:id,user_id,profile_photo_path',
+                'user.profile:id,user_id',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'leaveType:id,name',
                 'flow.steps.role:id,name',
-                'approver.profile:id,user_id,profile_photo_path'
+                'approver.profile:id,user_id'
             ]);
         });
     }

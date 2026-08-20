@@ -144,17 +144,42 @@ class LeaveController extends Controller
 
     public function calendar(Request $request): JsonResponse
     {
-        // Viewable based on filters
+        // Validasi date range. Default ke bulan berjalan jika tidak dikirim.
+        // Maksimal 90 hari untuk mencegah query data terlalu besar.
+        $request->validate([
+            'start_date'  => 'nullable|date',
+            'end_date'    => 'nullable|date|after_or_equal:start_date',
+            'employee_id' => 'nullable|integer|exists:employees,id',
+        ]);
+
+        $startDate = $request->input('start_date')
+            ? \Carbon\Carbon::parse($request->input('start_date'))->startOfDay()
+            : \Carbon\Carbon::now()->startOfMonth();
+
+        $endDate = $request->input('end_date')
+            ? \Carbon\Carbon::parse($request->input('end_date'))->endOfDay()
+            : \Carbon\Carbon::now()->endOfMonth();
+
+        // Batasi maksimal 90 hari agar tidak bisa tarik data terlalu besar sekaligus
+        if ($startDate->diffInDays($endDate) > 90) {
+            $endDate = $startDate->copy()->addDays(90)->endOfDay();
+        }
+
         $query = Leave::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
-            'employee.position:id,name'
-        ]);
+            'employee.position:id,name',
+        ])
+        // Filter berdasarkan overlap rentang tanggal: ambil leave yang menyentuh period ini
+        ->where(function ($q) use ($startDate, $endDate) {
+            $q->where('start_date', '<=', $endDate)
+              ->where('end_date', '>=', $startDate);
+        });
 
-        if ($request->has('employee_id')) {
-            $query->where('employee_id', $request->employee_id);
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->integer('employee_id'));
         }
 
         $leaves = $query->get();
@@ -162,21 +187,22 @@ class LeaveController extends Controller
         $data = $leaves->map(function ($leave) {
             $name = $leave->employee?->user?->name ?? 'User';
             $dept = $leave->employee?->department?->name ?? 'N/A';
-            $pos = $leave->employee?->position?->name ?? 'N/A';
-            
+            $pos  = $leave->employee?->position?->name ?? 'N/A';
+
             return [
-                'id' => $leave->id,
-                'title' => strtoupper($leave->type) . " - $name ($dept - $pos)",
-                'start' => $leave->start_date,
-                'end'   => $leave->end_date,
+                'id'     => $leave->id,
+                'title'  => strtoupper($leave->type ?? '') . " - $name ($dept - $pos)",
+                'start'  => $leave->start_date,
+                'end'    => $leave->end_date,
                 'status' => $leave->status,
                 'employee' => [
-                    'id' => $leave->employee_id,
-                    'name' => $name,
+                    'id'         => $leave->employee_id,
+                    'name'       => $name,
                     'department' => $dept,
-                    'position' => $pos,
-                    'avatar' => $leave->employee?->user?->profile?->avatar
-                ]
+                    'position'   => $pos,
+                    // Fix: gunakan profile_photo_path (field yang benar), bukan ->avatar
+                    'avatar'     => $leave->employee?->user?->profile?->profile_photo_path,
+                ],
             ];
         });
 
@@ -326,9 +352,17 @@ class LeaveController extends Controller
                 foreach ($validSteps as $step) {
                     $q->orWhere(function ($sq) use ($step, $subordinateUserIds) {
                         $sq->where('current_step', $step->step_order);
-                        // Dynamic scope: jika role step tidak punya HR-level permission, batasi ke subordinate
+
+                        // Cek apakah role pada step ini memiliki "broad scope" (HR/Admin level),
+                        // yang berarti mereka bisa melihat SEMUA pending leave, bukan hanya subordinate.
+                        //
+                        // 'leave.policy.manage' hanya dimiliki oleh role admin dan hr (bukan manager/employee),
+                        // sehingga tepat digunakan sebagai penanda HR-level scope.
+                        // Sumber: config/rbac.php — admin baris 26, hr baris 86, manager & employee: tidak ada.
                         $step->role->loadMissing('permissions');
-                        $hasBroadScope = $step->role->permissions->contains('name', 'employee.delete');
+                        $rolePermissions  = $step->role->permissions->pluck('name');
+                        $hasBroadScope    = $rolePermissions->contains('leave.policy.manage');
+
                         if (!$hasBroadScope) {
                             $sq->whereIn('user_id', $subordinateUserIds);
                         }

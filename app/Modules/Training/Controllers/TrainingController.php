@@ -6,6 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\TrainingEnrollment;
+use App\Models\TrainingProgressHistory;
 use App\Models\TrainingProgram;
 use App\Models\UserNotification;
 use App\Services\ApprovalFlowService;
@@ -36,13 +37,14 @@ class TrainingController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
             'status' => 'sometimes|string|in:draft,active,completed,cancelled',
             'mode' => 'sometimes|string|in:online,offline,hybrid',
+            'category' => 'sometimes|string|max:100',
             'search' => 'sometimes|string|max:255',
         ]);
 
         $query = TrainingProgram::with([
                 'enrollments.employee:id,user_id,employee_code,department_id,position_id',
                 'enrollments.employee.user:id,name,email',
-                'enrollments.employee.user.profile:id,user_id,profile_photo_path',
+                'enrollments.employee.user.profile:id,user_id',
                 'enrollments.employee.department:id,name',
                 'enrollments.employee.position:id,name',
             ])->latest();
@@ -55,11 +57,16 @@ class TrainingController extends Controller
             $query->where('mode', $validated['mode']);
         }
 
+        if (!empty($validated['category'])) {
+            $query->where('category', $validated['category']);
+        }
+
         if (!empty($validated['search'])) {
             $search = $validated['search'];
             $query->where(function ($builder) use ($search) {
                 $builder->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('provider', 'like', '%' . $search . '%');
+                    ->orWhere('provider', 'like', '%' . $search . '%')
+                    ->orWhere('category', 'like', '%' . $search . '%');
             });
         }
 
@@ -76,6 +83,7 @@ class TrainingController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'category' => 'nullable|string|max:100',
             'description' => 'nullable|string',
             'provider' => 'nullable|string|max:255',
             'mode' => 'required|string|in:online,offline,hybrid',
@@ -95,11 +103,11 @@ class TrainingController extends Controller
         $program = TrainingProgram::with([
             'enrollments.employee:id,user_id,employee_code,department_id,position_id',
             'enrollments.employee.user:id,name,email',
-            'enrollments.employee.user.profile:id,user_id,profile_photo_path',
+            'enrollments.employee.user.profile:id,user_id',
             'enrollments.employee.department:id,name',
             'enrollments.employee.position:id,name',
             'enrollments.employee.manager:id,name,email',
-            'enrollments.employee.manager.profile:id,user_id,profile_photo_path'
+            'enrollments.employee.manager.profile:id,user_id'
         ])->find($id);
 
         if (!$program) {
@@ -135,6 +143,7 @@ class TrainingController extends Controller
 
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
+            'category' => 'sometimes|nullable|string|max:100',
             'description' => 'sometimes|nullable|string',
             'provider' => 'sometimes|nullable|string|max:255',
             'mode' => 'sometimes|string|in:online,offline,hybrid',
@@ -224,7 +233,7 @@ class TrainingController extends Controller
             ->with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name'
             ])->get();
@@ -236,10 +245,10 @@ class TrainingController extends Controller
     {
         if ($this->canUseAdminTrainingViews($request)) {
             $data = TrainingEnrollment::with([
-                    'program:id,title,mode,start_date,end_date,status', 
+                    'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name'
                 ])
@@ -253,10 +262,10 @@ class TrainingController extends Controller
         $employee = $this->getAuthenticatedEmployee();
 
         $data = TrainingEnrollment::with([
-                'program:id,title,mode,start_date,end_date,status',
+                'program:id,title,category,mode,start_date,end_date,status',
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name'
             ])
@@ -288,12 +297,25 @@ class TrainingController extends Controller
             return ApiResponse::error('Training enrollment not found', null, 404);
         }
 
+        $oldScore = $enrollment->score;
+        $oldStatus = $enrollment->status;
+
         $enrollment->update([
             'status' => 'completed',
             'score' => $validated['score'] ?? $enrollment->score,
             'certificate_path' => $validated['certificate_path'] ?? $enrollment->certificate_path,
             'notes' => $validated['notes'] ?? $enrollment->notes,
             'completed_at' => now(),
+        ]);
+
+        TrainingProgressHistory::create([
+            'training_enrollment_id' => $enrollment->id,
+            'user_id' => $user->id,
+            'old_score' => $oldScore,
+            'new_score' => $enrollment->score,
+            'old_status' => $oldStatus,
+            'new_status' => 'completed',
+            'notes' => $validated['notes'] ?? 'Pelatihan ditandai selesai',
         ]);
 
         if ($enrollment->employee?->user) {
@@ -312,13 +334,79 @@ class TrainingController extends Controller
         }
 
         return ApiResponse::success('Training enrollment completed successfully', $enrollment->fresh([
-            'program:id,title,mode,start_date,end_date,status', 
+            'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
+    }
+
+    public function updateProgress(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('training.update')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $validated = $request->validate([
+            'score' => 'required|numeric|min:0|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+
+        if (!$enrollment) {
+            return ApiResponse::error('Training enrollment not found', null, 404);
+        }
+
+        $oldScore = $enrollment->score;
+        $oldStatus = $enrollment->status;
+        $newStatus = $oldStatus === 'pending' ? 'in_progress' : $oldStatus;
+
+        $enrollment->update([
+            'score' => $validated['score'],
+            'status' => $newStatus,
+            'notes' => $validated['notes'] ?? $enrollment->notes,
+        ]);
+
+        TrainingProgressHistory::create([
+            'training_enrollment_id' => $enrollment->id,
+            'user_id' => $user->id,
+            'old_score' => $oldScore,
+            'new_score' => $validated['score'],
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'notes' => $validated['notes'] ?? 'Progress diupdate',
+        ]);
+
+        return ApiResponse::success('Training progress updated successfully', $enrollment->fresh([
+            'program:id,title,category,mode,start_date,end_date,status', 
+            'employee:id,user_id,employee_code,department_id,position_id',
+            'employee.user:id,name,email',
+            'employee.user.profile:id,user_id',
+            'employee.department:id,name',
+            'employee.position:id,name'
+        ]));
+    }
+
+    public function progressHistory(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$this->canUseAdminTrainingViews($request)) {
+            $employee = $this->getAuthenticatedEmployee();
+            $enrollment = TrainingEnrollment::find($id);
+            if (!$enrollment || $enrollment->employee_id !== $employee->id) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+        }
+
+        $histories = TrainingProgressHistory::with('user:id,name')->where('training_enrollment_id', $id)->latest()->get();
+
+        return ApiResponse::success('Progress histories retrieved', $histories);
     }
 
     public function enrollmentsIndex(Request $request): JsonResponse
@@ -330,10 +418,10 @@ class TrainingController extends Controller
         }
 
         $enrollments = TrainingEnrollment::with([
-                'program:id,title,mode,start_date,end_date,status', 
+                'program:id,title,category,mode,start_date,end_date,status', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
-                'employee.user.profile:id,user_id,profile_photo_path',
+                'employee.user.profile:id,user_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'approvalFlow.steps.role', 
@@ -415,10 +503,10 @@ class TrainingController extends Controller
         }
 
         return ApiResponse::success('Successfully requested enrollment in training program. Waiting for approval.', $enrollment->fresh([
-            'program:id,title,mode,start_date,end_date,status', 
+            'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name',
             'approvalFlow.steps.role', 
@@ -448,10 +536,10 @@ class TrainingController extends Controller
 
                 $enrollment = $result['model'];
                 $enrollment->load([
-                    'program:id,title,mode,start_date,end_date,status', 
+                    'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approvalFlow.steps.role', 
@@ -506,10 +594,10 @@ class TrainingController extends Controller
         }
 
         return ApiResponse::success('Training enrollment approved', $enrollment->fresh([
-            'program:id,title,mode,start_date,end_date,status', 
+            'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));
@@ -537,10 +625,10 @@ class TrainingController extends Controller
 
                 $enrollment = $result['model'];
                 $enrollment->load([
-                    'program:id,title,mode,start_date,end_date,status', 
+                    'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
-                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.user.profile:id,user_id',
                     'employee.department:id,name',
                     'employee.position:id,name',
                     'approvalFlow.steps.role', 
@@ -589,10 +677,10 @@ class TrainingController extends Controller
         }
 
         return ApiResponse::success('Training enrollment rejected', $enrollment->fresh([
-            'program:id,title,mode,start_date,end_date,status', 
+            'program:id,title,category,mode,start_date,end_date,status', 
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
-            'employee.user.profile:id,user_id,profile_photo_path',
+            'employee.user.profile:id,user_id',
             'employee.department:id,name',
             'employee.position:id,name'
         ]));

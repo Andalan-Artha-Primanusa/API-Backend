@@ -30,8 +30,8 @@ class OvertimeController extends Controller
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
                 'employee.user.profile:id,user_id,profile_photo_path',
-                'employee.department:id,name',
-                'employee.position:id,name',
+                'employee.departmentRel:id,name',
+                'employee.positionRel:id,name',
                 'attendance', 
                 'approver:id,name,email',
                 'approver.profile:id,user_id,profile_photo_path',
@@ -90,8 +90,8 @@ class OvertimeController extends Controller
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
                 'employee.user.profile:id,user_id,profile_photo_path',
-                'employee.department:id,name',
-                'employee.position:id,name',
+                'employee.departmentRel:id,name',
+                'employee.positionRel:id,name',
                 'attendance',
                 'approver:id,name,email',
                 'approver.profile:id,user_id,profile_photo_path',
@@ -136,8 +136,8 @@ class OvertimeController extends Controller
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
                     'employee.user.profile:id,user_id,profile_photo_path',
-                    'employee.department:id,name',
-                    'employee.position:id,name',
+                    'employee.departmentRel:id,name',
+                    'employee.positionRel:id,name',
                     'attendance',
                     'approver:id,name,email',
                     'approver.profile:id,user_id,profile_photo_path',
@@ -198,8 +198,8 @@ class OvertimeController extends Controller
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
                     'employee.user.profile:id,user_id,profile_photo_path',
-                    'employee.department:id,name',
-                    'employee.position:id,name',
+                    'employee.departmentRel:id,name',
+                    'employee.positionRel:id,name',
                     'approver:id,name,email',
                     'approver.profile:id,user_id,profile_photo_path',
                     'evidences',
@@ -255,8 +255,8 @@ class OvertimeController extends Controller
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
-            'employee.department:id,name',
-            'employee.position:id,name',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
             'approver:id,name,email',
             'approver.profile:id,user_id,profile_photo_path',
             'evidences'
@@ -287,12 +287,18 @@ class OvertimeController extends Controller
                 $result = $approvalService->processApproval($overtimeRequest, $user, 'rejected', $validated['reject_reason'] ?? null);
 
                 $overtimeRequest = $result['model'];
+                $overtimeRequest->update([
+                    'reject_reason' => $validated['reject_reason'] ?? null,
+                    'rejected_by' => $user->id,
+                    'rejected_at' => now(),
+                ]);
+
                 $overtimeRequest->load([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
                     'employee.user.profile:id,user_id,profile_photo_path',
-                    'employee.department:id,name',
-                    'employee.position:id,name',
+                    'employee.departmentRel:id,name',
+                    'employee.positionRel:id,name',
                     'approver:id,name,email',
                     'approver.profile:id,user_id,profile_photo_path',
                     'approvalFlow.steps.role',
@@ -326,8 +332,8 @@ class OvertimeController extends Controller
         $overtimeRequest->update([
             'status' => 'rejected',
             'reject_reason' => $validated['reject_reason'] ?? null,
-            'approved_by' => $user->id,
-            'approved_at' => now(),
+            'rejected_by' => $user->id,
+            'rejected_at' => now(),
         ]);
 
         // Send notification to employee
@@ -345,8 +351,8 @@ class OvertimeController extends Controller
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
-            'employee.department:id,name',
-            'employee.position:id,name',
+            'employee.departmentRel:id,name',
+            'employee.positionRel:id,name',
             'approver:id,name,email',
             'approver.profile:id,user_id,profile_photo_path'
         ]));
@@ -373,7 +379,18 @@ class OvertimeController extends Controller
         }
 
         $validated = $request->validate([
-            'file' => 'required|file|max:10240', // 10MB max
+            // Batasi tipe file yang diizinkan (whitelist MIME) dan ukuran maksimal 5MB.
+            // Ini mencegah upload file berbahaya seperti .php, .exe, .sh, dll.
+            'file' => [
+                'required',
+                'file',
+                'max:5120', // 5MB max (diturunkan dari 10MB)
+                'mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx',
+            ],
+        ], [
+            'file.mimes'    => 'Format file tidak didukung. Gunakan: JPG, PNG, PDF, DOC, DOCX, XLS, atau XLSX.',
+            'file.max'      => 'Ukuran file maksimal 5MB.',
+            'file.required' => 'File bukti wajib diupload.',
         ]);
 
         $file = $request->file('file');

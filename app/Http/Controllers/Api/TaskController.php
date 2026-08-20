@@ -1,0 +1,193 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Helpers\ApiResponse;
+use App\Models\Task;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class TaskController
+{
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $query = Task::with([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ]);
+
+        if (!$user->hasPermission('task.view')) {
+            $query->where('assigned_to', $user->id);
+        }
+
+        $status = $request->query('status');
+        $priority = $request->query('priority');
+        $search = $request->query('search');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($priority) {
+            $query->where('priority', $priority);
+        }
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $tasks = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
+        return ApiResponse::success('Tasks retrieved', $tasks);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('task.create')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'assigned_to' => 'required|integer|exists:users,id',
+            'due_date' => 'nullable|date',
+        ]);
+
+        $task = Task::create([
+            ...$validated,
+            'assigned_by' => $user->id,
+            'status' => 'pending',
+        ]);
+
+        $task->load([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ]);
+        return ApiResponse::success('Task created successfully', $task, 201);
+    }
+
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $task = Task::with([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ])->findOrFail($id);
+
+        if ($task->assigned_to !== $user->id && !$user->hasPermission('task.view')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        return ApiResponse::success('Task detail', $task);
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $task = Task::findOrFail($id);
+
+        if ($task->assigned_to !== $user->id && !$user->hasPermission('task.update')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'priority' => 'sometimes|in:low,medium,high,urgent',
+            'status' => 'sometimes|in:pending,in_progress,completed,cancelled',
+            'due_date' => 'nullable|date',
+            'completion_notes' => 'nullable|string',
+        ]);
+
+        if (isset($validated['status']) && $validated['status'] === 'completed') {
+            $validated['completed_at'] = now();
+        }
+
+        $task->update($validated);
+        $task->load([
+            'assignedBy:id,name,email',
+            'assignedBy.profile:id,user_id',
+            'assignedBy.employee:id,user_id,department_id,position_id',
+            'assignedBy.employee.department:id,name',
+            'assignedBy.employee.position:id,name',
+            'assignedTo:id,name,email',
+            'assignedTo.profile:id,user_id',
+            'assignedTo.employee:id,user_id,department_id,position_id',
+            'assignedTo.employee.department:id,name',
+            'assignedTo.employee.position:id,name',
+        ]);
+        return ApiResponse::success('Task updated successfully', $task);
+    }
+
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $task = Task::findOrFail($id);
+
+        if (!$user->hasPermission('task.delete')) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
+
+        $task->delete();
+        return ApiResponse::success('Task deleted successfully');
+    }
+
+    public function myTasks(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $baseQuery = Task::where('assigned_to', $user->id);
+
+        $summary = [
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
+            'cancelled' => (clone $baseQuery)->where('status', 'cancelled')->count(),
+        ];
+
+        $tasks = (clone $baseQuery)->with([
+                'assignedBy:id,name,email',
+                'assignedBy.profile:id,user_id',
+                'assignedBy.employee:id,user_id,department_id,position_id',
+                'assignedBy.employee.department:id,name',
+                'assignedBy.employee.position:id,name',
+            ])
+            ->latest()
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString();
+
+        return ApiResponse::success('My tasks', [
+            'tasks' => $tasks,
+            'summary' => $summary,
+        ]);
+    }
+}

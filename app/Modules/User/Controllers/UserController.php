@@ -58,14 +58,14 @@ class UserController extends Controller
             $targetUser->load([
                 'roles:id,name',
                 'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender,profile_photo_path',
+                'profile:id,user_id,phone,address,gender',
                 'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.location:id,name',
                 'employee.workSchedule:id,name,check_in_time,check_out_time',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,profile_photo_path',
+                'employee.manager.profile:id,user_id',
             ])
         );
     }
@@ -84,14 +84,14 @@ class UserController extends Controller
         $query = User::with([
             'roles:id,name',
             'roles.permissions:id,name',
-            'profile:id,user_id,phone,address,gender,profile_photo_path',
+            'profile:id,user_id,phone,address,gender',
             'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
             'employee.department:id,name',
             'employee.position:id,name',
             'employee.location:id,name',
             'employee.workSchedule:id,name,check_in_time,check_out_time',
             'employee.manager:id,name',
-            'employee.manager.profile:id,user_id,profile_photo_path',
+            'employee.manager.profile:id,user_id',
         ]);
 
         if ($request->has('role')) {
@@ -139,14 +139,14 @@ class UserController extends Controller
             $targetUser->load([
                 'roles:id,name',
                 'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender,profile_photo_path',
+                'profile:id,user_id,phone,address,gender',
                 'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'employee.location:id,name',
                 'employee.workSchedule:id,name,check_in_time,check_out_time',
                 'employee.manager:id,name',
-                'employee.manager.profile:id,user_id,profile_photo_path',
+                'employee.manager.profile:id,user_id',
             ])
         );
     }

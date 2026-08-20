@@ -34,8 +34,13 @@ class TrainingEnrollment extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    public function approvalFlow(): BelongsTo
+    public function approvalFlow()
     {
         return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
+    }
+
+    public function progressHistories()
+    {
+        return $this->hasMany(TrainingProgressHistory::class, 'training_enrollment_id');
     }
 }

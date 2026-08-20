@@ -47,6 +47,10 @@ class User extends Authenticatable
     public function getIsOnboardedAttribute(): bool
     {
         // A user is considered onboarded if they have both profile and employee record
+        if ($this->relationLoaded('profile') && $this->relationLoaded('employee')) {
+            return $this->profile !== null && $this->employee !== null;
+        }
+        
         return $this->profile()->exists() && $this->employee()->exists();
     }
 
