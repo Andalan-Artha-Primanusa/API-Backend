@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
-use App\Models\Employee;
-use App\Models\EmployeeLifecycleEvent;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Employee\Models\EmployeeLifecycleEvent;
 use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -503,3 +503,4 @@ class PromotionController
         ]));
     }
 }
+

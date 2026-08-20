@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Rbac;
 
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Permission;
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Role;
+use App\Modules\Administration\Models\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -108,3 +108,4 @@ class RoleMiddlewareTest extends TestCase
         }
     }
 }
+

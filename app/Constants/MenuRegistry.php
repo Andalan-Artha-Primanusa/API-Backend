@@ -18,7 +18,6 @@ class MenuRegistry
         ['path' => '/payroll/process', 'label' => 'Proses Payroll', 'group' => 'Payroll'],
         ['path' => '/payroll/component', 'label' => 'Komponen Gaji', 'group' => 'Payroll'],
         ['path' => '/payroll/reports', 'label' => 'Laporan & Pajak', 'group' => 'Payroll'],
-        ['path' => '/tasks', 'label' => 'Task Management', 'group' => 'Task'],
         ['path' => '/assets', 'label' => 'Aset & Inventaris', 'group' => 'Aset'],
         ['path' => '/reimbursements', 'label' => 'Manajemen Reimburse', 'group' => 'Reimburse'],
         ['path' => '/training/programs', 'label' => 'Pelatihan & Pendaftaran', 'group' => 'Pelatihan'],

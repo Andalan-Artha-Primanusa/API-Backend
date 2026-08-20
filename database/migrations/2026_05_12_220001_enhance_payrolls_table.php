@@ -10,7 +10,9 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Update status enum — backward-compatible (keeps existing values)
-        DB::statement("ALTER TABLE payrolls MODIFY COLUMN status ENUM('draft', 'pending_hr', 'approved', 'paid', 'rejected') DEFAULT 'draft'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE payrolls MODIFY COLUMN status ENUM('draft', 'pending_hr', 'approved', 'paid', 'rejected') DEFAULT 'draft'");
+        }
 
         Schema::table('payrolls', function (Blueprint $table) {
             // 2. Late deduction columns
@@ -50,7 +52,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE payrolls MODIFY COLUMN status ENUM('draft', 'approved', 'paid') DEFAULT 'draft'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE payrolls MODIFY COLUMN status ENUM('draft', 'approved', 'paid') DEFAULT 'draft'");
+        }
 
         Schema::table('payrolls', function (Blueprint $table) {
             $cols = [

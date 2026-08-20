@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('performance_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('review_cycle_id')->constrained()->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->foreignId('reviewer_user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('kpi_id')->nullable()->constrained('kpis')->nullOnDelete();
@@ -27,10 +26,8 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['review_cycle_id', 'status']);
             $table->index(['employee_id', 'status']);
             $table->index(['reviewer_user_id', 'status']);
-            $table->unique(['review_cycle_id', 'employee_id'], 'performance_cycle_employee_unique');
         });
     }
 

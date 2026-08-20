@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Leave;
-use App\Models\Employee;
-use App\Models\ApprovalFlow;
+use App\Modules\Leave\Models\Leave;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Approval\Models\ApprovalFlow;
 use App\Enums\LeaveStatus;
 use Carbon\Carbon;
 
@@ -49,3 +49,6 @@ class LeaveSeeder extends Seeder
         $this->command?->info('Leave records seeded successfully.');
     }
 }
+
+
+

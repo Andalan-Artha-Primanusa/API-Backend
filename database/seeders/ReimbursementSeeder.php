@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Reimbursement;
-use App\Models\Employee;
-use App\Models\User;
+use App\Modules\Reimbursement\Models\Reimbursement;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\User\Models\User;
 
 class ReimbursementSeeder extends Seeder
 {
@@ -68,3 +68,5 @@ class ReimbursementSeeder extends Seeder
         $this->command?->info('Reimbursement records seeded successfully.');
     }
 }
+
+

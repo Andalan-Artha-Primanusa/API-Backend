@@ -9,12 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE leaves DROP FOREIGN KEY leaves_approval_flow_id_foreign');
         DB::statement('ALTER TABLE leaves ADD CONSTRAINT leaves_approval_flow_id_foreign FOREIGN KEY (approval_flow_id) REFERENCES approval_flows(id) ON DELETE SET NULL');
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE leaves DROP FOREIGN KEY leaves_approval_flow_id_foreign');
         DB::statement('ALTER TABLE leaves ADD CONSTRAINT leaves_approval_flow_id_foreign FOREIGN KEY (approval_flow_id) REFERENCES approval_flows(id)');
     }

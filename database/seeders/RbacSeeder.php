@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Role;
-use App\Models\Permission;
+use App\Modules\Administration\Models\Role;
+use App\Modules\Administration\Models\Permission;
 use App\Constants\Permissions as PermissionRegistry;
 
 class RbacSeeder extends Seeder
@@ -87,3 +87,5 @@ class RbacSeeder extends Seeder
         echo "📝 Customize permissions via: POST /admin/roles/{roleId}/assign-permission\n\n";
     }
 }
+
+

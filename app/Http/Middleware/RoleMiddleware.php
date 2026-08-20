@@ -131,19 +131,13 @@ class RoleMiddleware
             '/api/training' => ['training.view', 'training.create', 'training.update', 'training.delete', 'training.enroll'],
             '/training' => ['training.view', 'training.create', 'training.update', 'training.delete', 'training.enroll'],
 
-            // Recruitment
-            '/api/recruitment' => ['recruitment.opening.view', 'recruitment.opening.create', 'recruitment.opening.update', 'recruitment.opening.delete', 'recruitment.candidate.view', 'recruitment.candidate.manage', 'recruitment.interview.schedule', 'recruitment.offer.create'],
-            '/recruitment' => ['recruitment.opening.view', 'recruitment.opening.create', 'recruitment.opening.update', 'recruitment.opening.delete', 'recruitment.candidate.view', 'recruitment.candidate.manage', 'recruitment.interview.schedule', 'recruitment.offer.create'],
+            // Performance & Calibration
+            '/api/performance' => ['performance.cycle.view', 'performance.cycle.create', 'performance.cycle.manage', 'performance.review.view', 'performance.review.create', 'performance.review.update', 'performance.review.submit', 'performance.review.approve', 'calibration.view', 'calibration.create', 'calibration.participate', 'calibration.manage'],
+            '/performance' => ['performance.cycle.view', 'performance.cycle.create', 'performance.cycle.manage', 'performance.review.view', 'performance.review.create', 'performance.review.update', 'performance.review.submit', 'performance.review.approve', 'calibration.view', 'calibration.create', 'calibration.participate', 'calibration.manage'],
 
-            // Performance, OKR, 360, Calibration
-            '/api/performance' => ['performance.cycle.view', 'performance.cycle.create', 'performance.cycle.manage', 'performance.review.view', 'performance.review.create', 'performance.review.update', 'performance.review.submit', 'performance.review.approve', 'okr.view', 'okr.create', 'okr.update', 'okr.delete', 'okr.submit', 'okr.approve', 'okr.progress', 'review360.view', 'review360.create', 'review360.assign_feeders', 'review360.provide_feedback', 'review360.submit', 'review360.approve', 'calibration.view', 'calibration.create', 'calibration.participate', 'calibration.manage'],
-            '/performance' => ['performance.cycle.view', 'performance.cycle.create', 'performance.cycle.manage', 'performance.review.view', 'performance.review.create', 'performance.review.update', 'performance.review.submit', 'performance.review.approve', 'okr.view', 'okr.create', 'okr.update', 'okr.delete', 'okr.submit', 'okr.approve', 'okr.progress', 'review360.view', 'review360.create', 'review360.assign_feeders', 'review360.provide_feedback', 'review360.submit', 'review360.approve', 'calibration.view', 'calibration.create', 'calibration.participate', 'calibration.manage'],
-
-            // Reimbursements, HR Requests
+            // Reimbursements
             '/api/reimbursements' => ['reimbursement.view', 'reimbursement.create', 'reimbursement.approve', 'reimbursement.pay'],
             '/reimbursements' => ['reimbursement.view', 'reimbursement.create', 'reimbursement.approve', 'reimbursement.pay'],
-            '/api/requests' => ['hr_request.view', 'hr_request.create', 'hr_request.assign', 'hr_request.manage'],
-            '/requests' => ['hr_request.view', 'hr_request.create', 'hr_request.assign', 'hr_request.manage'],
 
             // Promotions, Career
             '/api/promotions' => ['career.promotion.view', 'career.promotion.create', 'career.promotion.approve', 'career.promotion.delete'],

@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Benefit;
-use App\Models\Employee;
-use App\Models\EmployeeBenefit;
+use App\Modules\Administration\Models\Benefit;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Employee\Models\EmployeeBenefit;
 use App\Services\ApprovalFlowService;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
@@ -296,3 +296,5 @@ class BenefitController extends Controller
         }
     }
 }
+
+

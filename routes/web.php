@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\ProfileController;
-use App\Http\Controllers\Api\AuthController;
+use App\Modules\Auth\Controllers\AuthController;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 

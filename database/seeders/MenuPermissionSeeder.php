@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\MenuPermission;
-use App\Models\Role;
+use App\Modules\Administration\Models\MenuPermission;
+use App\Modules\Administration\Models\Role;
 use App\Http\Controllers\Api\MenuController;
 use Illuminate\Database\Seeder;
 
@@ -26,3 +26,5 @@ class MenuPermissionSeeder extends Seeder
         $this->command?->info('All menus assigned to all roles successfully.');
     }
 }
+
+

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Employee;
+use App\Modules\User\Models\User;
+use App\Modules\Employee\Models\Employee;
 
 class EmployeeSeeder extends Seeder
 {
@@ -52,3 +52,5 @@ class EmployeeSeeder extends Seeder
         $this->command?->info('Employee records seeded successfully.');
     }
 }
+
+

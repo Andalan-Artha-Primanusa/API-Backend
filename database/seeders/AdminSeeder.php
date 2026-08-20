@@ -3,11 +3,11 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Employee;
-use App\Models\Role;
-use App\Models\WorkSchedule;
-use App\Models\Location;
+use App\Modules\User\Models\User;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Administration\Models\Role;
+use App\Modules\Attendance\Models\WorkSchedule;
+use App\Modules\Organization\Models\Location;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
@@ -205,3 +205,8 @@ class AdminSeeder extends Seeder
         return $password;
     }
 }
+
+
+
+
+

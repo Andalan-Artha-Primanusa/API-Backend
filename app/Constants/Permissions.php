@@ -26,7 +26,7 @@ class Permissions
 
     const LEAVE = [
         'leave.view' => 'View leave requests',
-        'leave.create' => 'Create leave request',
+        'leave.request' => 'Create leave request',
         'leave.update' => 'Update leave request',
         'leave.delete' => 'Delete leave request',
         'leave.approve' => 'Approve/reject leave (Manager/HR)',
@@ -44,16 +44,16 @@ class Permissions
     const PAYROLL = [
         'payroll.view' => 'View payroll records',
         'payroll.create' => 'Create payroll run',
-        'payroll.generate' => 'Generate payroll batch',
+        'payroll.process' => 'Generate payroll batch',
         'payroll.approve' => 'Approve payroll payment',
         'payroll.pay' => 'Process payroll payment',
-        'payroll.export' => 'Export payroll slips',
+        'payroll.publish' => 'Export/publish payroll slips',
         'payroll.reports.view' => 'View payroll reports',
     ];
 
     const OVERTIME = [
         'overtime.view' => 'View overtime requests',
-        'overtime.create' => 'Create overtime request',
+        'overtime.request' => 'Create overtime request',
         'overtime.approve' => 'Approve overtime request (Manager/HR)',
         'overtime.manage' => 'Manage overtime records',
     ];
@@ -68,7 +68,7 @@ class Permissions
 
     const REIMBURSEMENT = [
         'reimbursement.view' => 'View reimbursement requests',
-        'reimbursement.create' => 'Create reimbursement request',
+        'reimbursement.request' => 'Create reimbursement request',
         'reimbursement.approve' => 'Approve reimbursement',
         'reimbursement.pay' => 'Mark reimbursement as paid',
     ];
@@ -78,6 +78,7 @@ class Permissions
         'training.create' => 'Create training program',
         'training.update' => 'Update training program',
         'training.delete' => 'Delete training program',
+        'training.manage' => 'Manage training end-to-end',
         'training.enroll' => 'Enroll employee in training',
     ];
 
@@ -112,32 +113,6 @@ class Permissions
         'assignment_letter.export' => 'Generate assignment letter PDF',
     ];
 
-    const HR_REQUEST = [
-        'hr_request.view' => 'View HR service requests',
-        'hr_request.create' => 'Create HR request (employee)',
-        'hr_request.assign' => 'Assign request to HR staff',
-        'hr_request.manage' => 'Manage & close requests',
-    ];
-
-    const TASK = [
-        'task.view' => 'View assigned tasks',
-        'task.create' => 'Create new task',
-        'task.update' => 'Update task details',
-        'task.delete' => 'Delete task',
-        'task.complete' => 'Complete task',
-    ];
-
-    const RECRUITMENT = [
-        'recruitment.opening.view' => 'View job openings',
-        'recruitment.opening.create' => 'Create job opening',
-        'recruitment.opening.update' => 'Update job opening',
-        'recruitment.opening.delete' => 'Delete job opening',
-        'recruitment.candidate.view' => 'View candidates',
-        'recruitment.candidate.manage' => 'Manage candidate pipeline',
-        'recruitment.interview.schedule' => 'Schedule interviews',
-        'recruitment.offer.create' => 'Create offers',
-    ];
-
     const BENEFIT = [
         'benefit.view' => 'View benefits',
         'benefit.create' => 'Create benefit plan',
@@ -147,33 +122,11 @@ class Permissions
     ];
 
     const PERFORMANCE = [
-        'performance.cycle.view' => 'View performance cycles',
-        'performance.cycle.create' => 'Create performance cycle',
-        'performance.cycle.manage' => 'Manage performance cycles',
         'performance.review.view' => 'View performance reviews',
         'performance.review.create' => 'Create performance review',
         'performance.review.update' => 'Update performance review',
         'performance.review.submit' => 'Submit performance review',
         'performance.review.approve' => 'Approve performance review',
-    ];
-
-    const OKR = [
-        'okr.view' => 'View OKRs',
-        'okr.create' => 'Create OKR',
-        'okr.update' => 'Update OKR',
-        'okr.delete' => 'Delete OKR',
-        'okr.submit' => 'Submit OKR for approval',
-        'okr.approve' => 'Approve OKR',
-        'okr.progress' => 'Update OKR progress',
-    ];
-
-    const REVIEW360 = [
-        'review360.view' => 'View 360 reviews',
-        'review360.create' => 'Create 360 review cycle',
-        'review360.assign_feeders' => 'Assign 360 review feeders',
-        'review360.provide_feedback' => 'Provide 360 feedback as feeder',
-        'review360.submit' => 'Submit 360 review',
-        'review360.approve' => 'Approve 360 review',
     ];
 
     const CALIBRATION = [
@@ -272,7 +225,7 @@ class Permissions
         'admin.company.view' => 'View company data',
         'admin.company.update' => 'Update company data',
         'admin.schedule.manage' => 'Manage work schedules',
-        'admin.approval_flow.manage' => 'Manage approval workflows',
+        'approval.manage' => 'Manage approval workflows',
         'admin.biometric.manage' => 'Manage biometric devices',
         'biometric.devices.view' => 'View biometric devices',
         'biometric.attendance.sync' => 'Sync biometric attendance',
@@ -302,13 +255,8 @@ class Permissions
             self::ASSET,
             self::DOCUMENT,
             self::ASSIGNMENT_LETTER,
-            self::HR_REQUEST,
-            self::TASK,
-            self::RECRUITMENT,
             self::BENEFIT,
             self::PERFORMANCE,
-            self::OKR,
-            self::REVIEW360,
             self::CALIBRATION,
             self::CAREER,
             self::ENGAGEMENT,

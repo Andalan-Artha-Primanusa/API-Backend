@@ -104,10 +104,6 @@ class Employee extends Model
         return $this->hasMany(EmployeeDocument::class);
     }
 
-    public function hrRequests(): HasMany
-    {
-        return $this->hasMany(\App\Models\HrServiceRequest::class);
-    }
 
     public function overtimeRequests(): HasMany
     {

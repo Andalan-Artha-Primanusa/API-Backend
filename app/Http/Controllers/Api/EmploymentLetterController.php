@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
-use App\Models\Employee;
-use App\Models\EmployeeDocument;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Employee\Models\EmployeeDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -68,3 +68,4 @@ class EmploymentLetterController
         return $this->generateLetter($request, $employeeId, 'employment_letter', 'Surat Keterangan Bekerja', 'pdf.employment-letter');
     }
 }
+

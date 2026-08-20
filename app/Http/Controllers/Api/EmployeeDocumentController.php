@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
-use App\Models\EmployeeDocument;
-use App\Models\UserNotification;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Employee\Models\EmployeeDocument;
+use App\Modules\User\Models\UserNotification;
 use App\Services\ApprovalFlowService;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
@@ -658,3 +658,5 @@ class EmployeeDocumentController extends Controller
         return $user && $user->hasPermission('document.review');
     }
 }
+
+

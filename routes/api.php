@@ -3,60 +3,54 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PromotionController;
-use App\Services\ProgressiveTaxService;
+use App\Modules\Payroll\Services\ProgressiveTaxService;
 use App\Http\Controllers\Api\EmploymentLetterController;
-use App\Http\Controllers\Api\AssignmentLetterController;
-use App\Http\Controllers\Api\TaskController;
-use App\Http\Controllers\Api\SeveranceController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\GoogleAuthController;
-use App\Http\Controllers\Api\UserProfileController;
-use App\Http\Controllers\Api\EmployeeController;
-use App\Http\Controllers\Api\AttendanceController;
-use App\Http\Controllers\Api\LeaveController;
-use App\Http\Controllers\Api\KpiController;
-use App\Http\Controllers\Api\ReimbursementController;
-use App\Http\Controllers\Api\PayrollController;
-use App\Http\Controllers\Api\PayrollDetailController;
-use App\Http\Controllers\Api\LocationController;
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\WorkScheduleController;
-use App\Http\Controllers\Api\PeopleInsightController;
-use App\Http\Controllers\Api\AuditLogController;
-use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\TrainingController;
-use App\Http\Controllers\Api\CompetencyController;
-use App\Http\Controllers\Api\LeavePolicyController;
-use App\Http\Controllers\Api\LeaveTypeController;
-use App\Http\Controllers\Api\AssetController;
-use App\Http\Controllers\Api\EmployeeDocumentController;
-use App\Http\Controllers\Api\HrServiceRequestController;
-use App\Http\Controllers\Api\ReportingController;
-use App\Http\Controllers\Api\ApprovalFlowController;
-use App\Http\Controllers\Api\DataImportController;
-use App\Http\Controllers\Api\OrgStructureController;
-use App\Http\Controllers\Api\ComplianceController;
-use App\Http\Controllers\Api\RecruitmentController;
+use App\Modules\Payroll\Controllers\SeveranceController;
+use App\Modules\Auth\Controllers\AuthController;
+use App\Modules\Auth\Controllers\GoogleAuthController;
+use App\Modules\Employee\Controllers\UserProfileController;
+use App\Modules\Employee\Controllers\EmployeeController;
+use App\Modules\Attendance\Controllers\AttendanceController;
+use App\Modules\Leave\Controllers\LeaveController;
+use App\Modules\Performance\Controllers\KpiController;
+use App\Modules\Reimbursement\Controllers\ReimbursementController;
+use App\Modules\Payroll\Controllers\PayrollController;
+use App\Modules\Payroll\Controllers\PayrollDetailController;
+use App\Modules\Organization\Controllers\LocationController;
+use App\Modules\Administration\Controllers\RoleController;
+use App\Modules\Administration\Controllers\PermissionController;
+use App\Modules\User\Controllers\UserController;
+use App\Modules\Attendance\Controllers\WorkScheduleController;
+use App\Modules\Report\Controllers\PeopleInsightController;
+use App\Modules\Administration\Controllers\AuditLogController;
+use App\Modules\Administration\Controllers\NotificationController;
+use App\Modules\Training\Controllers\TrainingController;
+use App\Modules\Competency\Controllers\CompetencyController;
+use App\Modules\Leave\Controllers\LeavePolicyController;
+use App\Modules\Leave\Controllers\LeaveTypeController;
+use App\Modules\Asset\Controllers\AssetController;
+use App\Modules\Report\Controllers\ReportingController;
+use App\Modules\Administration\Controllers\ApprovalFlowController;
+use App\Modules\Administration\Controllers\DataImportController;
+use App\Modules\Organization\Controllers\OrgStructureController;
+use App\Modules\Administration\Controllers\ComplianceController;
 use App\Http\Controllers\Api\BenefitController;
-use App\Http\Controllers\Api\PerformanceReviewController;
-use App\Http\Controllers\Api\EnterpriseAtsController;
+use App\Modules\Performance\Controllers\PerformanceReviewController;
 use App\Http\Controllers\Api\CareerDevelopmentController;
-use App\Http\Controllers\Api\BiometricIntegrationController;
-use App\Http\Controllers\Api\EngagementController;
-use App\Http\Controllers\Api\WorkforcePolicyController;
-use App\Http\Controllers\Api\EnterpriseOpsController;
-use App\Http\Controllers\Api\OKRController;
-use App\Http\Controllers\Api\Review360Controller;
-use App\Http\Controllers\Api\CalibrationController;
-use App\Http\Controllers\Api\WorkforceComplianceController;
-use App\Http\Controllers\Api\CompanyController;
-use App\Http\Controllers\Api\DepartmentController;
-use App\Http\Controllers\Api\PositionController;
-use App\Http\Controllers\Api\NotificationSettingController;
-use App\Http\Controllers\Api\OvertimeController;
-use App\Http\Controllers\Api\KpiPeriodController;
+use App\Http\Controllers\Api\EmployeeDocumentController;
+use App\Http\Controllers\Api\AssignmentLetterController;
+use App\Modules\Attendance\Controllers\BiometricIntegrationController;
+use App\Modules\Performance\Controllers\EngagementController;
+use App\Modules\Administration\Controllers\WorkforcePolicyController;
+use App\Modules\Administration\Controllers\EnterpriseOpsController;
+use App\Modules\Performance\Controllers\CalibrationController;
+use App\Modules\Administration\Controllers\WorkforceComplianceController;
+use App\Modules\Organization\Controllers\CompanyController;
+use App\Modules\Organization\Controllers\DepartmentController;
+use App\Modules\Organization\Controllers\PositionController;
+use App\Modules\Administration\Controllers\NotificationSettingController;
+use App\Modules\Overtime\Controllers\OvertimeController;
+use App\Modules\Performance\Controllers\KpiPeriodController;
 // PROGRESSIVE TAX (PPh21 Progresif)
 Route::post('tax/progressive/calculate', function (\Illuminate\Http\Request $request) {
     $validated = $request->validate([
@@ -121,14 +115,6 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::match(['post', 'put'], 'assignment-letters/{id}/approve', [AssignmentLetterController::class, 'approve']);
     Route::match(['post', 'put'], 'assignment-letters/{id}/reject', [AssignmentLetterController::class, 'reject']);
     Route::get('assignment-letters/{id}/pdf', [AssignmentLetterController::class, 'generatePdf']);
-
-    // Task Management
-    Route::get('tasks', [TaskController::class, 'index']);
-    Route::post('tasks', [TaskController::class, 'store']);
-    Route::get('tasks/{id}', [TaskController::class, 'show']);
-    Route::put('tasks/{id}', [TaskController::class, 'update']);
-    Route::delete('tasks/{id}', [TaskController::class, 'destroy']);
-    Route::get('my/tasks', [TaskController::class, 'myTasks']);
 
     // Promotions
     Route::get('promotions', [PromotionController::class, 'index']);
@@ -208,11 +194,6 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         Route::get('/performance-reviews', [PerformanceReviewController::class, 'myReviews']);
         Route::get('/documents', [EmployeeDocumentController::class, 'myDocuments']);
         Route::post('/documents', [EmployeeDocumentController::class, 'store']);
-        Route::get('/requests', [HrServiceRequestController::class, 'myRequests']);
-        Route::post('/requests', [HrServiceRequestController::class, 'store']);
-        Route::get('/requests/{id}', [HrServiceRequestController::class, 'show']);
-        Route::post('/requests/{id}/comments', [HrServiceRequestController::class, 'comment']);
-
         // Overtime requests (ESS)
         Route::get('/overtime', [OvertimeController::class, 'myOvertimeRequests']);
         Route::put('/overtime/{id}/reason', [OvertimeController::class, 'addReason']);
@@ -411,47 +392,6 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::put('/{id}/reject', [EmployeeDocumentController::class, 'rejectDocument']);
         });
 
-        Route::prefix('requests')->group(function () {
-            Route::get('/', [HrServiceRequestController::class, 'index']);
-            Route::get('/sla-summary', [HrServiceRequestController::class, 'slaSummary']);
-            Route::post('/', [HrServiceRequestController::class, 'store']);
-            Route::get('/{id}', [HrServiceRequestController::class, 'show']);
-            Route::put('/{id}/assign', [HrServiceRequestController::class, 'assign']);
-            Route::put('/{id}/status', [HrServiceRequestController::class, 'updateStatus']);
-            Route::post('/{id}/comments', [HrServiceRequestController::class, 'comment']);
-            Route::delete('/{id}', [HrServiceRequestController::class, 'destroy']);
-        });
-
-        Route::prefix('recruitment')->group(function () {
-            Route::get('/summary', [RecruitmentController::class, 'summary']);
-
-            Route::prefix('openings')->group(function () {
-                Route::get('/', [RecruitmentController::class, 'openingsIndex']);
-                Route::post('/', [RecruitmentController::class, 'openingsStore']);
-                Route::get('/{id}', [RecruitmentController::class, 'openingsShow']);
-                Route::put('/{id}', [RecruitmentController::class, 'openingsUpdate']);
-                Route::delete('/{id}', [RecruitmentController::class, 'openingsDestroy']);
-            });
-
-            Route::prefix('candidates')->group(function () {
-                Route::get('/', [RecruitmentController::class, 'candidatesIndex']);
-                Route::post('/', [RecruitmentController::class, 'candidatesStore']);
-                Route::get('/{id}', [RecruitmentController::class, 'candidatesShow']);
-                Route::put('/{id}', [RecruitmentController::class, 'candidatesUpdate']);
-                Route::put('/{id}/stage', [RecruitmentController::class, 'candidatesMoveStage']);
-                Route::delete('/{id}', [RecruitmentController::class, 'candidatesDestroy']);
-
-                Route::post('/{id}/interviews', [EnterpriseAtsController::class, 'scheduleInterview']);
-                Route::post('/{id}/offer', [EnterpriseAtsController::class, 'createOffer']);
-                Route::put('/{id}/background-check', [EnterpriseAtsController::class, 'upsertBackgroundCheck']);
-                Route::post('/{id}/talent-pool', [EnterpriseAtsController::class, 'addToTalentPool']);
-            });
-
-            Route::post('/interviews/{id}/evaluate', [EnterpriseAtsController::class, 'evaluateInterview']);
-            Route::put('/offers/{id}/status', [EnterpriseAtsController::class, 'updateOfferStatus']);
-            Route::get('/talent-pool', [EnterpriseAtsController::class, 'talentPoolIndex']);
-        });
-
         Route::prefix('benefits')->group(function () {
             Route::get('/', [BenefitController::class, 'index']);
             Route::post('/', [BenefitController::class, 'store']);
@@ -467,14 +407,6 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         Route::prefix('performance')->group(function () {
             Route::get('/summary', [PerformanceReviewController::class, 'summary']);
 
-            Route::prefix('cycles')->group(function () {
-                Route::get('/', [PerformanceReviewController::class, 'cyclesIndex']);
-                Route::post('/', [PerformanceReviewController::class, 'cyclesStore']);
-                Route::get('/{id}', [PerformanceReviewController::class, 'cyclesShow']);
-                Route::put('/{id}', [PerformanceReviewController::class, 'cyclesUpdate']);
-                Route::put('/{id}/close', [PerformanceReviewController::class, 'cyclesClose']);
-            });
-
             Route::prefix('reviews')->group(function () {
                 Route::get('/', [PerformanceReviewController::class, 'reviewsIndex']);
                 Route::post('/', [PerformanceReviewController::class, 'reviewsStore']);
@@ -483,33 +415,6 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
                 Route::put('/{id}/submit', [PerformanceReviewController::class, 'submit']);
                 Route::put('/{id}/review', [PerformanceReviewController::class, 'review']);
                 Route::put('/{id}/approve', [PerformanceReviewController::class, 'approve']);
-            });
-
-            Route::prefix('okrs')->group(function () {
-                Route::get('/', [OKRController::class, 'index']);
-                Route::post('/', [OKRController::class, 'store']);
-                Route::get('/{id}', [OKRController::class, 'show']);
-                Route::put('/{id}', [OKRController::class, 'update']);
-                Route::put('/{id}/submit', [OKRController::class, 'submit']);
-                Route::put('/{id}/approve', [OKRController::class, 'approve']);
-                Route::put('/{id}/progress', [OKRController::class, 'updateProgress']);
-                Route::put('/{id}/start', [OKRController::class, 'markInProgress']);
-                Route::put('/{id}/complete', [OKRController::class, 'markCompleted']);
-                Route::delete('/{id}', [OKRController::class, 'destroy']);
-            });
-
-            Route::prefix('360-reviews')->group(function () {
-                Route::get('/', [Review360Controller::class, 'index']);
-                Route::post('/', [Review360Controller::class, 'store']);
-                Route::get('/{id}', [Review360Controller::class, 'show']);
-                Route::post('/{id}/feeders', [Review360Controller::class, 'assignFeeders']);
-                Route::get('/{id}/feeder-status', [Review360Controller::class, 'getFeederStatus']);
-                Route::post('/{reviewId}/feeders/{feederId}/submit', [Review360Controller::class, 'submitFeederFeedback']);
-                Route::put('/{id}/self-assessment', [Review360Controller::class, 'submitSelfAssessment']);
-                Route::put('/{id}/manager-assessment', [Review360Controller::class, 'submitManagerAssessment']);
-                Route::put('/{id}/complete', [Review360Controller::class, 'completeReview']);
-                Route::put('/{id}/submit-review', [Review360Controller::class, 'submitForReview']);
-                Route::put('/{id}/approve', [Review360Controller::class, 'approveReview']);
             });
 
             Route::prefix('calibration')->group(function () {
@@ -710,13 +615,13 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
 
     // MENU PERMISSIONS — accessible by PERMISSION via explicit map (role.assign_permission)
     Route::prefix('admin/menus')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\MenuController::class, 'definitions']);
-        Route::post('/assign-role', [\App\Http\Controllers\Api\MenuController::class, 'assignRole']);
-        Route::delete('/{menuKey}/roles/{roleId}', [\App\Http\Controllers\Api\MenuController::class, 'removeRole']);
+        Route::get('/', [\App\Modules\Administration\Controllers\MenuController::class, 'definitions']);
+        Route::post('/assign-role', [\App\Modules\Administration\Controllers\MenuController::class, 'assignRole']);
+        Route::delete('/{menuKey}/roles/{roleId}', [\App\Modules\Administration\Controllers\MenuController::class, 'removeRole']);
     });
 
     // USER MENUS (accessible to all authenticated users)
-    Route::get('/user/menus', [\App\Http\Controllers\Api\MenuController::class, 'userMenus']);
+    Route::get('/user/menus', [\App\Modules\Administration\Controllers\MenuController::class, 'userMenus']);
 
     Route::middleware('role:*')->group(function () {
         Route::apiResource('locations', LocationController::class);
@@ -807,3 +712,5 @@ Route::get('/setup-storage', function () {
         ], 500);
     }
 });
+
+

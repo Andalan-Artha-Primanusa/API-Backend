@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Rbac;
 
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Permission;
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Role;
+use App\Modules\Administration\Models\Permission;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Tests\TestCase;
@@ -60,7 +60,7 @@ class DynamicRoleTest extends TestCase
 
     private function seedPermissions(array $roleConfig): void
     {
-        Role::create(['name' => 'super_admin']);
+        Role::firstOrCreate(['name' => 'super_admin']);
 
         $allPerms = [];
         foreach ($roleConfig as $roleName => $perms) {
@@ -104,7 +104,7 @@ class DynamicRoleTest extends TestCase
 
     public function test_cannot_modify_super_admin_role(): void
     {
-        Role::create(['name' => 'super_admin']);
+        Role::firstOrCreate(['name' => 'super_admin']);
         $superAdminRole = Role::where('name', 'super_admin')->first();
 
         $user = User::factory()->create();
@@ -130,7 +130,7 @@ class DynamicRoleTest extends TestCase
 
     public function test_user_with_super_admin_and_other_role_still_super(): void
     {
-        $superAdminRole = Role::create(['name' => 'super_admin']);
+        $superAdminRole = Role::firstOrCreate(['name' => 'super_admin']);
         $employeeRole = Role::create(['name' => 'employee']);
 
         $user = User::factory()->create();
@@ -140,3 +140,4 @@ class DynamicRoleTest extends TestCase
         $this->assertTrue($user->hasPermission('any.random.permission'));
     }
 }
+

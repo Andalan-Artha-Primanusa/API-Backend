@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Role;
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -40,3 +40,5 @@ class UserSeeder extends Seeder
         $this->command?->info('Users seeded with pivot-based roles.');
     }
 }
+
+

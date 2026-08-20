@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AuditLog;
+use App\Modules\Administration\Models\AuditLog;
 use Closure;
 use Illuminate\Http\Request;
 

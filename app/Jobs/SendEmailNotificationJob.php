@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Models\EmailLog;
-use App\Models\EmailTemplate;
+use App\Modules\Administration\Models\EmailLog;
+use App\Modules\Administration\Models\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -49,3 +49,5 @@ class SendEmailNotificationJob implements ShouldQueue
         }
     }
 }
+
+

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Rbac;
 
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Permission;
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Role;
+use App\Modules\Administration\Models\Permission;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Tests\TestCase;
@@ -205,3 +205,4 @@ class UserPermissionTest extends TestCase
         $this->assertFalse($user->isEmployee());
     }
 }
+

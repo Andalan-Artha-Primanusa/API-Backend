@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Models\ApprovalFlowHistory;
-use App\Models\AssignmentLetter;
-use App\Models\ApprovalFlow;
-use App\Models\EmployeeDocument;
+use App\Modules\Administration\Models\AssignmentLetter;
+use App\Modules\Approval\Models\ApprovalFlow;
+use App\Modules\Employee\Models\EmployeeDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -282,3 +282,6 @@ class AssignmentLetterController
         }
     }
 }
+
+
+

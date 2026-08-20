@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Helpers\ApiResponse;
 
@@ -35,3 +35,4 @@ trait HasEmployee
         return $employee;
     }
 }
+

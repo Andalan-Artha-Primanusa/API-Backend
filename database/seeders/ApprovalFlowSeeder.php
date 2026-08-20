@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\ApprovalFlow;
-use App\Models\ApprovalStep;
-use App\Models\Role;
+use App\Modules\Approval\Models\ApprovalFlow;
+use App\Modules\Approval\Models\ApprovalStep;
+use App\Modules\Administration\Models\Role;
 
 class ApprovalFlowSeeder extends Seeder
 {
@@ -66,3 +66,5 @@ class ApprovalFlowSeeder extends Seeder
         }
     }
 }
+
+
