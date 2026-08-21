@@ -9,6 +9,9 @@ use App\Models\Location;
 use App\Models\WorkSchedule;
 use App\Models\AssetAssignment;
 use App\Models\EmployeeDocument;
+use App\Modules\User\Models\User;
+use App\Modules\Organization\Models\Department;
+use App\Modules\Organization\Models\Position;
 
 class Employee extends Model
 {
