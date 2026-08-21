@@ -133,7 +133,7 @@ class AuthController extends Controller
             return ApiResponse::error('Validation failed', $e->errors(), 422);
         } catch (\Throwable $e) {
             Log::error('Login failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return ApiResponse::error('Login failed', config('app.debug') ? $e->getMessage() : null, 500);
+            return ApiResponse::error('Login failed (DEBUG)', $e->getMessage() . ' | Line: ' . $e->getLine() . ' | File: ' . $e->getFile(), 500);
         }
     }
 
