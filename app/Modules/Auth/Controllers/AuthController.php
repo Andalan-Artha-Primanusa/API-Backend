@@ -110,14 +110,14 @@ class AuthController extends Controller
 
             // Load relations without schema-fragile column lists; production databases may lag optional profile/employee columns.
             $user->load([
-                'roles:id,name',
-                'roles.permissions:id,name',
+                'roles',
+                'roles.permissions',
                 'profile',
-                'employee.department:id,name',
-                'employee.position:id,name',
-                'employee.location:id,name',
-                'employee.workSchedule:id,name,check_in_time,check_out_time',
-                'employee.manager:id,name',
+                'employee.department',
+                'employee.position',
+                'employee.location',
+                'employee.workSchedule',
+                'employee.manager',
                 'employee.manager.profile',
             ]);
 
@@ -175,14 +175,14 @@ class AuthController extends Controller
             }
 
             $user->load([
-                'roles:id,name',
-                'roles.permissions:id,name',
+                'roles',
+                'roles.permissions',
                 'profile',
-                'employee.department:id,name',
-                'employee.position:id,name',
-                'employee.location:id,name',
-                'employee.workSchedule:id,name,check_in_time,check_out_time',
-                'employee.manager:id,name',
+                'employee.department',
+                'employee.position',
+                'employee.location',
+                'employee.workSchedule',
+                'employee.manager',
                 'employee.manager.profile',
             ]);
 
