@@ -1,6 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Performance\Models;
+
+use App\Models\ReviewCycle;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,3 +72,4 @@ class PerformanceReview extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 }
+

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Auth\Controllers;
 
@@ -13,8 +13,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 use App\Services\UserService;
-use App\Models\Employee;
-use App\Models\Permission;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Administration\Models\Permission;
 
 class AuthController extends Controller
 {
@@ -294,3 +294,4 @@ class AuthController extends Controller
             ->all();
     }
 }
+

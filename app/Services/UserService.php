@@ -1,14 +1,14 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
-use App\Models\Role;
+use App\Modules\Administration\Models\Role;
 use App\Repositories\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Models\User;
+use App\Modules\User\Models\User;
 use Illuminate\Support\Str;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 
 class UserService
 {
@@ -74,7 +74,7 @@ class UserService
         }
     }
 
-    // 🔥 auto create employee (IMPORTANT)
+    // ðŸ”¥ auto create employee (IMPORTANT)
     if (!$user->employee()->exists()) {
         Employee::create([
             'user_id' => $user->id,
@@ -89,3 +89,4 @@ class UserService
     return $user;
 }
 }
+

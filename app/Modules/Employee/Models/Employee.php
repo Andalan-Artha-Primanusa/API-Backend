@@ -12,6 +12,7 @@ use App\Models\EmployeeDocument;
 use App\Modules\User\Models\User;
 use App\Modules\Organization\Models\Department;
 use App\Modules\Organization\Models\Position;
+use App\Models\OvertimeRequest;
 
 class Employee extends Model
 {

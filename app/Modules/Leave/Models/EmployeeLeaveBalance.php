@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Leave\Models;
+
+use App\Modules\Employee\Models\Employee;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,3 +35,4 @@ class EmployeeLeaveBalance extends Model
         return max(0, ($this->allocated_days + $this->carry_over_days) - $this->used_days - $this->pending_days);
     }
 }
+

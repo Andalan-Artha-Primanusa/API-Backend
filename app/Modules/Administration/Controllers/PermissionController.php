@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Controllers;
 
@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Helpers\ApiResponse;
-use App\Models\Permission;
+use App\Modules\Administration\Models\Permission;
 
 class PermissionController extends Controller
 {
@@ -37,3 +37,4 @@ class PermissionController extends Controller
         return ApiResponse::success('Permission detail', $permission);
     }
 }
+

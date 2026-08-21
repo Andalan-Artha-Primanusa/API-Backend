@@ -1,6 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Organization\Models;
+
+use App\Modules\User\Models\User;
+use App\Modules\Employee\Models\Employee;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,3 +38,4 @@ class Department extends Model
         return $this->hasMany(Position::class);
     }
 }
+

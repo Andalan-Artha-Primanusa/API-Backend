@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Payroll\Services;
 
 use App\Models\Attendance;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\Leave;
 use App\Models\Payroll;
 use App\Models\Reimbursement;
@@ -31,7 +31,7 @@ class PayrollService
             throw new \DomainException('Salary employee belum di set');
         }
 
-        // ── Earnings components ─────────────────────────────────────────
+        // â”€â”€ Earnings components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $overtimePay        = $this->calculateOvertimePay($employee, $period, $gaji);
         $paidLeaveData      = $this->calculatePaidLeave($employee, $period, $gaji);
         $paidLeaveDays      = $paidLeaveData['days'];
@@ -42,7 +42,7 @@ class PayrollService
 
         $bruto = $gaji + $allowance + $bonus + $overtimePay + $paidLeaveAmount + $reimbursementAmount;
 
-        // ── Deduction components ─────────────────────────────────────────
+        // â”€â”€ Deduction components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $lateData      = $this->calculateLateDeduction($employee, $period, $gaji);
         $lateDays      = $lateData['days'];
         $lateDeduction = $lateData['deduction'];
@@ -65,7 +65,7 @@ class PayrollService
         $total_deduction = $bpjs_kesehatan + $bpjs_ketenagakerjaan + $pph21 + $lateDeduction;
         $take_home_pay   = $bruto - $total_deduction;
 
-        // ── Persist ──────────────────────────────────────────────────────
+        // â”€â”€ Persist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         return DB::transaction(function () use (
             $employee, $period, $gaji, $allowance, $bonus,
             $overtimePay, $paidLeaveDays, $paidLeaveAmount,
@@ -231,7 +231,7 @@ class PayrollService
 
     /**
      * Calculate late attendance deduction using per-minute rate formula.
-     * Formula: total_late_minutes × (monthly_salary / 22 / 8 / 60)
+     * Formula: total_late_minutes Ã— (monthly_salary / 22 / 8 / 60)
      *
      * @return array{days: int, deduction: float}
      */
@@ -309,3 +309,4 @@ class PayrollService
         ];
     }
 }
+

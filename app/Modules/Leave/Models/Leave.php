@@ -1,6 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Leave\Models;
+
+use App\Modules\User\Models\User;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Approval\Models\ApprovalFlow;
 
 use App\Enums\LeaveStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -132,3 +136,4 @@ class Leave extends Model
         ]);
     }
 }
+

@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
 use App\Models\Attendance;
-use App\Models\User;
+use App\Modules\User\Models\User;
 use App\Models\OvertimeRequest;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,7 +29,7 @@ class AttendanceService
         if ($existing) {
             throw new \DomainException('Already checked in today.');
         }
-        // 🔥 LOAD RELATION (ANTI N+1)
+        // ðŸ”¥ LOAD RELATION (ANTI N+1)
         $user->loadMissing('employee.location', 'employee.workSchedule');
 
         $employee = $user->employee;
@@ -39,7 +39,7 @@ class AttendanceService
         }
 
         // =========================
-        // 🔥 VALIDASI LOCATION
+        // ðŸ”¥ VALIDASI LOCATION
         // =========================
         if (!$employee->location) {
             throw new \DomainException('No assigned location for this employee.');
@@ -61,7 +61,7 @@ class AttendanceService
         }
 
         // =========================
-        // 🔥 VALIDASI SCHEDULE
+        // ðŸ”¥ VALIDASI SCHEDULE
         // =========================
         if (!$employee->workSchedule) {
             throw new \DomainException('No work schedule assigned.');
@@ -74,7 +74,7 @@ class AttendanceService
         $graceLimit = $checkInTime->copy()->addMinutes($schedule->grace_period);
 
         // =========================
-        // 🔥 STATUS LOGIC (INI YANG BARU)
+        // ðŸ”¥ STATUS LOGIC (INI YANG BARU)
         // =========================
         $status = 'on_time';
 
@@ -96,7 +96,7 @@ class AttendanceService
                 'check_in'  => now(),
                 'latitude'  => $latitude,
                 'longitude' => $longitude,
-                'status'    => $status, // 🔥 TAMBAHAN PENTING
+                'status'    => $status, // ðŸ”¥ TAMBAHAN PENTING
             ]);
         } catch (\Illuminate\Database\QueryException $e) {
             if (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1062) {
@@ -120,7 +120,7 @@ class AttendanceService
     public function checkOut(User $user): array
     {
 
-        $user->loadMissing('employee.workSchedule'); // 🔥 TAMBAH INI
+        $user->loadMissing('employee.workSchedule'); // ðŸ”¥ TAMBAH INI
 
         $attendance = Attendance::where('user_id', $user->id)
             ->where('date', now()->toDateString())
@@ -151,7 +151,7 @@ class AttendanceService
 
         $attendance->update(['check_out' => now()]);
 
-        // 🔥 AUTO-CREATE OVERTIME REQUEST
+        // ðŸ”¥ AUTO-CREATE OVERTIME REQUEST
         $overtimeRequest = null;
         
         // Parse scheduled checkout time from today
@@ -189,9 +189,9 @@ class AttendanceService
                         // No approval flow configured, continue without flow
                     }
 
-                    \Log::info('✅ OVERTIME CREATED', ['id' => $overtimeRequest->id, 'minutes' => $overtimeMinutes]);
+                    \Log::info('âœ… OVERTIME CREATED', ['id' => $overtimeRequest->id, 'minutes' => $overtimeMinutes]);
                 } catch (\Exception $e) {
-                    \Log::error('❌ OVERTIME ERROR', ['error' => $e->getMessage()]);
+                    \Log::error('âŒ OVERTIME ERROR', ['error' => $e->getMessage()]);
                 }
             }
         }
@@ -414,3 +414,4 @@ class AttendanceService
         ];
     }
 }
+

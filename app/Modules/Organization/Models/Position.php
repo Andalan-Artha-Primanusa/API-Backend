@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Organization\Models;
+
+use App\Modules\Employee\Models\Employee;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,3 +32,4 @@ class Position extends Model
         return $this->hasMany(Employee::class);
     }
 }
+

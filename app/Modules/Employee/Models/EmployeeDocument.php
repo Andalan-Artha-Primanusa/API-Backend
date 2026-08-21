@@ -1,6 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Employee\Models;
+
+use App\Modules\User\Models\User;
+use App\Modules\Approval\Models\ApprovalFlow;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -73,3 +76,4 @@ class EmployeeDocument extends Model
         return \Illuminate\Support\Facades\Storage::disk('public')->url($this->file_path);
     }
 }
+

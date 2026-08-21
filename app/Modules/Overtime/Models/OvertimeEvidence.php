@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Overtime\Models;
+
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -58,3 +60,4 @@ class OvertimeEvidence extends Model
         ]);
     }
 }
+

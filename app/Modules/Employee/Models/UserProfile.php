@@ -1,6 +1,14 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Employee\Models;
+
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Role;
+use App\Modules\Attendance\Models\Attendance;
+use App\Modules\Leave\Models\Leave;
+use App\Modules\Performance\Models\Kpi;
+use App\Modules\Reimbursement\Models\Reimbursement;
+use App\Modules\Payroll\Models\Payroll;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,7 +46,7 @@ class UserProfile extends Model
     ];
 
     /**
-     * 🔥 SULTAN ACCESSORS
+     * ðŸ”¥ SULTAN ACCESSORS
      * Resolves the conflict between 'profile_photo_path' in DB and 'avatar' in API.
      */
     protected $appends = ['avatar', 'avatar_url'];
@@ -152,3 +160,4 @@ class UserProfile extends Model
         );
     }
 }
+

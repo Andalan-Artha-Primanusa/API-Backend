@@ -1,6 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Performance\Models;
+
+use App\Modules\Employee\Models\Employee;
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -90,3 +93,4 @@ class KpiPeriod extends Model
         };
     }
 }
+

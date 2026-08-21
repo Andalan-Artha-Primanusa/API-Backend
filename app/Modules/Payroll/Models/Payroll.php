@@ -1,6 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Payroll\Models;
+
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Reimbursement\Models\Reimbursement;
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -102,3 +106,4 @@ class Payroll extends Model
         return in_array($this->status, ['approved', 'paid']);
     }
 }
+

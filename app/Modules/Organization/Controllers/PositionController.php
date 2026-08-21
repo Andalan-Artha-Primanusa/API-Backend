@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Organization\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
-use App\Models\Position;
+use App\Modules\Organization\Models\Position;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -194,3 +194,4 @@ class PositionController extends Controller
         }
     }
 }
+

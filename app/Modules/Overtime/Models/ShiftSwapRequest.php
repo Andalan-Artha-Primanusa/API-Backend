@@ -1,6 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Overtime\Models;
+
+use App\Modules\Employee\Models\Employee;
+use App\Modules\User\Models\User;
+use App\Modules\Approval\Models\ApprovalFlow;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,3 +50,4 @@ class ShiftSwapRequest extends Model
         return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
     }
 }
+

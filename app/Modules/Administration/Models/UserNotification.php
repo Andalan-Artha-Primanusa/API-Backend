@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Models;
+
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,3 +47,4 @@ class UserNotification extends Model
         }
     }
 }
+

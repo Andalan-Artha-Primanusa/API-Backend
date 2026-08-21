@@ -1,6 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Approval\Models;
+
+use App\Modules\Administration\Models\Role;
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,3 +27,4 @@ class ApprovalStep extends Model
         return $this->belongsTo(User::class);
     }
 }
+

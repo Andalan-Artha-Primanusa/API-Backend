@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 
 class SeveranceService
 {
@@ -60,3 +60,4 @@ class SeveranceService
         ];
     }
 }
+

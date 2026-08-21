@@ -1,6 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Models;
+
+use App\Modules\User\Models\User;
+use App\Modules\Approval\Models\ApprovalFlow;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,3 +46,4 @@ class AssignmentLetter extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 }
+

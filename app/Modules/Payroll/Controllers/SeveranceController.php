@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Payroll\Controllers;
 
 use App\Helpers\ApiResponse;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Services\SeveranceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,3 +62,4 @@ class SeveranceController
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 }
+

@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Models\MenuPermission;
-use App\Models\Role;
+use App\Modules\Administration\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -137,7 +137,7 @@ class MenuController
             return ApiResponse::success('No allowed menus', []);
         }
 
-        // Menu permission sudah dikonfigurasi → hanya return menu yang di-assign ke role user
+        // Menu permission sudah dikonfigurasi â†’ hanya return menu yang di-assign ke role user
         $userRoleIds = $user->roles->pluck('id');
         $assignedKeys = MenuPermission::whereIn('role_id', $userRoleIds)
             ->pluck('menu_key')
@@ -148,3 +148,4 @@ class MenuController
         return ApiResponse::success('Allowed menus', $assignedKeys);
     }
 }
+

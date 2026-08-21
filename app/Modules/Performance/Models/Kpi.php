@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Performance\Models;
+
+use App\Modules\Employee\Models\Employee;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,11 +26,11 @@ class Kpi extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 🔗 RELATIONSHIP
+    | ðŸ”— RELATIONSHIP
     |--------------------------------------------------------------------------
     */
 
-    // 🔥 KPI milik employee
+    // ðŸ”¥ KPI milik employee
     public function employee()
     {
         return $this->belongsTo(Employee::class);
@@ -36,17 +38,17 @@ class Kpi extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 🔧 HELPER / LOGIC
+    | ðŸ”§ HELPER / LOGIC
     |--------------------------------------------------------------------------
     */
 
-    // 🔒 cek kepemilikan KPI
+    // ðŸ”’ cek kepemilikan KPI
     public function isOwnedBy($employeeId)
     {
         return $this->employee_id == $employeeId;
     }
 
-    // 🔥 auto hitung score
+    // ðŸ”¥ auto hitung score
     public function calculateScore()
     {
         if ($this->target > 0) {
@@ -58,3 +60,4 @@ class Kpi extends Model
         return $this->score;
     }
 }
+

@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Payroll\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalFlow;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\Payroll;
 use App\Helpers\ApiResponse;
 use App\Traits\HasEmployee;
@@ -254,11 +254,11 @@ class PayrollController extends Controller
     }
 
     // =========================================================================
-    // APPROVAL FLOW: draft → pending_hr → approved → paid
+    // APPROVAL FLOW: draft â†’ pending_hr â†’ approved â†’ paid
     // =========================================================================
 
     /**
-     * Step 1 — Manager approves: draft → pending_hr
+     * Step 1 â€” Manager approves: draft â†’ pending_hr
      */
     public function managerApprove(Request $request, $id): JsonResponse
     {
@@ -293,7 +293,7 @@ class PayrollController extends Controller
             'manager_approved_at' => now(),
         ]);
 
-        return ApiResponse::success('Payroll approved by manager — awaiting HR final approval', $payroll->fresh([
+        return ApiResponse::success('Payroll approved by manager â€” awaiting HR final approval', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
@@ -307,7 +307,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Step 2 — HR final approves: pending_hr → approved
+     * Step 2 â€” HR final approves: pending_hr â†’ approved
      */
     public function hrApprove(Request $request, $id): JsonResponse
     {
@@ -342,7 +342,7 @@ class PayrollController extends Controller
             'hr_approved_at'  => now(),
         ]);
 
-        return ApiResponse::success('Payroll approved by HR — ready for payment', $payroll->fresh([
+        return ApiResponse::success('Payroll approved by HR â€” ready for payment', $payroll->fresh([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
@@ -356,7 +356,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Reject: draft|pending_hr → rejected (Manager or HR can reject)
+     * Reject: draft|pending_hr â†’ rejected (Manager or HR can reject)
      */
     public function reject(Request $request, $id): JsonResponse
     {
@@ -407,7 +407,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Backward-compat: POST /{id}/approve — routes to correct step based on status.
+     * Backward-compat: POST /{id}/approve â€” routes to correct step based on status.
      */
     public function approve(Request $request, $id): JsonResponse
     {
@@ -429,7 +429,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Mark single payroll as paid: approved → paid
+     * Mark single payroll as paid: approved â†’ paid
      */
     public function pay(Request $request, $id): JsonResponse
     {
@@ -882,3 +882,4 @@ class PayrollController extends Controller
         ];
     }
 }
+

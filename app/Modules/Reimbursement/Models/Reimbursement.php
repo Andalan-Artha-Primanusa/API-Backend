@@ -1,6 +1,11 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Reimbursement\Models;
+
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Payroll\Models\Payroll;
+use App\Modules\User\Models\User;
+use App\Modules\Approval\Models\ApprovalFlow;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -40,29 +45,29 @@ class Reimbursement extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 🔗 RELATIONSHIP
+    | ðŸ”— RELATIONSHIP
     |--------------------------------------------------------------------------
     */
 
-    // 🔥 Reimbursement milik employee
+    // ðŸ”¥ Reimbursement milik employee
     public function employee()
     {
         return $this->belongsTo(Employee::class)->withDefault();
     }
 
-    // 🔥 Linked payroll
+    // ðŸ”¥ Linked payroll
     public function payroll()
     {
         return $this->belongsTo(Payroll::class);
     }
 
-    // 🔥 Approved by user
+    // ðŸ”¥ Approved by user
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by')->withDefault();
     }
 
-    // 🔥 Approval flow
+    // ðŸ”¥ Approval flow
     public function approvalFlow()
     {
         return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
@@ -70,24 +75,24 @@ class Reimbursement extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 🔧 HELPER / LOGIC
+    | ðŸ”§ HELPER / LOGIC
     |--------------------------------------------------------------------------
     */
 
-    // 🔒 cek kepemilikan reimbursement
+    // ðŸ”’ cek kepemilikan reimbursement
     public function isOwnedBy($employeeId)
     {
         return $this->employee_id == $employeeId;
     }
 
-    // 🔥 Status constants
+    // ðŸ”¥ Status constants
     const STATUS_DRAFT = 'draft';
     const STATUS_SUBMITTED = 'submitted';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
     const STATUS_PAID = 'paid';
 
-    // 🔥 Category constants
+    // ðŸ”¥ Category constants
     const CATEGORY_TRAVEL = 'travel';
     const CATEGORY_MEDICAL = 'medical';
     const CATEGORY_OFFICE_SUPPLIES = 'office_supplies';
@@ -99,7 +104,7 @@ class Reimbursement extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 📊 STATUS METHODS
+    | ðŸ“Š STATUS METHODS
     |--------------------------------------------------------------------------
     */
 
@@ -130,7 +135,7 @@ class Reimbursement extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 🔄 WORKFLOW METHODS
+    | ðŸ”„ WORKFLOW METHODS
     |--------------------------------------------------------------------------
     */
 
@@ -172,7 +177,7 @@ class Reimbursement extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | 📈 STATISTICS METHODS
+    | ðŸ“ˆ STATISTICS METHODS
     |--------------------------------------------------------------------------
     */
 
@@ -206,3 +211,4 @@ class Reimbursement extends Model
         return $query->count();
     }
 }
+

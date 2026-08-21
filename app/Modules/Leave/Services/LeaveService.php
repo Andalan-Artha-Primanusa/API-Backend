@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Leave\Services;
 
 use App\Models\Leave;
 use App\Models\LeaveType;
 use App\Models\ApprovalFlow;
-use App\Models\User;
+use App\Modules\User\Models\User;
 use App\Models\EmployeeLeaveBalance;
 use App\Models\LeavePolicy;
 use App\Models\ApprovalFlowHistory;
@@ -110,9 +110,9 @@ class LeaveService
      * Retrieve leaves based on the user's role/permissions.
      *
      * Authorization priority (most privileged first):
-     * 1. Admin/HR/SuperAdmin → all leaves
-     * 2. Manager → subordinates' leaves + own
-     * 3. Employee → own leaves only
+     * 1. Admin/HR/SuperAdmin â†’ all leaves
+     * 2. Manager â†’ subordinates' leaves + own
+     * 3. Employee â†’ own leaves only
      */
     public function getLeavesByRole(User $user): LengthAwarePaginator
     {
@@ -129,18 +129,18 @@ class LeaveService
             'approver.profile:id,user_id,profile_photo_path'
         ]);
 
-        // Admin/HR/SuperAdmin — see all (no filter)
+        // Admin/HR/SuperAdmin â€” see all (no filter)
         if ($user->isAdmin() || $user->isHR()) {
-            // no filter — all records
+            // no filter â€” all records
         } elseif ($user->isManager()) {
-            // Manager — subordinates' leaves + own
+            // Manager â€” subordinates' leaves + own
             $subordinateUserIds = $user->teamMembers()->pluck('user_id');
             $query->where(function ($q) use ($user, $subordinateUserIds) {
                 $q->whereIn('user_id', $subordinateUserIds)
                   ->orWhere('user_id', $user->id);
             });
         } else {
-            // Employee (default) — own leaves only
+            // Employee (default) â€” own leaves only
             $query->where('user_id', $user->id);
         }
 
@@ -222,7 +222,7 @@ class LeaveService
             }
         }
 
-        // Rejection — immediately finalize
+        // Rejection â€” immediately finalize
         if ($action === 'rejected') {
             $this->releaseAnnualLeave($leave);
             $leave->update([
@@ -508,3 +508,4 @@ class LeaveService
         }
     }
 }
+

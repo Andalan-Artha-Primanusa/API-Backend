@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Asset\Controllers;
 
@@ -6,7 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Asset as InventoryAsset;
 use App\Models\AssetAssignment as InventoryAssetAssignment;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\UserNotification;
 use App\Services\ApprovalFlowService;
 use Illuminate\Http\JsonResponse;
@@ -212,7 +212,7 @@ class AssetController extends Controller
             $approvalService->applyToModel('asset_assignment', $assignment);
             $assignment->refresh();
         } catch (\RuntimeException $e) {
-            // No approval flow configured — fall back to direct assignment
+            // No approval flow configured â€” fall back to direct assignment
         }
 
         $employee = Employee::with('user')->find($validated['employee_id']);
@@ -494,3 +494,4 @@ class AssetController extends Controller
         return ApiResponse::success('My assets retrieved successfully', $assignments);
     }
 }
+

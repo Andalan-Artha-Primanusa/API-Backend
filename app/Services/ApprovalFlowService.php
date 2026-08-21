@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowHistory;
-use App\Models\User;
+use App\Modules\User\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -98,7 +98,7 @@ class ApprovalFlowService
             'acted_at' => now(),
         ]);
 
-        // Rejection — finalize immediately
+        // Rejection â€” finalize immediately
         if ($action === 'rejected') {
             $model->status = 'rejected';
             $model->save();
@@ -140,7 +140,7 @@ class ApprovalFlowService
             ];
         }
 
-        // No next step — final approval
+        // No next step â€” final approval
         $model->status = 'approved';
         $model->save();
 
@@ -213,3 +213,4 @@ class ApprovalFlowService
         });
     }
 }
+

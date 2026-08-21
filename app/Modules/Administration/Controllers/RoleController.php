@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Controllers;
 
@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Helpers\ApiResponse;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Permission;
+use App\Modules\Administration\Models\Role;
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Permission;
 
 class RoleController extends Controller
 {
@@ -207,3 +207,4 @@ class RoleController extends Controller
         return ApiResponse::success('OK', ['can_assign' => $canAssign]);
     }
 }
+

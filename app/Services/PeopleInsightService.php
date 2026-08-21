@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
 use App\Models\Attendance;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\HrServiceRequest;
 use App\Models\Kpi;
@@ -11,7 +11,7 @@ use App\Models\Leave;
 use App\Models\Payroll;
 use App\Models\Reimbursement;
 use App\Models\TrainingEnrollment;
-use App\Models\User;
+use App\Modules\User\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -772,3 +772,4 @@ class PeopleInsightService
         ];
     }
 }
+

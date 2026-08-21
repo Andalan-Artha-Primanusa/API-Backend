@@ -1,12 +1,12 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Employee;
-use App\Models\Role;
+use App\Modules\User\Models\User;
+use App\Modules\Employee\Models\Employee;
+use App\Modules\Administration\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -357,3 +357,4 @@ class DataImportController extends Controller
         return ApiResponse::success('Import template for ' . $type, $template);
     }
 }
+

@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Organization\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
-use App\Models\Department;
+use App\Modules\Organization\Models\Department;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -191,3 +191,4 @@ class DepartmentController extends Controller
         }
     }
 }
+

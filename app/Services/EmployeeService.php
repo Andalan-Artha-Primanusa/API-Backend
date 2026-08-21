@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\WorkSchedule;
 use App\Models\Location;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -148,3 +148,4 @@ class EmployeeService
         Employee::findOrFail($id)->delete();
     }
 }
+

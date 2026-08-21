@@ -1,6 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Competency\Models;
+
+use App\Modules\Employee\Models\Employee;
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,3 +39,4 @@ class EmployeeCompetency extends Model
         return $this->belongsTo(User::class, 'assessed_by');
     }
 }
+

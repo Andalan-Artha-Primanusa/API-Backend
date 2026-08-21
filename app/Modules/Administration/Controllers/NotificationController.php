@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Controllers;
 
@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendEmailNotificationJob;
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
-use App\Models\User;
+use App\Modules\User\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -467,3 +467,4 @@ class NotificationController extends Controller
         return ApiResponse::success('Email notification sent for retry', $emailLog);
     }
 }
+

@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Administration\Models;
+
+use App\Modules\User\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,3 +34,4 @@ class AuditLog extends Model
         return $this->belongsTo(User::class);
     }
 }
+

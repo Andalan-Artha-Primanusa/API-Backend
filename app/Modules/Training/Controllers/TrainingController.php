@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Training\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\TrainingEnrollment;
 use App\Models\TrainingProgressHistory;
 use App\Models\TrainingProgram;
@@ -686,3 +686,4 @@ class TrainingController extends Controller
         ]));
     }
 }
+

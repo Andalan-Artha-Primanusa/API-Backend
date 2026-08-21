@@ -1,13 +1,13 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Organization\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Department;
-use App\Models\Employee;
+use App\Modules\Organization\Models\Department;
+use App\Modules\Employee\Models\Employee;
 use App\Models\Location;
-use App\Models\Position;
+use App\Modules\Organization\Models\Position;
 use App\Models\WorkSchedule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -350,3 +350,4 @@ class OrgStructureController extends Controller
         ]);
     }
 }
+

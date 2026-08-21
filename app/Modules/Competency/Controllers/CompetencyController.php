@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Competency\Controllers;
 
@@ -6,7 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Competency;
 use App\Models\EmployeeCompetency;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -241,6 +241,7 @@ class CompetencyController extends Controller
         return ApiResponse::success('Employee competencies retrieved successfully', $data);
     }
 }
+
 
 
 

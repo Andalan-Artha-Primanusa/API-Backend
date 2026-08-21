@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Modules\User\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Role;
+use App\Modules\User\Models\User;
+use App\Modules\Administration\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Helpers\ApiResponse;
@@ -151,3 +151,4 @@ class UserController extends Controller
         );
     }
 }
+

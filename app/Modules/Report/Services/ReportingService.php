@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 namespace App\Modules\Report\Services;
 
 use Carbon\Carbon;
-use App\Models\Employee;
+use App\Modules\Employee\Models\Employee;
 use App\Models\Attendance;
 use App\Models\Leave;
 use App\Models\Payroll;
@@ -364,3 +364,4 @@ class ReportingService
     ];
 }
 }
+
