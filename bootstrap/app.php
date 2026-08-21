@@ -82,8 +82,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Internal server error',
-                'error' => app()->isLocal() ? $e->getMessage() : null,
+                'message' => 'Internal server error (DEBUG)',
+                'error' => $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine(),
             ], 500);
         });
     })
