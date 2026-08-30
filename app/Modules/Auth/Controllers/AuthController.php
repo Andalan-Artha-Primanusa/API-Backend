@@ -66,6 +66,8 @@ class AuthController extends Controller
                 'employee.workSchedule:id,name,check_in_time,check_out_time',
                 'employee.manager:id,name',
                 'employee.manager.profile',
+                'companyAccesses.company',
+                'companies',
             ]);
 
             $effectivePermissions = $this->resolveEffectivePermissions($user);
@@ -119,6 +121,8 @@ class AuthController extends Controller
                 'employee.workSchedule',
                 'employee.manager',
                 'employee.manager.profile',
+                'companyAccesses.company',
+                'companies',
             ]);
 
             $effectivePermissions = $this->resolveEffectivePermissions($user);
@@ -221,6 +225,8 @@ class AuthController extends Controller
                 'employee.workSchedule',
                 'employee.manager',
                 'employee.manager.profile',
+                'companyAccesses.company',
+                'companies',
             ]);
 
             $effectivePermissions = $this->resolveEffectivePermissions($user);

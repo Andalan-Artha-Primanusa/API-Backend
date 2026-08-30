@@ -8,13 +8,15 @@ use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\UserNotification;
 use App\Services\EmployeeService;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
     public function __construct(
-        protected EmployeeService $employeeService
+        protected EmployeeService $employeeService,
+        protected CompanyScopeService $companyScope
     ) {}
 
     /**
@@ -59,7 +61,13 @@ class EmployeeController extends Controller
     public function store(StoreEmployeeRequest $request): JsonResponse
     {
         try {
-            $employee = $this->employeeService->create($request->validated());
+            $data = $request->validated();
+
+            if (empty($data['company_id'])) {
+                $data['company_id'] = $this->companyScope->selectedCompanyId($request);
+            }
+
+            $employee = $this->employeeService->create($data);
             return ApiResponse::success('Employee created successfully', $employee, 201);
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), null, 422);
@@ -79,6 +87,10 @@ class EmployeeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
+        if (!$this->canAccessEmployeeCompany($request, $employee)) {
+            return ApiResponse::error('Forbidden', 'Cannot access employee from another company', 403);
+        }
+
         return ApiResponse::success('Employee detail', $employee);
     }
 
@@ -89,6 +101,12 @@ class EmployeeController extends Controller
     public function update(UpdateEmployeeRequest $request, $id): JsonResponse
     {
         try {
+            $employee = $this->employeeService->findWithUser($id);
+
+            if (!$this->canAccessEmployeeCompany($request, $employee)) {
+                return ApiResponse::error('Forbidden', 'Cannot update employee from another company', 403);
+            }
+
             $employee = $this->employeeService->update($id, $request->validated());
             return ApiResponse::success('Employee updated successfully', $employee);
         } catch (\DomainException $e) {
@@ -106,6 +124,11 @@ class EmployeeController extends Controller
         }
 
         $employee = $this->employeeService->findWithUser($id);
+
+        if (!$this->canAccessEmployeeCompany($request, $employee)) {
+            return ApiResponse::error('Forbidden', 'Cannot delete employee from another company', 403);
+        }
+
         $deleted = $employee->toArray();
 
         $this->employeeService->delete($id);
@@ -159,6 +182,27 @@ class EmployeeController extends Controller
             'manager:id,name',
             'manager.profile:id,user_id,profile_photo_path'
         ]));
+    }
+
+    protected function canAccessEmployeeCompany(Request $request, $employee): bool
+    {
+        $user = $request->user();
+
+        if ($employee->user_id === $user->id || $this->companyScope->canViewAll($user)) {
+            return true;
+        }
+
+        if (!$employee->company_id) {
+            return false;
+        }
+
+        $selectedCompanyId = $this->companyScope->selectedCompanyId($request);
+
+        if ($selectedCompanyId) {
+            return (int) $employee->company_id === $selectedCompanyId;
+        }
+
+        return $this->companyScope->availableCompanyIds($user)->contains((int) $employee->company_id);
     }
 
     /**

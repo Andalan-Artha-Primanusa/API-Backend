@@ -9,11 +9,16 @@ use App\Helpers\ApiResponse;
 use App\Http\Requests\StoreReimbursementRequest;
 use App\Traits\HasEmployee;
 use App\Services\ApprovalFlowService;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 
 class ReimbursementController extends Controller
 {
     use HasEmployee;
+
+    public function __construct(
+        protected CompanyScopeService $companyScope
+    ) {}
 
     /*
     |--------------------------------------------------------------------------
@@ -60,6 +65,8 @@ class ReimbursementController extends Controller
             }
             $query->where('employee_id', $request->employee_id);
         }
+
+        $this->companyScope->applyThroughEmployee($query, $request);
 
         $reimbursements = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
         $service = app(ApprovalFlowService::class);
@@ -300,7 +307,7 @@ class ReimbursementController extends Controller
     {
         $user = $request->user();
 
-        $reimbursements = Reimbursement::with([
+        $query = Reimbursement::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
@@ -312,7 +319,11 @@ class ReimbursementController extends Controller
             'approver.employee.position:id,name',
             'approvalFlow.steps.role:id,name'
         ])
-            ->where('status', 'submitted')
+            ->where('status', 'submitted');
+
+        $this->companyScope->applyThroughEmployee($query, $request);
+
+        $reimbursements = $query
             ->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();

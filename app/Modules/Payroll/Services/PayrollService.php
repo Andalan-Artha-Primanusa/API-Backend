@@ -107,10 +107,11 @@ class PayrollService
     /**
      * Generate payrolls for all ACTIVE employees for a given period.
      */
-    public function generateMonthlyBulk(string $period): array
+    public function generateMonthlyBulk(string $period, ?int $companyId = null): array
     {
         $employees = Employee::whereNotNull('salary')
             ->where('status', 'active')
+            ->when($companyId, fn ($query) => $query->where('company_id', $companyId))
             ->get();
 
         $result = [];

@@ -9,14 +9,20 @@ use App\Modules\User\Models\User;
 use App\Models\EmployeeLeaveBalance;
 use App\Models\LeavePolicy;
 use App\Models\ApprovalFlowHistory;
+use App\Services\CompanyScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 use App\Enums\LeaveStatus;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class LeaveService
 {
+    public function __construct(
+        protected CompanyScopeService $companyScope
+    ) {}
+
     /**
      * Create a new leave request and attach it to the approval flow.
      *
@@ -114,7 +120,7 @@ class LeaveService
      * 2. Manager â†’ subordinates' leaves + own
      * 3. Employee â†’ own leaves only
      */
-    public function getLeavesByRole(User $user): LengthAwarePaginator
+    public function getLeavesByRole(User $user, ?Request $request = null): LengthAwarePaginator
     {
         $query = Leave::with([
             'user:id,name,email',
@@ -142,6 +148,10 @@ class LeaveService
         } else {
             // Employee (default) â€” own leaves only
             $query->where('user_id', $user->id);
+        }
+
+        if ($request) {
+            $this->companyScope->applyThroughEmployee($query, $request);
         }
 
         return $query->latest()->paginate(request()->integer('per_page', 10));

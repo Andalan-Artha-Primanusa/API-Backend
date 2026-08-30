@@ -658,6 +658,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
 
         Route::apiResource('positions', PositionController::class);
 
+        Route::get('/company/context', [CompanyController::class, 'context']);
         Route::get('/company', [CompanyController::class, 'show']);
         Route::get('/companies', [CompanyController::class, 'index']);
         Route::post('/companies', [CompanyController::class, 'store']);

@@ -10,6 +10,7 @@ use App\Models\Leave;
 use App\Models\LeavePolicy;
 use App\Models\ApprovalFlow;
 use App\Services\LeaveService;
+use App\Services\CompanyScopeService;
 use App\Traits\HasEmployee;
 use App\Enums\LeaveStatus;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,8 @@ class LeaveController extends Controller
     use HasEmployee;
 
     public function __construct(
-        protected LeaveService $leaveService
+        protected LeaveService $leaveService,
+        protected CompanyScopeService $companyScope
     ) {}
 
     /*
@@ -94,7 +96,7 @@ class LeaveController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $leaves = $this->leaveService->getLeavesByRole($user)->withQueryString();
+        $leaves = $this->leaveService->getLeavesByRole($user, $request)->withQueryString();
         return ApiResponse::success('Leave list', $leaves);
     }
 
@@ -308,6 +310,8 @@ class LeaveController extends Controller
                 'approver.employee.position:id,name'
             ])
             ->where('status', LeaveStatus::Pending->value);
+
+        $this->companyScope->applyThroughEmployee($query, $request);
 
         if ($user->hasPermission('leave.approve')) {
             $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();

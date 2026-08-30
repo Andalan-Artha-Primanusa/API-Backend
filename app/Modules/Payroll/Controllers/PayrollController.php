@@ -12,13 +12,15 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Services\PayrollService;
+use App\Services\CompanyScopeService;
 
 class PayrollController extends Controller
 {
     use HasEmployee;
 
     public function __construct(
-        protected PayrollService $payrollService
+        protected PayrollService $payrollService,
+        protected CompanyScopeService $companyScope
     ) {}
 
     // =========================================================================
@@ -44,6 +46,7 @@ class PayrollController extends Controller
             'details',
             'reimbursements'
         ])
+            ->when(true, fn ($query) => $this->companyScope->applyThroughEmployee($query, $request))
             ->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
@@ -175,7 +178,10 @@ class PayrollController extends Controller
         $request->validate(['period' => 'required']);
 
         try {
-            $result = $this->payrollService->generateMonthlyBulk($request->period);
+            $result = $this->payrollService->generateMonthlyBulk(
+                $request->period,
+                $this->companyScope->selectedCompanyId($request)
+            );
             
             // Hydrate with Mega-Full context
             $hydrated = Payroll::with([

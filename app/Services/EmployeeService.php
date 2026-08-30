@@ -6,11 +6,16 @@ use App\Modules\Employee\Models\Employee;
 use App\Models\Company;
 use App\Models\WorkSchedule;
 use App\Models\Location;
+use App\Services\CompanyScopeService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 class EmployeeService
 {
+    public function __construct(
+        protected CompanyScopeService $companyScope
+    ) {}
+
     /**
      * Get a filtered, searched, and sorted employee list.
      */
@@ -30,10 +35,7 @@ class EmployeeService
             $q->where('category', 'letter');
         }]);
 
-        // Filter by department
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->integer('company_id'));
-        }
+        $this->companyScope->applyEmployeeScope($query, $request);
 
         if ($request->filled('department')) {
             $query->where('department', $request->department);

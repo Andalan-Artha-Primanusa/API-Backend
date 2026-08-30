@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use App\Models\Company;
 use App\Models\UserCompanyAccess;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class CompanyController extends Controller
 {
+    public function __construct(
+        protected CompanyScopeService $companyScope
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         if (!$this->canViewCompanies($request->user())) {
@@ -22,13 +27,8 @@ class CompanyController extends Controller
 
         $query = Company::query()->latest();
 
-        if (!$this->canViewAllCompanies($request->user())) {
-            $allowedIds = $request->user()->companies()->pluck('companies.id');
-            $employeeCompanyId = $request->user()->employee?->company_id;
-            if ($employeeCompanyId) {
-                $allowedIds->push($employeeCompanyId);
-            }
-            $query->whereIn('id', $allowedIds->unique()->values());
+        if (!$this->companyScope->canViewAll($request->user())) {
+            $query->whereIn('id', $this->companyScope->availableCompanyIds($request->user()));
         }
 
         if ($request->filled('status')) {
@@ -36,6 +36,15 @@ class CompanyController extends Controller
         }
 
         return ApiResponse::success('Companies retrieved', $query->paginate($request->integer('per_page', 20)));
+    }
+
+    public function context(Request $request): JsonResponse
+    {
+        if (!$this->canViewCompanies($request->user())) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        return ApiResponse::success('Company context retrieved', $this->companyScope->context($request));
     }
 
     /**
@@ -98,7 +107,8 @@ class CompanyController extends Controller
         }
 
         try {
-            $company = Company::first();
+            $companyId = $this->companyScope->selectedCompanyId($request);
+            $company = $companyId ? Company::find($companyId) : Company::first();
 
             if (!$company) {
                 return ApiResponse::error('Company not found', null, 404);
@@ -309,6 +319,6 @@ class CompanyController extends Controller
 
     private function canViewAllCompanies($user): bool
     {
-        return $user->hasPermission('company.view_all');
+        return $this->companyScope->canViewAll($user);
     }
 }

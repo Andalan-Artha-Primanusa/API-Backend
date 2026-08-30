@@ -7,6 +7,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Requests\CheckInRequest;
 use App\Models\Attendance;
 use App\Services\AttendanceService;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -14,7 +15,8 @@ use Illuminate\Validation\ValidationException;
 class AttendanceController extends Controller
 {
     public function __construct(
-        protected AttendanceService $attendanceService
+        protected AttendanceService $attendanceService,
+        protected CompanyScopeService $companyScope
     ) {}
 
     /**
@@ -247,6 +249,14 @@ class AttendanceController extends Controller
                 'user.employee.position:id,name',
             ])
                 ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at']);
+
+            $selectedCompanyId = $this->companyScope->selectedCompanyId($request);
+            if ($selectedCompanyId) {
+                $query->whereHas('user.employee', fn ($employeeQuery) => $employeeQuery->where('company_id', $selectedCompanyId));
+            } elseif (!$this->companyScope->canViewAll($request->user())) {
+                $allowedCompanyIds = $this->companyScope->availableCompanyIds($request->user());
+                $query->whereHas('user.employee', fn ($employeeQuery) => $employeeQuery->whereIn('company_id', $allowedCompanyIds));
+            }
 
             // Apply filters
             if (!empty($validated['date_from'])) {
