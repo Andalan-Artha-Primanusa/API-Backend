@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Modules\Employee\Models\Employee;
+use App\Models\Company;
 use App\Models\WorkSchedule;
 use App\Models\Location;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -18,6 +19,7 @@ class EmployeeService
         $query = Employee::with([
             'user:id,name,email',
             'user.profile:id,user_id',
+            'company:id,name,code,status',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
@@ -29,6 +31,10 @@ class EmployeeService
         }]);
 
         // Filter by department
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->integer('company_id'));
+        }
+
         if ($request->filled('department')) {
             $query->where('department', $request->department);
         }
@@ -62,6 +68,7 @@ class EmployeeService
         return Employee::with([
             'user:id,name,email',
             'user.profile:id,user_id,phone,address,gender',
+            'company:id,name,code,status',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
@@ -80,6 +87,12 @@ class EmployeeService
     public function create(array $data): Employee
     {
         // Validate work schedule
+        if (isset($data['company_id']) && $data['company_id']) {
+            if (!Company::find($data['company_id'])) {
+                throw new \DomainException('Company not found with ID: ' . $data['company_id']);
+            }
+        }
+
         if (isset($data['work_schedule_id']) && $data['work_schedule_id']) {
             if (!WorkSchedule::find($data['work_schedule_id'])) {
                 throw new \DomainException('Work schedule not found with ID: ' . $data['work_schedule_id']);
@@ -96,6 +109,7 @@ class EmployeeService
         return Employee::create($data)->load([
             'user:id,name,email',
             'user.profile:id,user_id',
+            'company:id,name,code,status',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',
@@ -112,6 +126,12 @@ class EmployeeService
     public function update(int|string $id, array $data): Employee
     {
         // Validate work schedule
+        if (isset($data['company_id']) && $data['company_id']) {
+            if (!Company::find($data['company_id'])) {
+                throw new \DomainException('Company not found with ID: ' . $data['company_id']);
+            }
+        }
+
         if (isset($data['work_schedule_id']) && $data['work_schedule_id']) {
             if (!WorkSchedule::find($data['work_schedule_id'])) {
                 throw new \DomainException('Work schedule not found with ID: ' . $data['work_schedule_id']);
@@ -131,6 +151,7 @@ class EmployeeService
         return $employee->fresh([
             'user:id,name,email',
             'user.profile:id,user_id',
+            'company:id,name,code,status',
             'departmentRel:id,name',
             'positionRel:id,name',
             'location:id,name',

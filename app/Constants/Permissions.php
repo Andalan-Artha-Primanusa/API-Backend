@@ -24,8 +24,16 @@ class Permissions
         'employee.offboard' => 'Start offboarding process',
     ];
 
+    const TASK = [
+        'task.view' => 'View tasks',
+        'task.create' => 'Create tasks',
+        'task.update' => 'Update tasks',
+        'task.delete' => 'Delete tasks',
+    ];
+
     const LEAVE = [
         'leave.view' => 'View leave requests',
+        'leave.create' => 'Create leave request',
         'leave.request' => 'Create leave request',
         'leave.update' => 'Update leave request',
         'leave.delete' => 'Delete leave request',
@@ -39,20 +47,34 @@ class Permissions
         'attendance.check_in' => 'Employee check-in',
         'attendance.check_out' => 'Employee check-out',
         'attendance.view_own' => 'View own attendance history',
+        'attendance.qr.generate' => 'Generate QR attendance token',
+        'attendance.qr.scan' => 'Scan QR for attendance',
+        'attendance.manual_adjust' => 'Manual attendance adjustment',
+    ];
+
+    const PATROL = [
+        'patrol.scan' => 'Scan security patrol checkpoints',
+        'patrol.view' => 'View security patrol checkpoints and scans',
+        'patrol.manage' => 'Manage security patrol checkpoints',
+        'patrol.report' => 'View security patrol reports',
     ];
 
     const PAYROLL = [
         'payroll.view' => 'View payroll records',
+        'payroll.view_own' => 'View own payroll slips',
         'payroll.create' => 'Create payroll run',
+        'payroll.generate' => 'Generate payroll batch',
         'payroll.process' => 'Generate payroll batch',
         'payroll.approve' => 'Approve payroll payment',
         'payroll.pay' => 'Process payroll payment',
+        'payroll.export' => 'Export payroll data',
         'payroll.publish' => 'Export/publish payroll slips',
         'payroll.reports.view' => 'View payroll reports',
     ];
 
     const OVERTIME = [
         'overtime.view' => 'View overtime requests',
+        'overtime.create' => 'Create overtime request',
         'overtime.request' => 'Create overtime request',
         'overtime.approve' => 'Approve overtime request (Manager/HR)',
         'overtime.manage' => 'Manage overtime records',
@@ -68,6 +90,7 @@ class Permissions
 
     const REIMBURSEMENT = [
         'reimbursement.view' => 'View reimbursement requests',
+        'reimbursement.create' => 'Create reimbursement request',
         'reimbursement.request' => 'Create reimbursement request',
         'reimbursement.approve' => 'Approve reimbursement',
         'reimbursement.pay' => 'Mark reimbursement as paid',
@@ -122,6 +145,9 @@ class Permissions
     ];
 
     const PERFORMANCE = [
+        'performance.cycle.view' => 'View performance cycles',
+        'performance.cycle.create' => 'Create performance cycles',
+        'performance.cycle.manage' => 'Manage performance cycles',
         'performance.review.view' => 'View performance reviews',
         'performance.review.create' => 'Create performance review',
         'performance.review.update' => 'Update performance review',
@@ -179,12 +205,21 @@ class Permissions
         'reporting.assets' => 'View asset analytics',
     ];
 
+    const DASHBOARD = [
+        'dashboard.customize_self' => 'Customize own dashboard',
+        'dashboard.manage_default' => 'Manage default dashboards',
+        'dashboard.view_all_company' => 'View all-company dashboard widgets',
+    ];
+
     // ==========================================
     // SYSTEM ADMIN PERMISSIONS (Super Admin ONLY)
     // ==========================================
 
     const ADMIN_SYSTEM = [
         'user.view' => 'View users',
+        'user.create' => 'Create users',
+        'user.update' => 'Update users',
+        'user.delete' => 'Delete users',
         'user.assign_role' => 'Assign roles to users',
         'role.view' => 'View roles',
         'role.create' => 'Create roles',
@@ -193,6 +228,9 @@ class Permissions
         'role.assign_permission' => 'Assign permissions to roles',
         'permission.view' => 'View permissions',
         'admin.user.view' => 'View all users',
+        'admin.user.create' => 'Create users',
+        'admin.user.update' => 'Update users',
+        'admin.user.delete' => 'Delete users',
         'admin.user.assign_role' => 'Assign roles to users',
         'admin.role.view' => 'View roles',
         'admin.role.assign_permission' => 'Assign permissions to roles',
@@ -224,6 +262,13 @@ class Permissions
         'admin.position.manage' => 'Manage positions',
         'admin.company.view' => 'View company data',
         'admin.company.update' => 'Update company data',
+        'admin.approval_flow.manage' => 'Manage approval workflows',
+        'company.view' => 'View companies',
+        'company.create' => 'Create companies',
+        'company.update' => 'Update companies',
+        'company.deactivate' => 'Deactivate companies',
+        'company.view_all' => 'View all companies',
+        'company.assign_user' => 'Assign users to companies',
         'admin.schedule.manage' => 'Manage work schedules',
         'approval.manage' => 'Manage approval workflows',
         'admin.biometric.manage' => 'Manage biometric devices',
@@ -245,8 +290,10 @@ class Permissions
     {
         return array_merge(
             self::EMPLOYEE,
+            self::TASK,
             self::LEAVE,
             self::ATTENDANCE,
+            self::PATROL,
             self::PAYROLL,
             self::KPI,
             self::REIMBURSEMENT,
@@ -264,6 +311,7 @@ class Permissions
             self::COMPLIANCE,
             self::OVERTIME,
             self::REPORTING,
+            self::DASHBOARD,
             self::ADMIN_SYSTEM,
             self::ADMIN_SETTINGS,
             self::ADMIN_DATA,

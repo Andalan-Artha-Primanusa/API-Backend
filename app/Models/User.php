@@ -114,6 +114,18 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles');
     }
 
+    public function companyAccesses(): HasMany
+    {
+        return $this->hasMany(UserCompanyAccess::class);
+    }
+
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'user_company_access')
+            ->withPivot(['scope_role', 'is_default'])
+            ->withTimestamps();
+    }
+
     // =========================================================================
     // ROLE CHECKS (all pivot-based — reads from user_roles table)
     // =========================================================================

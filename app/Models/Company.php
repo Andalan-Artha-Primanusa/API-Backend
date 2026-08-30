@@ -8,6 +8,7 @@ class Company extends Model
 {
     protected $fillable = [
         'name',
+        'code',
         'legal_name',
         'tax_number',
         'email',
@@ -18,6 +19,10 @@ class Company extends Model
         'state',
         'postal_code',
         'country',
+        'status',
+        'timezone',
+        'currency',
+        'parent_company_id',
         'logo_path',
     ];
 

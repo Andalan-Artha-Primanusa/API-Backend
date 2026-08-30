@@ -5,6 +5,7 @@ namespace App\Modules\Organization\Controllers;
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use App\Models\Company;
+use App\Models\UserCompanyAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,22 +14,42 @@ use Illuminate\Validation\ValidationException;
 
 class CompanyController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        if (!$this->canViewCompanies($request->user())) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        $query = Company::query()->latest();
+
+        if (!$this->canViewAllCompanies($request->user())) {
+            $allowedIds = $request->user()->companies()->pluck('companies.id');
+            $employeeCompanyId = $request->user()->employee?->company_id;
+            if ($employeeCompanyId) {
+                $allowedIds->push($employeeCompanyId);
+            }
+            $query->whereIn('id', $allowedIds->unique()->values());
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        return ApiResponse::success('Companies retrieved', $query->paginate($request->integer('per_page', 20)));
+    }
+
     /**
      * POST /company - Create company data
      */
     public function store(Request $request): JsonResponse
     {
-        if (!$request->user()->hasPermission('admin.company.update')) {
+        if (!$request->user()->hasPermission('company.create') && !$request->user()->hasPermission('admin.company.update')) {
             return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
         }
 
         try {
-            $existing = Company::first();
-            if ($existing) {
-                return ApiResponse::error('Company already exists', 'Use PUT to update existing company', 400);
-            }
-
             $validated = $request->validate([
+                'code'        => 'nullable|string|max:50|unique:companies,code',
                 'name'        => 'required|string|max:255',
                 'legal_name'  => 'nullable|string|max:255',
                 'tax_number'  => 'nullable|string|max:100',
@@ -40,6 +61,10 @@ class CompanyController extends Controller
                 'state'       => 'nullable|string|max:100',
                 'postal_code' => 'nullable|string|max:20',
                 'country'     => 'nullable|string|max:100',
+                'status'      => 'nullable|string|in:active,draft,inactive',
+                'timezone'    => 'nullable|string|max:100',
+                'currency'    => 'nullable|string|max:8',
+                'parent_company_id' => 'nullable|exists:companies,id',
                 'logo'        => 'nullable|image|max:2048',
             ]);
 
@@ -68,7 +93,7 @@ class CompanyController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        if (!$request->user()->hasPermission('admin.company.view')) {
+        if (!$this->canViewCompanies($request->user())) {
             return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
         }
 
@@ -91,7 +116,7 @@ class CompanyController extends Controller
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        if (!$request->user()->hasPermission('admin.company.update')) {
+        if (!$request->user()->hasPermission('company.update') && !$request->user()->hasPermission('admin.company.update')) {
             return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
         }
 
@@ -103,6 +128,7 @@ class CompanyController extends Controller
             $company = Company::findOrFail($id);
 
             $validated = $request->validate([
+                'code'        => 'sometimes|nullable|string|max:50|unique:companies,code,' . $id,
                 'name'        => 'sometimes|string|max:255',
                 'legal_name'  => 'sometimes|nullable|string|max:255',
                 'tax_number'  => 'sometimes|nullable|string|max:100',
@@ -114,6 +140,10 @@ class CompanyController extends Controller
                 'state'       => 'sometimes|nullable|string|max:100',
                 'postal_code' => 'sometimes|nullable|string|max:20',
                 'country'     => 'sometimes|nullable|string|max:100',
+                'status'      => 'sometimes|nullable|string|in:active,draft,inactive',
+                'timezone'    => 'sometimes|nullable|string|max:100',
+                'currency'    => 'sometimes|nullable|string|max:8',
+                'parent_company_id' => 'sometimes|nullable|exists:companies,id',
                 'logo'        => 'sometimes|nullable|image|max:2048',
             ]);
 
@@ -213,5 +243,72 @@ class CompanyController extends Controller
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to delete company logo', null, 500);
         }
+    }
+
+    public function deactivate(Request $request, int $id): JsonResponse
+    {
+        if (!$request->user()->hasPermission('company.deactivate')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        $company = Company::findOrFail($id);
+        $company->update(['status' => 'inactive']);
+
+        return ApiResponse::success('Company deactivated', $company->fresh());
+    }
+
+    public function assignUser(Request $request, int $id): JsonResponse
+    {
+        if (!$request->user()->hasPermission('company.assign_user')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'scope_role' => 'nullable|string|max:50',
+            'is_default' => 'nullable|boolean',
+        ]);
+
+        $company = Company::findOrFail($id);
+
+        if (!empty($validated['is_default'])) {
+            UserCompanyAccess::where('user_id', $validated['user_id'])->update(['is_default' => false]);
+        }
+
+        $access = UserCompanyAccess::updateOrCreate(
+            [
+                'user_id' => $validated['user_id'],
+                'company_id' => $company->id,
+            ],
+            [
+                'scope_role' => $validated['scope_role'] ?? 'member',
+                'is_default' => $validated['is_default'] ?? false,
+            ]
+        );
+
+        return ApiResponse::success('Company access assigned', $access->load('company'));
+    }
+
+    public function removeUser(Request $request, int $id, int $userId): JsonResponse
+    {
+        if (!$request->user()->hasPermission('company.assign_user')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        UserCompanyAccess::where('company_id', $id)->where('user_id', $userId)->delete();
+
+        return ApiResponse::success('Company access removed');
+    }
+
+    private function canViewCompanies($user): bool
+    {
+        return $user->hasPermission('company.view')
+            || $user->hasPermission('company.view_all')
+            || $user->hasPermission('admin.company.view');
+    }
+
+    private function canViewAllCompanies($user): bool
+    {
+        return $user->hasPermission('company.view_all');
     }
 }

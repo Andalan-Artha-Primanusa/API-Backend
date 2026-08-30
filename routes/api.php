@@ -11,6 +11,8 @@ use App\Modules\Auth\Controllers\GoogleAuthController;
 use App\Modules\Employee\Controllers\UserProfileController;
 use App\Modules\Employee\Controllers\EmployeeController;
 use App\Modules\Attendance\Controllers\AttendanceController;
+use App\Modules\Attendance\Controllers\QrAttendanceController;
+use App\Modules\Attendance\Controllers\SecurityPatrolController;
 use App\Modules\Leave\Controllers\LeaveController;
 use App\Modules\Performance\Controllers\KpiController;
 use App\Modules\Reimbursement\Controllers\ReimbursementController;
@@ -30,6 +32,7 @@ use App\Modules\Leave\Controllers\LeavePolicyController;
 use App\Modules\Leave\Controllers\LeaveTypeController;
 use App\Modules\Asset\Controllers\AssetController;
 use App\Modules\Report\Controllers\ReportingController;
+use App\Modules\Report\Controllers\DashboardConfigController;
 use App\Modules\Administration\Controllers\ApprovalFlowController;
 use App\Modules\Administration\Controllers\DataImportController;
 use App\Modules\Organization\Controllers\OrgStructureController;
@@ -142,6 +145,7 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
     Route::get('employees/{employee}/severance/export', [SeveranceController::class, 'exportExcel']);
 
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     /*
@@ -256,6 +260,10 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         Route::get('/locations', [LocationController::class, 'activeLocations']);
         Route::post('/check-in', [AttendanceController::class, 'checkIn']);
         Route::post('/check-out', [AttendanceController::class, 'checkOut']);
+        Route::post('/qr/generate', [QrAttendanceController::class, 'generate']);
+        Route::post('/qr/validate', [QrAttendanceController::class, 'validateToken']);
+        Route::post('/qr/check-in', [QrAttendanceController::class, 'checkIn']);
+        Route::post('/qr/check-out', [QrAttendanceController::class, 'checkOut']);
         Route::get('/history', [AttendanceController::class, 'history']);
         Route::get('/today', [AttendanceController::class, 'today']);
         Route::get('/intelligence', [AttendanceController::class, 'intelligence']);
@@ -268,6 +276,16 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::get('/{id}', [AttendanceController::class, 'show'])->whereNumber('id');
             Route::delete('/{id}', [AttendanceController::class, 'destroy'])->whereNumber('id');
         });
+    });
+
+    Route::middleware('role:*')->prefix('patrol')->group(function () {
+        Route::get('/checkpoints', [SecurityPatrolController::class, 'checkpoints']);
+        Route::post('/checkpoints', [SecurityPatrolController::class, 'storeCheckpoint']);
+        Route::put('/checkpoints/{id}', [SecurityPatrolController::class, 'updateCheckpoint'])->whereNumber('id');
+        Route::delete('/checkpoints/{id}', [SecurityPatrolController::class, 'destroyCheckpoint'])->whereNumber('id');
+        Route::post('/checkpoints/{id}/regenerate-qr', [SecurityPatrolController::class, 'regenerateQr'])->whereNumber('id');
+        Route::post('/scan', [SecurityPatrolController::class, 'scan']);
+        Route::get('/scans', [SecurityPatrolController::class, 'scans']);
     });
 
     // MANAGER / HR / ADMIN (Role based grouped endpoints)
@@ -496,6 +514,14 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::get('/assets', [ReportingController::class, 'assetAnalytics']);
         });
 
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/widgets', [DashboardConfigController::class, 'widgets']);
+            Route::get('/configs', [DashboardConfigController::class, 'index']);
+            Route::post('/configs', [DashboardConfigController::class, 'store']);
+            Route::put('/configs/{id}', [DashboardConfigController::class, 'update'])->whereNumber('id');
+            Route::delete('/configs/{id}', [DashboardConfigController::class, 'destroy'])->whereNumber('id');
+        });
+
     });
 
     // We keep these base leaves endpoints for standard access
@@ -633,6 +659,12 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         Route::apiResource('positions', PositionController::class);
 
         Route::get('/company', [CompanyController::class, 'show']);
+        Route::get('/companies', [CompanyController::class, 'index']);
+        Route::post('/companies', [CompanyController::class, 'store']);
+        Route::put('/companies/{id}', [CompanyController::class, 'update'])->whereNumber('id');
+        Route::post('/companies/{id}/deactivate', [CompanyController::class, 'deactivate'])->whereNumber('id');
+        Route::post('/companies/{id}/users', [CompanyController::class, 'assignUser'])->whereNumber('id');
+        Route::delete('/companies/{id}/users/{userId}', [CompanyController::class, 'removeUser'])->whereNumber('id')->whereNumber('userId');
         Route::post('/company', [CompanyController::class, 'store']);
         Route::put('/company/{id}', [CompanyController::class, 'update']);
         Route::post('/company/{id}/logo', [CompanyController::class, 'uploadLogo']);
@@ -666,6 +698,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         Route::get('/permissions', [PermissionController::class, 'index']);
         Route::get('/permissions/{id}', [PermissionController::class, 'show']);
         Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
         Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
         Route::delete('/users/{id}/remove-role/{roleId}', [UserController::class, 'removeRole']);
 
@@ -714,5 +747,3 @@ Route::get('/setup-storage', function () {
         ], 500);
     }
 });
-
-

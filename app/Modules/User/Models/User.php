@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Company;
+use App\Models\UserCompanyAccess;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -40,6 +42,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'must_change_password',
+        'password_changed_at',
     ];
 
     /**
@@ -80,6 +84,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
+            'password_changed_at' => 'datetime',
         ];
     }
 
@@ -118,6 +124,18 @@ class User extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');
+    }
+
+    public function companyAccesses(): HasMany
+    {
+        return $this->hasMany(UserCompanyAccess::class);
+    }
+
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'user_company_access')
+            ->withPivot(['scope_role', 'is_default'])
+            ->withTimestamps();
     }
 
     // =========================================================================

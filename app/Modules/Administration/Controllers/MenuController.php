@@ -10,7 +10,125 @@ use Illuminate\Http\Request;
 
 class MenuController
 {
+    private const MENU_PERMISSIONS = [
+        'dashboard' => ['reporting.dashboard', 'dashboard.customize_self'],
+        'dashboard.overview' => ['reporting.dashboard'],
+        'dashboard.custom' => ['dashboard.customize_self'],
+        'workforce' => ['employee.view', 'attendance.view_all', 'attendance.view_own', 'leave.view', 'overtime.view', 'patrol.scan'],
+        'workforce.employees' => ['employee.view'],
+        'workforce.attendance' => ['attendance.view_all', 'attendance.view_own'],
+        'workforce.attendance.qr-generator' => ['attendance.qr.generate'],
+        'workforce.patrol.scan' => ['patrol.scan'],
+        'workforce.patrol.monitor' => ['patrol.view', 'patrol.manage', 'patrol.report'],
+        'workforce.leave' => ['leave.view'],
+        'workforce.overtime' => ['overtime.view'],
+        'compensation' => ['payroll.view', 'reimbursement.view'],
+        'compensation.payroll' => ['payroll.view'],
+        'compensation.reimbursement' => ['reimbursement.view'],
+        'performance-dev' => ['kpi.view', 'training.view', 'competency.view', 'calibration.view'],
+        'performance-dev.kpi' => ['kpi.view'],
+        'performance-dev.calibration' => ['calibration.view'],
+        'performance-dev.training' => ['training.view'],
+        'performance-dev.competency' => ['competency.view'],
+        'assets' => ['asset.view'],
+        'approval-center' => ['admin.approval_flow.manage'],
+        'reports' => ['reporting.dashboard'],
+        'admin' => ['company.view', 'admin.company.view', 'user.view', 'role.view', 'permission.view', 'admin.audit.view'],
+        'admin.companies' => ['company.view', 'company.view_all'],
+        'admin.company' => ['admin.company.view', 'company.view'],
+        'admin.departments' => ['department.view'],
+        'admin.positions' => ['position.view'],
+        'admin.locations' => ['location.view'],
+        'admin.users' => ['user.view', 'admin.user.view'],
+        'admin.roles' => ['role.view', 'admin.role.view'],
+        'admin.permissions' => ['permission.view', 'admin.permission.view'],
+        'admin.menu-permissions' => ['role.assign_permission', 'role.view'],
+        'admin.approval-workflow' => ['admin.approval_flow.manage'],
+        'admin.audit-logs' => ['audit.logs.view', 'admin.audit.view'],
+        'admin.import' => ['admin.import.execute'],
+        'admin.notifications' => ['admin.email.manage'],
+        'admin.email-send' => ['admin.email.manage'],
+        'admin.email-logs' => ['admin.email.manage'],
+        'admin.notification-settings' => ['admin.email.manage'],
+        'admin.work-schedules' => ['admin.schedule.manage'],
+        'employee-dashboard' => ['dashboard.customize_self', 'attendance.view_own'],
+        'ess.profile' => ['profile.update', 'attendance.view_own'],
+        'ess.attendance' => ['attendance.check_in', 'attendance.check_out', 'attendance.view_own', 'patrol.scan'],
+        'ess.attendance.check-in' => ['attendance.check_in'],
+        'ess.attendance.check-out' => ['attendance.check_out'],
+        'ess.attendance.patrol' => ['patrol.scan'],
+        'ess.attendance.history' => ['attendance.view_own'],
+        'ess.leave' => ['leave.view', 'leave.create'],
+        'ess.overtime' => ['overtime.view', 'overtime.create'],
+        'ess.reimbursement' => ['reimbursement.view', 'reimbursement.create'],
+        'ess.payslip' => ['payroll.view', 'payroll.view_own'],
+        'ess.kpi' => ['kpi.view'],
+        'ess.training' => ['training.view'],
+        'ess.competency' => ['competency.view'],
+        'ess.assets' => ['asset.view'],
+        'ess.documents' => ['document.view'],
+        'ess.dashboard.custom' => ['dashboard.customize_self'],
+        'ess.notifications' => ['attendance.view_own'],
+    ];
+
     public const MENU_DEFINITIONS = [
+        ['key' => 'dashboard', 'label' => 'Dashboard', 'path' => '/dashboard'],
+        ['key' => 'dashboard.overview', 'label' => 'Overview', 'path' => '/dashboard'],
+        ['key' => 'dashboard.custom', 'label' => 'Custom Dashboard', 'path' => '/dashboard/custom'],
+        ['key' => 'workforce', 'label' => 'Workforce'],
+        ['key' => 'workforce.employees', 'label' => 'Employees', 'path' => '/employees'],
+        ['key' => 'workforce.attendance', 'label' => 'Attendance', 'path' => '/attendance'],
+        ['key' => 'workforce.attendance.qr-generator', 'label' => 'QR Generator', 'path' => '/attendance/qr-generator'],
+        ['key' => 'workforce.patrol.scan', 'label' => 'Patrol Scan', 'path' => '/patrol/scan'],
+        ['key' => 'workforce.patrol.monitor', 'label' => 'Patrol Monitor', 'path' => '/patrol/monitor'],
+        ['key' => 'workforce.leave', 'label' => 'Leave', 'path' => '/leave/requests'],
+        ['key' => 'workforce.overtime', 'label' => 'Overtime', 'path' => '/attendance/overtime'],
+        ['key' => 'compensation', 'label' => 'Compensation'],
+        ['key' => 'compensation.payroll', 'label' => 'Payroll', 'path' => '/payroll'],
+        ['key' => 'compensation.reimbursement', 'label' => 'Reimbursement', 'path' => '/reimbursements'],
+        ['key' => 'performance-dev', 'label' => 'Performance & Development'],
+        ['key' => 'performance-dev.kpi', 'label' => 'KPI', 'path' => '/kpis'],
+        ['key' => 'performance-dev.calibration', 'label' => 'Calibration', 'path' => '/performance/calibration'],
+        ['key' => 'performance-dev.training', 'label' => 'Training', 'path' => '/training/programs'],
+        ['key' => 'performance-dev.competency', 'label' => 'Competency', 'path' => '/competencies'],
+        ['key' => 'assets', 'label' => 'Assets', 'path' => '/assets'],
+        ['key' => 'approval-center', 'label' => 'Approval Center', 'path' => '/approval-flows'],
+        ['key' => 'reports', 'label' => 'Reports', 'path' => '/reports/dashboard-summary'],
+        ['key' => 'admin', 'label' => 'Administration'],
+        ['key' => 'admin.companies', 'label' => 'Companies', 'path' => '/companies'],
+        ['key' => 'admin.company', 'label' => 'Company Setting', 'path' => '/settings/company'],
+        ['key' => 'admin.departments', 'label' => 'Departments', 'path' => '/organization/master-data'],
+        ['key' => 'admin.positions', 'label' => 'Positions', 'path' => '/organization/master-data'],
+        ['key' => 'admin.locations', 'label' => 'Locations', 'path' => '/locations'],
+        ['key' => 'admin.users', 'label' => 'Users', 'path' => '/admin/users'],
+        ['key' => 'admin.roles', 'label' => 'Roles & Permissions', 'path' => '/admin/roles'],
+        ['key' => 'admin.permissions', 'label' => 'Permissions', 'path' => '/admin/permissions'],
+        ['key' => 'admin.menu-permissions', 'label' => 'Menu Access', 'path' => '/admin/menu-permissions'],
+        ['key' => 'admin.approval-workflow', 'label' => 'Approval Workflow', 'path' => '/approval-flows'],
+        ['key' => 'admin.audit-logs', 'label' => 'Audit Logs', 'path' => '/admin/audit-logs'],
+        ['key' => 'admin.import', 'label' => 'Import Center', 'path' => '/admin/import'],
+        ['key' => 'admin.notifications', 'label' => 'Admin Notifications', 'path' => '/admin/notifications'],
+        ['key' => 'admin.email-send', 'label' => 'Send Email', 'path' => '/admin/notifications/email-send'],
+        ['key' => 'admin.email-logs', 'label' => 'Email Logs', 'path' => '/admin/notifications/email-logs'],
+        ['key' => 'admin.notification-settings', 'label' => 'Notification Settings', 'path' => '/settings/notifications'],
+        ['key' => 'admin.work-schedules', 'label' => 'Work Schedules', 'path' => '/work-schedules'],
+        ['key' => 'ess.profile', 'label' => 'My Profile', 'path' => '/my/profile'],
+        ['key' => 'ess.attendance', 'label' => 'Attendance'],
+        ['key' => 'ess.attendance.check-in', 'label' => 'QR Check In', 'path' => '/attendance/check-in'],
+        ['key' => 'ess.attendance.check-out', 'label' => 'QR Check Out', 'path' => '/attendance/check-out'],
+        ['key' => 'ess.attendance.patrol', 'label' => 'Patrol Scan', 'path' => '/patrol/scan'],
+        ['key' => 'ess.attendance.history', 'label' => 'History', 'path' => '/attendance/history'],
+        ['key' => 'ess.leave', 'label' => 'Leave', 'path' => '/leave/my-leave'],
+        ['key' => 'ess.overtime', 'label' => 'Overtime', 'path' => '/my/overtime'],
+        ['key' => 'ess.reimbursement', 'label' => 'Reimbursement', 'path' => '/my/reimbursements'],
+        ['key' => 'ess.payslip', 'label' => 'Payslip', 'path' => '/my/payroll'],
+        ['key' => 'ess.kpi', 'label' => 'My KPI', 'path' => '/my/kpi'],
+        ['key' => 'ess.training', 'label' => 'Training', 'path' => '/my/trainings'],
+        ['key' => 'ess.competency', 'label' => 'Competency', 'path' => '/my/competencies'],
+        ['key' => 'ess.assets', 'label' => 'My Assets', 'path' => '/my/assets'],
+        ['key' => 'ess.documents', 'label' => 'My Documents', 'path' => '/my/documents'],
+        ['key' => 'ess.dashboard.custom', 'label' => 'Custom Dashboard', 'path' => '/dashboard/custom'],
+        ['key' => 'ess.notifications', 'label' => 'Notifications', 'path' => '/notifications'],
         ['key' => 'dashboard', 'label' => 'Dashboard', 'path' => '/dashboard'],
         ['key' => 'employee-dashboard', 'label' => 'Dashboard Saya', 'path' => '/employee-dashboard'],
         ['key' => 'employees', 'label' => 'Manajemen Karyawan', 'path' => '/employees'],
@@ -89,10 +207,15 @@ class MenuController
         $roles = Role::where('name', '!=', 'super_admin')->get();
         $assignments = MenuPermission::all()->groupBy('menu_key')->map->pluck('role_id')->toArray();
 
-        $items = array_map(function ($def) use ($assignments) {
-            $def['assigned_role_ids'] = $assignments[$def['key']] ?? [];
-            return $def;
-        }, self::MENU_DEFINITIONS);
+        $items = collect(self::MENU_DEFINITIONS)
+            ->unique('key')
+            ->values()
+            ->map(function ($def) use ($assignments) {
+                $def['assigned_role_ids'] = $assignments[$def['key']] ?? [];
+                $def['required_permissions'] = self::MENU_PERMISSIONS[$def['key']] ?? [];
+                return $def;
+            })
+            ->all();
 
         return ApiResponse::success('Menu definitions', [
             'items' => $items,
@@ -129,7 +252,7 @@ class MenuController
         $user = $request->user();
 
         if ($user->isSuperAdmin()) {
-            return ApiResponse::success('All menus', array_column(self::MENU_DEFINITIONS, 'key'));
+            return ApiResponse::success('All menus', collect(self::MENU_DEFINITIONS)->pluck('key')->unique()->values()->all());
         }
 
         // Jika user tidak punya role, tidak ada menu yang bisa diakses
@@ -143,9 +266,21 @@ class MenuController
             ->pluck('menu_key')
             ->unique()
             ->values()
+            ->filter(fn (string $key) => $this->canAccessMenuKey($user, $key))
             ->toArray();
 
         return ApiResponse::success('Allowed menus', $assignedKeys);
+    }
+
+    private function canAccessMenuKey($user, string $key): bool
+    {
+        $requiredPermissions = self::MENU_PERMISSIONS[$key] ?? [];
+
+        if (empty($requiredPermissions)) {
+            return true;
+        }
+
+        return $user->hasAnyPermission($requiredPermissions);
     }
 }
 

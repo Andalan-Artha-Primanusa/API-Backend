@@ -19,6 +19,7 @@ class UpdateEmployeeRequest extends FormRequest
         return [
             'name'          => ['sometimes', 'string', 'max:255'],
             'user_id'       => ['sometimes', 'nullable', 'exists:users,id'],
+            'company_id'    => ['sometimes', 'nullable', 'exists:companies,id'],
             'employee_code' => [
                 'sometimes', 'string',
                 Rule::unique('employees', 'employee_code')->ignore($employeeId),

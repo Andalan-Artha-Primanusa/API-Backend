@@ -66,12 +66,16 @@ class RoleMiddleware
             '/positions' => ['position.view', 'position.create', 'position.update', 'position.delete'],
             '/api/company' => ['admin.company.view', 'admin.company.update'],
             '/company' => ['admin.company.view', 'admin.company.update'],
+            '/api/companies' => ['company.view', 'company.view_all', 'company.create', 'company.update', 'company.deactivate', 'company.assign_user'],
+            '/companies' => ['company.view', 'company.view_all', 'company.create', 'company.update', 'company.deactivate', 'company.assign_user'],
             '/api/work-schedules' => ['admin.schedule.manage'],
             '/work-schedules' => ['admin.schedule.manage'],
 
             // Employees
             '/api/employees' => ['employee.view', 'employee.create', 'employee.update', 'employee.delete', 'employee.onboard', 'employee.offboard'],
             '/employees' => ['employee.view', 'employee.create', 'employee.update', 'employee.delete', 'employee.onboard', 'employee.offboard'],
+            '/api/tasks' => ['task.view', 'task.create', 'task.update', 'task.delete'],
+            '/tasks' => ['task.view', 'task.create', 'task.update', 'task.delete'],
 
             // Biometric
             '/api/biometric/devices' => ['biometric.devices.view'],
@@ -88,6 +92,8 @@ class RoleMiddleware
             // Reports
             '/api/reports' => ['reporting.dashboard', 'reporting.attendance', 'reporting.leave', 'reporting.payroll', 'reporting.competency', 'reporting.lifecycle', 'reporting.assets'],
             '/reports' => ['reporting.dashboard', 'reporting.attendance', 'reporting.leave', 'reporting.payroll', 'reporting.competency', 'reporting.lifecycle', 'reporting.assets'],
+            '/api/dashboard' => ['dashboard.customize_self', 'dashboard.manage_default', 'dashboard.view_all_company'],
+            '/dashboard' => ['dashboard.customize_self', 'dashboard.manage_default', 'dashboard.view_all_company'],
 
             // Leave
             '/api/leaves' => ['leave.view', 'leave.create', 'leave.update', 'leave.delete', 'leave.approve'],
@@ -150,8 +156,10 @@ class RoleMiddleware
             '/engagement' => ['engagement.survey.view', 'engagement.survey.create', 'engagement.survey.respond', 'engagement.survey.analytics'],
 
             // Attendance
-            '/api/attendance' => ['attendance.view_all', 'attendance.delete', 'attendance.check_in', 'attendance.check_out'],
-            '/attendance' => ['attendance.view_all', 'attendance.delete', 'attendance.check_in', 'attendance.check_out'],
+            '/api/attendance' => ['attendance.view_all', 'attendance.delete', 'attendance.check_in', 'attendance.check_out', 'attendance.qr.generate', 'attendance.qr.scan'],
+            '/attendance' => ['attendance.view_all', 'attendance.delete', 'attendance.check_in', 'attendance.check_out', 'attendance.qr.generate', 'attendance.qr.scan'],
+            '/api/patrol' => ['patrol.scan', 'patrol.view', 'patrol.manage', 'patrol.report'],
+            '/patrol' => ['patrol.scan', 'patrol.view', 'patrol.manage', 'patrol.report'],
 
             // Compliance
             '/api/compliance' => ['compliance.view', 'compliance.audit', 'compliance.documents'],

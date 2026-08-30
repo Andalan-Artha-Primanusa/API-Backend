@@ -17,12 +17,16 @@ class Attendance extends Model
 
     protected $fillable = [
         'user_id',
+        'company_id',
+        'qr_token_id',
+        'location_id',
         'date',
         'check_in',
         'check_out',
         'latitude',
         'longitude',
         'status',
+        'validation_status',
     ];
 
     protected $casts = [

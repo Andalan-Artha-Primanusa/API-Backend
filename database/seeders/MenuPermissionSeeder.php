@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Modules\Administration\Models\MenuPermission;
 use App\Modules\Administration\Models\Role;
-use App\Http\Controllers\Api\MenuController;
+use App\Modules\Administration\Controllers\MenuController;
 use Illuminate\Database\Seeder;
 
 class MenuPermissionSeeder extends Seeder

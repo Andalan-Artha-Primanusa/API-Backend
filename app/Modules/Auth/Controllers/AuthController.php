@@ -159,6 +159,43 @@ class AuthController extends Controller
         }
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'password' => 'required|string|min:8|confirmed',
+            ], [
+                'current_password.required' => 'Password sementara/password saat ini wajib diisi.',
+                'password.required' => 'Password baru wajib diisi.',
+                'password.min' => 'Password minimal 8 karakter.',
+                'password.confirmed' => 'Konfirmasi password tidak sama.',
+            ]);
+
+            $user = $request->user();
+
+            if (!$user || !Hash::check($validated['current_password'], $user->password)) {
+                return ApiResponse::error('Password saat ini tidak sesuai', null, 422);
+            }
+
+            $user->forceFill([
+                'password' => Hash::make($validated['password']),
+                'must_change_password' => false,
+                'password_changed_at' => now(),
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            $user->tokens()->delete();
+
+            return ApiResponse::success('Password berhasil diganti. Silakan login kembali.');
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Validation failed', $e->errors(), 422);
+        } catch (\Throwable $e) {
+            Log::error('Change password failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return ApiResponse::error('Gagal mengganti password', config('app.debug') ? $e->getMessage() : null, 500);
+        }
+    }
+
     /**
      * Get authenticated user profile for current token.
      *
@@ -253,6 +290,8 @@ class AuthController extends Controller
                 function ($user, $password) {
                     $user->forceFill([
                         'password' => Hash::make($password),
+                        'must_change_password' => false,
+                        'password_changed_at' => now(),
                         'remember_token' => Str::random(60),
                     ])->save();
 

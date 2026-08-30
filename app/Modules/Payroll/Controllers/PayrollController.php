@@ -202,6 +202,12 @@ class PayrollController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.create') && !$user->hasPermission('payroll.generate')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $payroll = Payroll::find($id);
 
         if (!$payroll) {
@@ -232,8 +238,14 @@ class PayrollController extends Controller
         ]));
     }
 
-    public function destroy($id): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.create') && !$user->hasPermission('payroll.generate')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $payroll = Payroll::find($id);
 
         if (!$payroll) {

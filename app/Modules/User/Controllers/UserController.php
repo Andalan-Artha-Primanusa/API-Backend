@@ -7,10 +7,90 @@ use App\Modules\User\Models\User;
 use App\Modules\Administration\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Helpers\ApiResponse;
 
 class UserController extends Controller
 {
+    private function userLoadRelations(): array
+    {
+        return [
+            'roles:id,name',
+            'roles.permissions:id,name',
+            'profile:id,user_id,phone,address,gender',
+            'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
+            'employee.department:id,name',
+            'employee.position:id,name',
+            'employee.location:id,name',
+            'employee.workSchedule:id,name,check_in_time,check_out_time',
+            'employee.manager:id,name',
+            'employee.manager.profile:id,user_id',
+        ];
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $authUser = $request->user();
+
+        if (!$authUser->isSuperAdmin() && !$authUser->hasPermission('user.create') && !$authUser->hasPermission('admin.user.create')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['nullable', 'string', 'min:8'],
+            'generate_password' => ['sometimes', 'boolean'],
+            'must_change_password' => ['sometimes', 'boolean'],
+            'role_ids' => ['sometimes', 'array'],
+            'role_ids.*' => ['integer', 'exists:roles,id'],
+        ]);
+
+        $plainPassword = !empty($data['generate_password'])
+            ? Str::password(12, true, true, false, false)
+            : ($data['password'] ?? null);
+
+        if (!$plainPassword) {
+            return ApiResponse::error('Password is required when generate_password is false', null, 422);
+        }
+
+        $roleIds = collect($data['role_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if (!$authUser->isSuperAdmin() && $roleIds->isNotEmpty()) {
+            $superAdminRoleId = Role::where('name', User::ROLE_SUPER_ADMIN)->value('id');
+            if ($superAdminRoleId) {
+                $roleIds = $roleIds->reject(fn ($roleId) => $roleId === (int) $superAdminRoleId)->values();
+            }
+        }
+
+        $createdUser = DB::transaction(function () use ($data, $plainPassword, $roleIds) {
+            $createdUser = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($plainPassword),
+                'must_change_password' => $data['must_change_password'] ?? true,
+                'password_changed_at' => null,
+            ]);
+
+            if ($roleIds->isNotEmpty()) {
+                $createdUser->roles()->sync($roleIds->all());
+            }
+
+            return $createdUser;
+        });
+
+        return ApiResponse::success('User account created successfully', [
+            'user' => $createdUser->load($this->userLoadRelations()),
+            'temporary_password' => $plainPassword,
+            'must_change_password' => (bool) $createdUser->must_change_password,
+        ], 201);
+    }
+
     /**
      * Assign roles to a user.
      *
@@ -53,21 +133,7 @@ class UserController extends Controller
 
         $targetUser->roles()->sync($data['role_ids']);
 
-        return ApiResponse::success(
-            'Roles assigned successfully',
-            $targetUser->load([
-                'roles:id,name',
-                'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender',
-                'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
-                'employee.department:id,name',
-                'employee.position:id,name',
-                'employee.location:id,name',
-                'employee.workSchedule:id,name,check_in_time,check_out_time',
-                'employee.manager:id,name',
-                'employee.manager.profile:id,user_id',
-            ])
-        );
+        return ApiResponse::success('Roles assigned successfully', $targetUser->load($this->userLoadRelations()));
     }
 
     /**
@@ -81,18 +147,7 @@ class UserController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $query = User::with([
-            'roles:id,name',
-            'roles.permissions:id,name',
-            'profile:id,user_id,phone,address,gender',
-            'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
-            'employee.department:id,name',
-            'employee.position:id,name',
-            'employee.location:id,name',
-            'employee.workSchedule:id,name,check_in_time,check_out_time',
-            'employee.manager:id,name',
-            'employee.manager.profile:id,user_id',
-        ]);
+        $query = User::with($this->userLoadRelations());
 
         if ($request->has('role')) {
             $roleParam = $request->role;
@@ -134,21 +189,7 @@ class UserController extends Controller
 
         $targetUser->roles()->detach($role->id);
 
-        return ApiResponse::success(
-            'Role removed successfully',
-            $targetUser->load([
-                'roles:id,name',
-                'roles.permissions:id,name',
-                'profile:id,user_id,phone,address,gender',
-                'employee:id,user_id,employee_code,department_id,position_id,location_id,work_schedule_id',
-                'employee.department:id,name',
-                'employee.position:id,name',
-                'employee.location:id,name',
-                'employee.workSchedule:id,name,check_in_time,check_out_time',
-                'employee.manager:id,name',
-                'employee.manager.profile:id,user_id',
-            ])
-        );
+        return ApiResponse::success('Role removed successfully', $targetUser->load($this->userLoadRelations()));
     }
 }
 

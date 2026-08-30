@@ -12,12 +12,14 @@ use App\Models\EmployeeDocument;
 use App\Modules\User\Models\User;
 use App\Modules\Organization\Models\Department;
 use App\Modules\Organization\Models\Position;
+use App\Modules\Organization\Models\Company;
 use App\Models\OvertimeRequest;
 
 class Employee extends Model
 {
     protected $fillable = [
         'user_id',
+        'company_id',
         'manager_id',
         'employee_code',
         'position',
@@ -66,6 +68,11 @@ class Employee extends Model
     public function manager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_id')->withDefault();
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function location(): BelongsTo

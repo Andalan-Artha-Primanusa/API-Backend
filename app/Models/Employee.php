@@ -14,6 +14,7 @@ class Employee extends Model
 {
     protected $fillable = [
         'user_id',
+        'company_id',
         'manager_id',
         'employee_code',
         'position',
@@ -66,6 +67,11 @@ class Employee extends Model
     public function manager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_id')->withDefault();
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function location(): BelongsTo

@@ -13,8 +13,14 @@ use Illuminate\Support\Facades\DB;
 class PayrollDetailController extends Controller
 {
     // 📌 GET DETAIL BY PAYROLL
-    public function index($payroll_id): JsonResponse
+    public function index(Request $request, $payroll_id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.view')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $payroll = Payroll::with([
             'employee.user.profile',
             'employee.manager.profile',
@@ -39,6 +45,12 @@ class PayrollDetailController extends Controller
     // 📌 STORE (BULK)
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.create') && !$user->hasPermission('payroll.generate')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $request->validate([
             'payroll_id' => 'required|exists:payrolls,id',
             'details' => 'required|array|min:1',
@@ -72,6 +84,12 @@ class PayrollDetailController extends Controller
     // 📌 UPDATE (SINGLE)
     public function update(Request $request, $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.create') && !$user->hasPermission('payroll.generate')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $detail = PayrollDetail::with('payroll.employee.user.profile')->find($id);
 
         if (!$detail) {
@@ -98,6 +116,12 @@ class PayrollDetailController extends Controller
     // 📌 BULK UPDATE
     public function bulkUpdate(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.create') && !$user->hasPermission('payroll.generate')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $request->validate([
             'details' => 'required|array|min:1',
             'details.*.id' => 'required|exists:payroll_details,id',
@@ -160,8 +184,14 @@ class PayrollDetailController extends Controller
     }
 
     // 📌 DELETE
-    public function destroy($id): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->hasPermission('payroll.create') && !$user->hasPermission('payroll.generate')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
         $detail = PayrollDetail::with('payroll.employee.user.profile')->find($id);
 
         if (!$detail) {
