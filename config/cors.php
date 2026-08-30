@@ -22,6 +22,7 @@ return [
         'Content-Type',
         'Authorization',
         'X-Requested-With',
+        'X-Company-Id',
         'Accept',
         'Origin',
     ],
