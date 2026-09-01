@@ -118,7 +118,7 @@ class LeaveController extends Controller
 
     public function show(Request $request, $id): JsonResponse
     {
-        $leave = Leave::with([
+        $query = Leave::with([
                 'user:id,name,email',
                 'user.profile:id,user_id,profile_photo_path',
                 'employee:id,user_id,employee_code,department_id,position_id',
@@ -132,8 +132,11 @@ class LeaveController extends Controller
                 'approver.profile:id,user_id,profile_photo_path',
                 'approver.employee:id,user_id,position_id',
                 'approver.employee.position:id,name'
-            ])
-            ->findOrFail($id);
+            ]);
+
+        $this->companyScope->applyThroughEmployee($query, $request);
+
+        $leave = $query->findOrFail($id);
 
         $user = $request->user();
 
@@ -180,6 +183,8 @@ class LeaveController extends Controller
               ->where('end_date', '>=', $startDate);
         });
 
+        $this->companyScope->applyThroughEmployee($query, $request);
+
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->integer('employee_id'));
         }
@@ -213,7 +218,9 @@ class LeaveController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        $leave = Leave::findOrFail($id);
+        $query = Leave::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $leave = $query->findOrFail($id);
 
         if (!$leave->isPending()) {
             return ApiResponse::error('Only pending leaves can be updated', null, 400);
@@ -253,7 +260,9 @@ class LeaveController extends Controller
 
     public function destroy(Request $request, $id): JsonResponse
     {
-        $leave = Leave::findOrFail($id);
+        $query = Leave::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $leave = $query->findOrFail($id);
 
         if (!$leave->isPending()) {
             return ApiResponse::error('Only pending leaves can be deleted', null, 400);
@@ -316,8 +325,8 @@ class LeaveController extends Controller
         if ($user->hasPermission('leave.approve')) {
             $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
             
-            $leaves->getCollection()->transform(function ($leave) {
-                $leave->setAttribute('can_act', true);
+            $leaves->getCollection()->transform(function ($leave) use ($user) {
+                $leave->setAttribute('can_act', $this->leaveService->canUserAct($leave, $user));
                 return $leave;
             });
 
@@ -377,8 +386,8 @@ class LeaveController extends Controller
         $leaves = $query->latest()->paginate($request->integer('per_page', 10))->withQueryString();
 
         // For non-admin users, leaves are already filtered to only show their steps
-        $leaves->getCollection()->transform(function ($leave) {
-            $leave->setAttribute('can_act', true);
+        $leaves->getCollection()->transform(function ($leave) use ($user) {
+            $leave->setAttribute('can_act', $this->leaveService->canUserAct($leave, $user));
             return $leave;
         });
 
@@ -392,7 +401,9 @@ class LeaveController extends Controller
         if (!$user->hasPermission('leave.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $leave = Leave::with('flow.steps.role')->findOrFail($id);
+        $query = Leave::with('flow.steps.role');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $leave = $query->findOrFail($id);
 
         try {
             $result = $this->leaveService->processApproval(
@@ -426,7 +437,9 @@ class LeaveController extends Controller
             'note' => 'required|string|max:500'
         ]);
 
-        $leave = Leave::with('flow.steps.role')->findOrFail($id);
+        $query = Leave::with('flow.steps.role');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $leave = $query->findOrFail($id);
 
         if (!$leave->isPending()) {
             return ApiResponse::error('Leave is not pending', null, 400);
@@ -455,5 +468,55 @@ class LeaveController extends Controller
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
         ]));
+    }
+
+    public function returnForRevision(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('leave.approve')) {
+            return ApiResponse::error('Forbidden', 'You are not authorized', 403);
+        }
+
+        $request->validate([
+            'note' => 'required|string|max:500',
+        ]);
+
+        $query = Leave::with('flow.steps.role');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $leave = $query->findOrFail($id);
+
+        try {
+            $leave = $this->leaveService->returnForRevision($leave, $user, $request->note);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 500);
+        }
+
+        return ApiResponse::success('Leave returned for revision', $leave);
+    }
+
+    public function resubmit(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $query = Leave::with('flow.steps.role');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $leave = $query->findOrFail($id);
+
+        if ($leave->user_id !== $user->id) {
+            return ApiResponse::error('Hanya pemilik pengajuan yang dapat mengajukan ulang.', null, 403);
+        }
+
+        try {
+            $leave = $this->leaveService->resubmit($leave, $user, $request->note);
+        } catch (\DomainException $e) {
+            return ApiResponse::error($e->getMessage(), null, 403);
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 500);
+        }
+
+        return ApiResponse::success('Leave resubmitted successfully', $leave);
     }
 }

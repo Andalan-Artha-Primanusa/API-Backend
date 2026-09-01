@@ -10,6 +10,8 @@ use App\Models\KpiPeriod;
 use App\Models\KpiItem;
 use App\Helpers\ApiResponse;
 use App\Traits\HasEmployee;
+use App\Services\CompanyScopeService;
+use App\Services\ApprovalFlowService;
 
 class KpiPeriodController extends Controller
 {
@@ -32,6 +34,7 @@ class KpiPeriodController extends Controller
                 'employee.position:id,name',
                 'items',
             ]);
+            app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
 
             if ($user->isManager() && !$user->isAdmin() && !$user->isHR() && !$user->hasPermission('kpi.view')) {
                 $subordinateIds = $user->teamMembers()->pluck('id')->filter()->toArray();
@@ -119,7 +122,7 @@ class KpiPeriodController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $period = KpiPeriod::with([
+            $periodQuery = KpiPeriod::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
                 'employee.user.profile:id,user_id,profile_photo_path',
@@ -128,7 +131,9 @@ class KpiPeriodController extends Controller
                 'items',
                 'creator:id,name,email',
                 'creator.profile:id,user_id,profile_photo_path'
-            ])->findOrFail($id);
+            ]);
+            app(CompanyScopeService::class)->applyThroughEmployee($periodQuery, $request);
+            $period = $periodQuery->findOrFail($id);
 
             $user = $request->user();
             $isOwner = $period->employee?->user_id === $user->id;
@@ -150,7 +155,9 @@ class KpiPeriodController extends Controller
     public function updateItems(Request $request, int $id): JsonResponse
     {
         try {
-            $period = KpiPeriod::findOrFail($id);
+            $periodQuery = KpiPeriod::query();
+            app(CompanyScopeService::class)->applyThroughEmployee($periodQuery, $request);
+            $period = $periodQuery->findOrFail($id);
             $user = $request->user();
 
             if (!$user->hasPermission('kpi.update')) {
@@ -238,7 +245,9 @@ class KpiPeriodController extends Controller
     {
         try {
             $employee = $this->getAuthenticatedEmployee();
-            $period = KpiPeriod::with('items')->findOrFail($id);
+            $periodQuery = KpiPeriod::with('items');
+            app(CompanyScopeService::class)->applyThroughEmployee($periodQuery, $request);
+            $period = $periodQuery->findOrFail($id);
 
             if ($period->employee_id !== $employee->id) {
                 return ApiResponse::error('Forbidden', 'Bukan periode KPI Anda', 403);
@@ -301,7 +310,11 @@ class KpiPeriodController extends Controller
                 return ApiResponse::error('Approval flow untuk KPI belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
             }
 
-            $period = KpiPeriod::with('items')->findOrFail($id);
+            $periodQuery = KpiPeriod::with('items');
+            app(CompanyScopeService::class)->applyThroughEmployee($periodQuery, $request);
+            $period = $periodQuery->findOrFail($id);
+            $approvalService = app(ApprovalFlowService::class);
+            $approvalService->guardNotSelfApproval($period, $user);
 
             $validated = $request->validate([
                 'item_id' => 'nullable|exists:kpi_items,id',
@@ -332,7 +345,6 @@ class KpiPeriodController extends Controller
 
             // Correct Flow Integration: Use ApprovalFlowService
             try {
-                $approvalService = app(\App\Services\ApprovalFlowService::class);
                 $result = $approvalService->processApproval($period, $user, 'approved', $request->note);
                 
                 $period = $result['model'];
@@ -362,7 +374,9 @@ class KpiPeriodController extends Controller
                     $result['final'] ? 'Periode KPI berhasil disetujui sepenuhnya' : 'Periode KPI disetujui - menunggu tahap berikutnya', 
                     $period
                 );
-            } catch (\Exception $e) {
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
                 // Fallback: simple single-step approval
                 foreach ($period->items as $item) {
                     $item->calculateScore();
@@ -392,7 +406,9 @@ class KpiPeriodController extends Controller
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
-            $period = KpiPeriod::findOrFail($id);
+            $periodQuery = KpiPeriod::query();
+            app(CompanyScopeService::class)->applyThroughEmployee($periodQuery, $request);
+            $period = $periodQuery->findOrFail($id);
             $period->delete();
 
             return ApiResponse::success('Periode KPI berhasil dihapus');

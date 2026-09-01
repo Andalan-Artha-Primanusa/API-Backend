@@ -17,6 +17,7 @@ class TrainingProgram extends Model
         'end_date',
         'budget',
         'status',
+        'company_id',
     ];
 
     protected $casts = [

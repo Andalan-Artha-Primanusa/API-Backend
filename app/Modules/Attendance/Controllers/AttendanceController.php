@@ -300,15 +300,16 @@ class AttendanceController extends Controller
             }
 
             // Optimized query with eager loading
-            $attendance = Attendance::with([
+            $query = Attendance::with([
                 'user:id,name,email',
                 'user.profile:id,user_id,phone,address,profile_photo_path',
                 'user.employee:id,user_id,employee_code,department_id,position_id',
                 'user.employee.department:id,name',
                 'user.employee.position:id,name',
             ])
-            ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at'])
-            ->findOrFail($id);
+            ->select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status', 'created_at']);
+            $this->companyScope->applyEmployeeScope($query, $request, 'company_id');
+            $attendance = $query->findOrFail($id);
 
             $user = $request->user();
 
@@ -347,8 +348,9 @@ class AttendanceController extends Controller
             }
 
             // Find and soft-delete record (if using soft deletes) or hard delete
-            $attendance = Attendance::select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status'])
-                ->findOrFail($id);
+            $query = Attendance::select(['id', 'user_id', 'date', 'check_in', 'check_out', 'latitude', 'longitude', 'status']);
+            $this->companyScope->applyEmployeeScope($query, $request, 'company_id');
+            $attendance = $query->findOrFail($id);
 
             // Convert to array BEFORE deleting to ensure we have the data
             $deleted = $attendance->toArray();
@@ -379,6 +381,10 @@ class AttendanceController extends Controller
         ]);
 
         try {
+            $employeeQuery = \App\Modules\Employee\Models\Employee::where('user_id', $userId);
+            $this->companyScope->applyEmployeeScope($employeeQuery, $request, 'company_id');
+            $employeeQuery->firstOrFail();
+
             $data = $this->attendanceService->getEmployeeIntelligence($userId, $validated['days'] ?? 30);
 
             return ApiResponse::success('Employee attendance intelligence', $data);

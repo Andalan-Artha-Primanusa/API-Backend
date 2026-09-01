@@ -137,17 +137,6 @@ return new class extends Migration
             $table->unique('module');
         });
 
-        Schema::create('compliance_tasks', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->string('module')->nullable();
-            $table->string('status')->default('open');
-            $table->date('due_date')->nullable();
-            $table->foreignId('owner_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('privacy_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('requester_user_id')->nullable()->constrained('users')->nullOnDelete();
@@ -165,7 +154,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('privacy_requests');
-        Schema::dropIfExists('compliance_tasks');
         Schema::dropIfExists('data_retention_policies');
         Schema::dropIfExists('scheduled_notifications');
         Schema::dropIfExists('notification_rule_sets');

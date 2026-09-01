@@ -1,0 +1,8 @@
+﻿
+
+   ERROR  Command "routes" is not defined. Did you mean one of these?  
+
+  Γçé route:cache  
+  Γçé route:clear  
+  Γçé route:list  
+

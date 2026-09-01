@@ -22,7 +22,6 @@ return [
         'admin' => [
             'employee.view', 'employee.create', 'employee.update', 'employee.delete',
             'employee.onboard', 'employee.offboard',
-            'task.view', 'task.create', 'task.update', 'task.delete',
             'leave.view', 'leave.create', 'leave.update', 'leave.delete', 'leave.approve',
             'leave.policy.manage',
             'attendance.view_all', 'attendance.delete', 'attendance.check_in', 'attendance.check_out',
@@ -38,8 +37,6 @@ return [
             'asset.view', 'asset.create', 'asset.update', 'asset.delete', 'asset.assign',
             'document.view', 'document.create', 'document.update', 'document.delete', 'document.review',
             'assignment_letter.view', 'assignment_letter.create', 'assignment_letter.approve', 'assignment_letter.export',
-
-            'calibration.view', 'calibration.create', 'calibration.participate', 'calibration.manage',
             'career.idp.view', 'career.idp.create', 'career.idp.update',
             'career.succession.view', 'career.succession.manage',
             'career.promotion.view', 'career.promotion.create', 'career.promotion.update',
@@ -75,7 +72,6 @@ return [
         'hr' => [
             'employee.view', 'employee.create', 'employee.update', 'employee.delete',
             'employee.onboard', 'employee.offboard',
-            'task.view', 'task.create', 'task.update', 'task.delete',
             'leave.view', 'leave.create', 'leave.update', 'leave.delete', 'leave.approve',
             'leave.policy.manage',
             'attendance.view_all', 'attendance.delete', 'attendance.check_in', 'attendance.check_out',
@@ -95,7 +91,6 @@ return [
             'performance.cycle.view', 'performance.cycle.create', 'performance.cycle.manage',
             'performance.review.view', 'performance.review.create', 'performance.review.update',
             'performance.review.submit', 'performance.review.approve',
-            'calibration.view', 'calibration.create', 'calibration.participate', 'calibration.manage',
             'career.idp.view', 'career.idp.create', 'career.idp.update',
             'career.succession.view', 'career.succession.manage',
             'career.promotion.view', 'career.promotion.create', 'career.promotion.update',
@@ -116,7 +111,6 @@ return [
 
         'ho' => [
             'employee.view',
-            'task.view',
             'leave.view', 'leave.approve',
             'attendance.view_all', 'attendance.view_own', 'attendance.check_in', 'attendance.check_out',
             'attendance.qr.generate', 'attendance.qr.scan',
@@ -141,7 +135,6 @@ return [
 
         'manager' => [
             'employee.view',
-            'task.view', 'task.create', 'task.update',
             'leave.view', 'leave.create', 'leave.approve',
             'attendance.check_in', 'attendance.check_out', 'attendance.view_own', 'attendance.qr.scan',
             'patrol.scan', 'patrol.view',
@@ -162,7 +155,6 @@ return [
 
         'employee' => [
             'leave.view', 'leave.create',
-            'task.view', 'task.create', 'task.update',
             'attendance.check_in', 'attendance.check_out', 'attendance.view_own', 'attendance.qr.scan',
             'patrol.scan',
             'overtime.create', 'overtime.view',

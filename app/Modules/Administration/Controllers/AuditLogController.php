@@ -12,6 +12,12 @@ class AuditLogController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasPermission('admin.audit.view') && !$user->hasPermission('audit.logs.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $validated = $request->validate([
             'per_page' => 'sometimes|integer|min:1|max:100',
             'user_id' => 'sometimes|integer|exists:users,id',
@@ -63,8 +69,14 @@ class AuditLogController extends Controller
         return ApiResponse::success('Audit logs retrieved successfully', $logs);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasPermission('admin.audit.view') && !$user->hasPermission('audit.logs.view')) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
+        }
+
         $log = AuditLog::with('user:id,name,email')->find($id);
 
         if (!$log) {

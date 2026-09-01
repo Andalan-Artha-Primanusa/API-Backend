@@ -68,7 +68,7 @@ class EnterpriseOpsController extends Controller
             ->leftJoin('employee_compensation_profiles as cp', 'cp.employee_id', '=', 'e.id')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
             ->where('p.period', $validated['period'])
-            ->select('p.id as payroll_id', 'p.period', 'u.name as employee_name', 'cp.bank_name', 'cp.bank_account_no', 'cp.bank_account_name', 'p.net_pay')
+            ->select('p.id as payroll_id', 'p.period', 'u.name as employee_name', 'cp.bank_name', 'cp.bank_account_no', 'cp.bank_account_name', 'p.take_home_pay')
             ->get();
 
         return ApiResponse::success('Bank export preview generated successfully', [

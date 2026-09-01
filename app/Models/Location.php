@@ -10,7 +10,8 @@ class Location extends Model
         'name',
         'latitude',
         'longitude',
-        'radius'
+        'radius',
+        'company_id',
     ];
 
     protected $casts = [

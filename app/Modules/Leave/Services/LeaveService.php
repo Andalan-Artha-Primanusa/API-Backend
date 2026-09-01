@@ -222,6 +222,11 @@ class LeaveService
             throw new \DomainException('This request is assigned to a specific approver.');
         }
 
+        // Anti self-approval: user tidak boleh menyetujui/menolak permintaan miliknya sendiri
+        if ($approver->id === $leave->user_id) {
+            throw new \DomainException('Anda tidak dapat menyetujui permintaan cuti Anda sendiri.');
+        }
+
         // Dynamic scope: jika role step tidak punya HR-level permission, batasi ke subordinate
         $step->role->loadMissing('permissions');
         $hasBroadScope = $step->role->permissions->contains('name', 'employee.delete');
@@ -359,6 +364,43 @@ class LeaveService
             'action' => 'pending',
             'acted_at' => now(),
         ]);
+    }
+
+    public function canUserAct(Leave $leave, User $user): bool
+    {
+        if (!$leave->isPending()) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ((int) $leave->user_id === (int) $user->id) {
+            return false;
+        }
+
+        if (!$leave->flow) {
+            return false;
+        }
+
+        $leave->flow->loadMissing('steps.role.permissions');
+        $step = $leave->flow->steps->where('step_order', $leave->current_step)->first();
+
+        if (!$step || !$step->role || !$user->hasRole($step->role->name)) {
+            return false;
+        }
+
+        if (!is_null($step->user_id) && (int) $step->user_id !== (int) $user->id) {
+            return false;
+        }
+
+        $hasBroadScope = $step->role->permissions->contains('name', 'employee.delete');
+        if ($hasBroadScope) {
+            return true;
+        }
+
+        return $user->teamMembers()->pluck('user_id')->contains($leave->user_id);
     }
 
     public function getLeaveBalance(User $user): array

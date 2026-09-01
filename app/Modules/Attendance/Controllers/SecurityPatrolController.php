@@ -23,6 +23,19 @@ class SecurityPatrolController extends Controller
             ->with('company:id,name,code,status')
             ->latest();
 
+        $companyScope = app(\App\Services\CompanyScopeService::class);
+        if (!$companyScope->canViewAll($request->user())) {
+            $query->where(function ($q) use ($companyScope, $request) {
+                $q->whereIn('company_id', $companyScope->availableCompanyIds($request->user()))
+                  ->orWhereNull('company_id');
+            });
+        }
+
+        $selectedCompanyId = $companyScope->selectedCompanyId($request);
+        if ($selectedCompanyId) {
+            $query->where('company_id', $selectedCompanyId);
+        }
+
         if ($request->filled('company_id')) {
             $query->where('company_id', $request->integer('company_id'));
         }
@@ -70,7 +83,12 @@ class SecurityPatrolController extends Controller
             return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
         }
 
-        $checkpoint = SecurityPatrolCheckpoint::findOrFail($id);
+        $query = SecurityPatrolCheckpoint::query();
+        $companyScope = app(\App\Services\CompanyScopeService::class);
+        if (!$companyScope->canViewAll($request->user())) {
+            $query->whereIn('company_id', $companyScope->availableCompanyIds($request->user()));
+        }
+        $checkpoint = $query->findOrFail($id);
 
         $validated = $request->validate([
             'company_id' => 'sometimes|nullable|exists:companies,id',
@@ -95,7 +113,12 @@ class SecurityPatrolController extends Controller
             return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
         }
 
-        SecurityPatrolCheckpoint::findOrFail($id)->delete();
+        $query = SecurityPatrolCheckpoint::query();
+        $companyScope = app(\App\Services\CompanyScopeService::class);
+        if (!$companyScope->canViewAll($request->user())) {
+            $query->whereIn('company_id', $companyScope->availableCompanyIds($request->user()));
+        }
+        $query->findOrFail($id)->delete();
 
         return ApiResponse::success('Patrol checkpoint deleted');
     }
@@ -106,7 +129,12 @@ class SecurityPatrolController extends Controller
             return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
         }
 
-        $checkpoint = SecurityPatrolCheckpoint::findOrFail($id);
+        $query = SecurityPatrolCheckpoint::query();
+        $companyScope = app(\App\Services\CompanyScopeService::class);
+        if (!$companyScope->canViewAll($request->user())) {
+            $query->whereIn('company_id', $companyScope->availableCompanyIds($request->user()));
+        }
+        $checkpoint = $query->findOrFail($id);
         $checkpoint->update(['qr_code' => 'PATROL-' . Str::upper(Str::random(48))]);
 
         return ApiResponse::success('Patrol QR regenerated', $this->checkpointPayload($checkpoint));

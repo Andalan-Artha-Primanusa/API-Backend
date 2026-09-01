@@ -6,7 +6,9 @@ use App\Helpers\ApiResponse;
 use App\Models\ApprovalFlowHistory;
 use App\Modules\Administration\Models\AssignmentLetter;
 use App\Modules\Approval\Models\ApprovalFlow;
+use App\Modules\Employee\Models\Employee;
 use App\Modules\Employee\Models\EmployeeDocument;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,11 +24,13 @@ class AssignmentLetterController
             $user = $request->user();
             $perPage = max(1, $request->integer('per_page', 10));
 
-            $query = AssignmentLetter::with(['user.profile', 'approvalFlow.steps.role']);
+$query = AssignmentLetter::with(['user.profile', 'approvalFlow.steps.role']);
 
             if (!$user->hasPermission('assignment_letter.view')) {
                 $query->where('user_id', $user->id);
             }
+
+            app(CompanyScopeService::class)->applyThroughEmployee($query, $request, 'user.employee');
 
             $letters = $query->latest()->paginate($perPage)->withQueryString();
             $letters->load('approver.profile');
@@ -51,12 +55,17 @@ class AssignmentLetterController
             'end_date' => 'required|date|after_or_equal:start_date',
             'location' => 'nullable|string|max:255',
             'user_id' => 'nullable|integer|exists:users,id',
-        ]);
+]);
 
         $targetUserId = $validated['user_id'] ?? $user->id;
 
         if ($targetUserId !== $user->id && !$user->hasPermission('assignment_letter.create')) {
             return ApiResponse::error('Forbidden: only admin/HR can create letters for other users', null, 403);
+        }
+
+        $targetEmployee = Employee::where('user_id', $targetUserId)->first();
+        if ($targetEmployee && !app(CompanyScopeService::class)->canAccessEmployeeCompany($targetEmployee->id, $user)) {
+            return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
         $flow = ApprovalFlow::where('module', 'assignment_letter')->where('is_active', true)->with('steps')->first();
@@ -91,7 +100,9 @@ class AssignmentLetterController
     public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $letter = AssignmentLetter::with(['user.profile', 'approvalFlow.steps.role'])->findOrFail($id);
+            $letterQuery = AssignmentLetter::with(['user.profile', 'approvalFlow.steps.role']);
+            app(CompanyScopeService::class)->applyThroughEmployee($letterQuery, $request, 'user.employee');
+            $letter = $letterQuery->findOrFail($id);
             if ($letter->approved_by) {
                 $letter->load('approver.profile');
             }
@@ -109,7 +120,9 @@ class AssignmentLetterController
     {
         try {
             $user = $request->user();
-            $letter = AssignmentLetter::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+            $letterQuery = AssignmentLetter::with('approvalFlow.steps.role', 'approvalFlow.steps.user');
+            app(CompanyScopeService::class)->applyThroughEmployee($letterQuery, $request, 'user.employee');
+            $letter = $letterQuery->findOrFail($id);
             if ($letter->status !== 'pending') {
                 return ApiResponse::error('Assignment letter already processed', null, 400);
             }
@@ -133,6 +146,9 @@ class AssignmentLetterController
             }
             if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
                 return ApiResponse::error('It is not your turn to approve', null, 403);
+            }
+            if ($user->id === $letter->user_id) {
+                return ApiResponse::error('Anda tidak dapat menyetujui surat tugas milik Anda sendiri.', null, 403);
             }
 
             ApprovalFlowHistory::create([
@@ -179,7 +195,9 @@ class AssignmentLetterController
     {
         try {
             $user = $request->user();
-            $letter = AssignmentLetter::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+            $letterQuery = AssignmentLetter::with('approvalFlow.steps.role', 'approvalFlow.steps.user');
+            app(CompanyScopeService::class)->applyThroughEmployee($letterQuery, $request, 'user.employee');
+            $letter = $letterQuery->findOrFail($id);
             if ($letter->status !== 'pending') {
                 return ApiResponse::error('Assignment letter already processed', null, 400);
             }
@@ -204,6 +222,9 @@ class AssignmentLetterController
             if (!$user->hasRole($step->role->name) && !$user->hasPermission('assignment_letter.approve')) {
                 return ApiResponse::error('It is not your turn to approve', null, 403);
             }
+            if ($user->id === $letter->user_id) {
+                return ApiResponse::error('Anda tidak dapat menolak surat tugas milik Anda sendiri.', null, 403);
+            }
 
             ApprovalFlowHistory::create([
                 'module' => 'assignment_letter',
@@ -227,7 +248,9 @@ class AssignmentLetterController
     public function generatePdf(Request $request, int $id): JsonResponse
     {
         try {
-            $letter = AssignmentLetter::with(['user.profile', 'user.employee'])->findOrFail($id);
+            $letterQuery = AssignmentLetter::with(['user.profile', 'user.employee']);
+            app(CompanyScopeService::class)->applyThroughEmployee($letterQuery, $request, 'user.employee');
+            $letter = $letterQuery->findOrFail($id);
             
             if ($letter->status !== 'approved') {
                 return ApiResponse::error('Only approved assignment letters can generate PDF', null, 400);

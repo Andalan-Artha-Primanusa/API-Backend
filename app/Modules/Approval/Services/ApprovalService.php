@@ -21,8 +21,8 @@ use Illuminate\Support\Facades\Log;
  * Core Approval Engine.
  *
  * Orchestrates the full lifecycle of an approval request:
- * submit â†’ approve/reject/
-        return â†’ next step â†’ completed
+ * submit Ã¢â€ â€™ approve/reject/
+        return Ã¢â€ â€™ next step Ã¢â€ â€™ completed
  *
  * Completely decoupled from business modules via Events.
  */
@@ -41,7 +41,7 @@ function __construct(
 }
 
 
-    // â”€â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Submit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     /**
      * Submit a model for approval.
@@ -82,7 +82,7 @@ function () use ($approvable, $requester, $module, $amount, $requestType)
             if (!$flow || $flow->steps->isEmpty()) 
 {
 
-                // No workflow found â€” auto-approve
+                // No workflow found Ã¢â‚¬â€ auto-approve
                 
         return $this->autoApprove($approvable, $requester);
             
@@ -123,7 +123,7 @@ function () use ($approvable, $requester, $module, $amount, $requestType)
 }
 
 
-    // â”€â”€â”€ Approve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Approve Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     /**
      * Approve the current step of an approval request.
@@ -147,6 +147,8 @@ function () use ($approvalRequest, $approver, $comment)
             
 }
 
+
+            $this->guardCanAct($approvalRequest, $currentStep, $approver);
 
             // Record the approval action
             ApprovalHistory::create([
@@ -178,7 +180,7 @@ function () use ($approvalRequest, $approver, $comment)
  else 
 {
 
-                // All steps completed â€” mark as approved
+                // All steps completed Ã¢â‚¬â€ mark as approved
                 $approvalRequest->update([
                     'status'       => 'approved',
                     'completed_at' => now(),
@@ -198,7 +200,7 @@ function () use ($approvalRequest, $approver, $comment)
 }
 
 
-    // â”€â”€â”€ Reject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Reject Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     /**
      * Reject the approval request at the current step.
@@ -214,6 +216,8 @@ function () use ($approvalRequest, $approver, $comment)
 {
 
             $currentStep = $approvalRequest->currentStep();
+
+            $this->guardCanAct($approvalRequest, $currentStep, $approver);
 
             ApprovalHistory::create([
                 'approval_request_id' => $approvalRequest->id,
@@ -257,6 +261,8 @@ function () use ($approvalRequest, $approver, $comment)
 
             $currentStep = $approvalRequest->currentStep();
 
+            $this->guardCanAct($approvalRequest, $currentStep, $approver);
+
             ApprovalHistory::create([
                 'approval_request_id' => $approvalRequest->id,
                 'approval_step_id'    => $currentStep->id,
@@ -281,7 +287,7 @@ function () use ($approvalRequest, $approver, $comment)
 }
 
 
-    // â”€â”€â”€ Cancel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Cancel Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     /**
      * Cancel the approval request (by the requester).
@@ -327,7 +333,7 @@ function () use ($approvalRequest, $requester, $comment)
 }
 
 
-    // â”€â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Queries Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     /**
      * Get pending approvals assigned to a specific user.
@@ -379,7 +385,7 @@ function getApprovalHistory(Model $approvable): ?ApprovalRequest
 }
 
 
-    // â”€â”€â”€ Internal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Internal Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     /**
      * Auto-approve when no workflow is configured.
@@ -400,7 +406,7 @@ function autoApprove(Model $approvable, User $requester): ApprovalRequest
             'completed_at'     => now(),
         ]);
 
-        // Don't save â€” this is a virtual auto-approval
+        // Don't save Ã¢â‚¬â€ this is a virtual auto-approval
         // The caller should handle the business logic directly
         Log::info("Auto-approved 
 {
@@ -410,7 +416,7 @@ $approvable->getTable()
 {
 $approvable->getKey()
 }
- â€” no workflow configured.");
+ Ã¢â‚¬â€ no workflow configured.");
 
         event(new ApprovalCompleted($approvalRequest));
 
@@ -419,6 +425,17 @@ $approvable->getKey()
     
 }
 
+
+    protected function guardCanAct(ApprovalRequest $approvalRequest, ApprovalStep $currentStep, User $approver): void
+    {
+        if ($approvalRequest->requester_id === $approver->id) {
+            throw new \DomainException('Anda tidak dapat menyetujui permintaan milik Anda sendiri.');
+        }
+        $resolvedId = $this->approverResolver->resolve($currentStep, $approvalRequest->requester);
+        if ($resolvedId !== null && (int) $resolvedId !== (int) $approver->id) {
+            throw new \DomainException('Bukan giliran Anda untuk menyetujui permintaan ini.');
+        }
+    }
 
 }
 

@@ -46,7 +46,6 @@ use App\Modules\Attendance\Controllers\BiometricIntegrationController;
 use App\Modules\Performance\Controllers\EngagementController;
 use App\Modules\Administration\Controllers\WorkforcePolicyController;
 use App\Modules\Administration\Controllers\EnterpriseOpsController;
-use App\Modules\Performance\Controllers\CalibrationController;
 use App\Modules\Administration\Controllers\WorkforceComplianceController;
 use App\Modules\Organization\Controllers\CompanyController;
 use App\Modules\Organization\Controllers\DepartmentController;
@@ -214,6 +213,8 @@ Route::middleware(['auth:sanctum', 'audit.trail'])->group(function () {
         // ESS Leave Management
         Route::get('/my', [LeaveController::class, 'myLeaves']);
         Route::get('/balance', [LeaveController::class, 'balance']);
+        // Owner resubmit after the leave was returned for revision
+        Route::put('/{id}/resubmit', [LeaveController::class, 'resubmit']);
     });
 
     Route::prefix('notifications')->group(function () {
@@ -296,6 +297,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::get('/pending', [LeaveController::class, 'pending']);
             Route::put('/{id}/approve', [LeaveController::class, 'approve']);
             Route::put('/{id}/reject', [LeaveController::class, 'reject']);
+            Route::put('/{id}/return', [LeaveController::class, 'returnForRevision']);
         });
 
         // OVERTIME APPROVAL
@@ -437,18 +439,6 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
                 Route::put('/{id}/approve', [PerformanceReviewController::class, 'approve']);
             });
 
-            Route::prefix('calibration')->group(function () {
-                Route::get('/', [CalibrationController::class, 'index']);
-                Route::post('/', [CalibrationController::class, 'store']);
-                Route::get('/{id}', [CalibrationController::class, 'show']);
-                Route::post('/{id}/participants', [CalibrationController::class, 'addParticipants']);
-                Route::post('/{id}/reviews', [CalibrationController::class, 'addReviewsForCalibration']);
-                Route::put('/{id}/start', [CalibrationController::class, 'startSession']);
-                Route::put('/{sessionId}/calibrate/{calibrationReviewId}', [CalibrationController::class, 'calibrateEmployee']);
-                Route::get('/{id}/report', [CalibrationController::class, 'getCalibrationReport']);
-                Route::put('/{id}/complete', [CalibrationController::class, 'completeSession']);
-                Route::delete('/{id}', [CalibrationController::class, 'destroy']);
-            });
         });
 
         Route::prefix('career')->group(function () {
@@ -499,7 +489,6 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
             Route::delete('/compliance/retention-policies/{module}', [EnterpriseOpsController::class, 'deactivateRetentionPolicy']);
             Route::get('/compliance/privacy-requests', [EnterpriseOpsController::class, 'getPrivacyRequests']);
             Route::post('/compliance/retention-policies', [EnterpriseOpsController::class, 'retentionPolicyStore']);
-            Route::post('/compliance/tasks', [EnterpriseOpsController::class, 'complianceTaskStore']);
             Route::post('/compliance/privacy-requests', [EnterpriseOpsController::class, 'privacyRequestStore']);
         });
 
@@ -650,6 +639,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
 
     // USER MENUS (accessible to all authenticated users)
     Route::get('/user/menus', [\App\Modules\Administration\Controllers\MenuController::class, 'userMenus']);
+    Route::get('/user/menu-tree', [\App\Modules\Administration\Controllers\MenuController::class, 'userMenuTree']);
 
     Route::middleware('role:*')->group(function () {
         Route::apiResource('locations', LocationController::class);
@@ -664,6 +654,7 @@ Route::middleware('auth:sanctum')->prefix('approval-history')->group(function ()
         Route::post('/companies', [CompanyController::class, 'store']);
         Route::put('/companies/{id}', [CompanyController::class, 'update'])->whereNumber('id');
         Route::post('/companies/{id}/deactivate', [CompanyController::class, 'deactivate'])->whereNumber('id');
+        Route::get('/companies/{id}/users', [CompanyController::class, 'listUsers'])->whereNumber('id');
         Route::post('/companies/{id}/users', [CompanyController::class, 'assignUser'])->whereNumber('id');
         Route::delete('/companies/{id}/users/{userId}', [CompanyController::class, 'removeUser'])->whereNumber('id')->whereNumber('userId');
         Route::post('/company', [CompanyController::class, 'store']);

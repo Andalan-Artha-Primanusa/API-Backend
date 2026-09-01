@@ -4,14 +4,14 @@ namespace Database\Seeders;
 
 use App\Modules\Administration\Models\MenuPermission;
 use App\Modules\Administration\Models\Role;
-use App\Modules\Administration\Controllers\MenuController;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class MenuPermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $menuKeys = collect(MenuController::MENU_DEFINITIONS)->pluck('key');
+        $menuKeys = DB::table('menus')->where('is_active', true)->pluck('key');
         $roles = Role::all();
 
         foreach ($roles as $role) {

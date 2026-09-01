@@ -23,14 +23,14 @@ class PeopleInsightService
     /**
      * Build a summary dashboard for HR/Manager/Admin in a rolling time window.
      */
-    public function buildDashboard(int $windowDays = 30, ?string $department = null, ?int $managerUserId = null): array
+    public function buildDashboard(int $windowDays = 30, ?string $department = null, ?int $managerUserId = null, ?int $companyId = null): array
     {
         $windowDays = max(7, min(90, $windowDays));
 
         $toDate = now()->toDateString();
         $fromDate = now()->subDays($windowDays - 1)->toDateString();
 
-        $scope = $this->resolveEmployeeScope($department, $managerUserId);
+        $scope = $this->resolveEmployeeScope($department, $managerUserId, $companyId);
         $employeeIds = $scope['employee_ids'];
         $userIds = $scope['user_ids'];
 
@@ -146,7 +146,7 @@ class PeopleInsightService
         ];
     }
 
-    public function buildDetailedDashboard(int $windowDays = 30, ?string $department = null, ?int $managerUserId = null, int $expiringDays = 30): array
+    public function buildDetailedDashboard(int $windowDays = 30, ?string $department = null, ?int $managerUserId = null, int $expiringDays = 30, ?int $companyId = null): array
     {
         $windowDays = max(7, min(90, $windowDays));
         $expiringDays = max(1, min(365, $expiringDays));
@@ -154,7 +154,7 @@ class PeopleInsightService
         $toDate = now()->toDateString();
         $fromDate = now()->subDays($windowDays - 1)->toDateString();
 
-        $scope = $this->resolveEmployeeScope($department, $managerUserId);
+        $scope = $this->resolveEmployeeScope($department, $managerUserId, $companyId);
         $employees = $scope['employees'];
         $employeeIds = $scope['employee_ids'];
         $userIds = $scope['user_ids'];
@@ -396,14 +396,14 @@ class PeopleInsightService
         ];
     }
 
-    public function buildTrends(int $windowDays = 30, ?string $department = null, ?int $managerUserId = null): array
+    public function buildTrends(int $windowDays = 30, ?string $department = null, ?int $managerUserId = null, ?int $companyId = null): array
     {
         $windowDays = max(7, min(90, $windowDays));
 
         $toDate = now()->toDateString();
         $fromDate = now()->subDays($windowDays - 1)->toDateString();
 
-        $scope = $this->resolveEmployeeScope($department, $managerUserId);
+        $scope = $this->resolveEmployeeScope($department, $managerUserId, $companyId);
         $employeeIds = $scope['employee_ids'];
         $userIds = $scope['user_ids'];
 
@@ -484,7 +484,7 @@ class PeopleInsightService
         ];
     }
 
-    public function buildTeamHealth(int $windowDays = 30, ?int $managerUserId = null): array
+    public function buildTeamHealth(int $windowDays = 30, ?int $managerUserId = null, ?int $companyId = null): array
     {
         $windowDays = max(7, min(90, $windowDays));
 
@@ -493,6 +493,7 @@ class PeopleInsightService
         $weekdayCount = $this->countWeekdays($fromDate, $toDate);
 
         $employees = Employee::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->when($managerUserId, fn ($q) => $q->where('manager_id', $managerUserId))
             ->get(['id', 'user_id', 'department']);
 
@@ -571,11 +572,12 @@ class PeopleInsightService
         ];
     }
 
-    public function buildEmployeeRiskDetail(int $userId, int $windowDays = 30): array
+    public function buildEmployeeRiskDetail(int $userId, int $windowDays = 30, ?int $companyId = null): array
     {
         $windowDays = max(7, min(90, $windowDays));
 
         $employee = Employee::with('user:id,name,email')
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->where('user_id', $userId)
             ->first();
 
@@ -746,9 +748,11 @@ class PeopleInsightService
         return $count;
     }
 
-    private function resolveEmployeeScope(?string $department = null, ?int $managerUserId = null): array
+    private function resolveEmployeeScope(?string $department = null, ?int $managerUserId = null, ?int $companyId = null): array
     {
         $query = Employee::query();
+
+        $query->when($companyId, fn (\Illuminate\Database\Eloquent\Builder $q) => $q->where('company_id', $companyId));
 
         if ($department) {
             $query->where('department', $department);

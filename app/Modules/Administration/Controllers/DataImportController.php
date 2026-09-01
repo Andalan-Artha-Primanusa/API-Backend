@@ -10,6 +10,7 @@ use App\Modules\Administration\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DataImportController extends Controller
 {
@@ -150,7 +151,7 @@ class DataImportController extends Controller
                     $user = User::create([
                         'name' => $row['name'] ?? $row['full_name'],
                         'email' => $row['email'],
-                        'password' => bcrypt($row['password'] ?? 'Password123!'),
+                        'password' => bcrypt($row['password'] ?? Str::password(18)),
                         'phone' => $row['phone'] ?? null,
                     ]);
 
@@ -315,13 +316,13 @@ class DataImportController extends Controller
                         'name' => 'John Doe',
                         'email' => 'john@example.com',
                         'phone' => '08123456789',
-                        'password' => 'InitialPassword123!',
+                        'password' => '',
                     ],
                     [
                         'name' => 'Jane Smith',
                         'email' => 'jane@example.com',
                         'phone' => '08987654321',
-                        'password' => 'InitialPassword123!',
+                        'password' => '',
                     ],
                 ],
             ],

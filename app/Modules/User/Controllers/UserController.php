@@ -5,6 +5,8 @@ namespace App\Modules\User\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\User\Models\User;
 use App\Modules\Administration\Models\Role;
+use App\Models\UserCompanyAccess;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +29,28 @@ class UserController extends Controller
             'employee.workSchedule:id,name,check_in_time,check_out_time',
             'employee.manager:id,name',
             'employee.manager.profile:id,user_id',
+            'companyAccesses.company:id,name,code',
+            'companies:id,name,code',
         ];
+    }
+
+    private function canManageTargetUser(Request $request, User $targetUser): bool
+    {
+        $actor = $request->user();
+        $companyScope = app(CompanyScopeService::class);
+
+        if ($companyScope->canViewAll($actor)) {
+            return true;
+        }
+
+        $allowedCompanyIds = $companyScope->availableCompanyIds($actor);
+
+        return $targetUser->companyAccesses()
+            ->whereIn('company_id', $allowedCompanyIds)
+            ->exists()
+            || $targetUser->employee()
+                ->whereIn('company_id', $allowedCompanyIds)
+                ->exists();
     }
 
     public function store(Request $request): JsonResponse
@@ -44,9 +67,27 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:8'],
             'generate_password' => ['sometimes', 'boolean'],
             'must_change_password' => ['sometimes', 'boolean'],
+            'company_id' => ['sometimes', 'nullable', 'integer', 'exists:companies,id'],
             'role_ids' => ['sometimes', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
+
+        $companyScope = app(CompanyScopeService::class);
+        $targetCompanyId = !empty($data['company_id'])
+            ? (int) $data['company_id']
+            : $companyScope->selectedCompanyId($request);
+
+        if (!$targetCompanyId && !$companyScope->canViewAll($authUser)) {
+            $targetCompanyId = $companyScope->defaultCompanyId($authUser);
+        }
+
+        if ($targetCompanyId && !$companyScope->canAccessCompany($targetCompanyId, $authUser)) {
+            return ApiResponse::error('Forbidden', 'Selected company is not accessible', 403);
+        }
+
+        if (!$targetCompanyId && !$companyScope->canViewAll($authUser)) {
+            return ApiResponse::error('Company scope required', 'Pilih company aktif sebelum membuat user', 422);
+        }
 
         $plainPassword = !empty($data['generate_password'])
             ? Str::password(12, true, true, false, false)
@@ -68,7 +109,7 @@ class UserController extends Controller
             }
         }
 
-        $createdUser = DB::transaction(function () use ($data, $plainPassword, $roleIds) {
+        $createdUser = DB::transaction(function () use ($data, $plainPassword, $roleIds, $targetCompanyId) {
             $createdUser = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -79,6 +120,13 @@ class UserController extends Controller
 
             if ($roleIds->isNotEmpty()) {
                 $createdUser->roles()->sync($roleIds->all());
+            }
+
+            if ($targetCompanyId) {
+                UserCompanyAccess::updateOrCreate(
+                    ['user_id' => $createdUser->id, 'company_id' => $targetCompanyId],
+                    ['scope_role' => 'member', 'is_default' => true]
+                );
             }
 
             return $createdUser;
@@ -106,6 +154,10 @@ class UserController extends Controller
         }
 
         $targetUser = User::findOrFail($id);
+
+        if (!$this->canManageTargetUser($request, $targetUser)) {
+            return ApiResponse::error('Forbidden', 'Target user is outside your company scope', 403);
+        }
 
         // Protect super admin from role changes
         if ($targetUser->isSuperAdmin()) {
@@ -147,7 +199,25 @@ class UserController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
+        $companyScope = app(CompanyScopeService::class);
+        $selectedCompanyId = $companyScope->selectedCompanyId($request);
+
         $query = User::with($this->userLoadRelations());
+
+        if ($selectedCompanyId) {
+            $query->where(function ($scopeQuery) use ($selectedCompanyId) {
+                $scopeQuery
+                    ->whereHas('companyAccesses', fn ($accessQuery) => $accessQuery->where('company_id', $selectedCompanyId))
+                    ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('company_id', $selectedCompanyId));
+            });
+        } elseif (!$companyScope->canViewAll($user)) {
+            $allowedCompanyIds = $companyScope->availableCompanyIds($user);
+            $query->where(function ($scopeQuery) use ($allowedCompanyIds) {
+                $scopeQuery
+                    ->whereHas('companyAccesses', fn ($accessQuery) => $accessQuery->whereIn('company_id', $allowedCompanyIds))
+                    ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->whereIn('company_id', $allowedCompanyIds));
+            });
+        }
 
         if ($request->has('role')) {
             $roleParam = $request->role;
@@ -175,6 +245,10 @@ class UserController extends Controller
         }
 
         $targetUser = User::findOrFail($id);
+
+        if (!$this->canManageTargetUser($request, $targetUser)) {
+            return ApiResponse::error('Forbidden', 'Target user is outside your company scope', 403);
+        }
 
         if ($targetUser->isSuperAdmin()) {
             return ApiResponse::error('Cannot modify Super Admin roles', null, 403);

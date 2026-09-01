@@ -100,7 +100,7 @@ class ReimbursementController extends Controller
 
     public function show($id): JsonResponse
     {
-        $reimbursement = Reimbursement::with([
+        $query = Reimbursement::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
@@ -110,14 +110,18 @@ class ReimbursementController extends Controller
             'approver.profile:id,user_id,profile_photo_path',
             'approver.employee:id,user_id,position_id',
             'approver.employee.position:id,name'
-        ])->findOrFail($id);
+        ]);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursement = $query->findOrFail($id);
 
         return ApiResponse::success('Reimbursement details', $reimbursement);
     }
 
     public function update(Request $request, $id): JsonResponse
     {
-        $reimbursement = Reimbursement::findOrFail($id);
+        $query = Reimbursement::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursement = $query->findOrFail($id);
 
         if (!$reimbursement->isDraft()) {
             return ApiResponse::error('Reimbursement already submitted cannot be updated', null, 400);
@@ -151,7 +155,9 @@ class ReimbursementController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $reimbursement = Reimbursement::with(['employee.user', 'approver'])->findOrFail($id);
+        $query = Reimbursement::with(['employee.user', 'approver']);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursement = $query->findOrFail($id);
 
         if (!$reimbursement->isDraft()) {
             return ApiResponse::error('Submitted reimbursement cannot be deleted', null, 400);
@@ -170,7 +176,9 @@ class ReimbursementController extends Controller
         if (!$user->hasPermission('reimbursement.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+        $query = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursement = $query->findOrFail($id);
 
         // Use approval flow if configured
         if ($reimbursement->approval_flow_id) {
@@ -229,7 +237,9 @@ class ReimbursementController extends Controller
         if (!$user->hasPermission('reimbursement.approve')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $reimbursement = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+        $query = Reimbursement::with('approvalFlow.steps.role', 'approvalFlow.steps.user');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursement = $query->findOrFail($id);
 
         // Use approval flow if configured
         if ($reimbursement->approval_flow_id) {
@@ -282,7 +292,9 @@ class ReimbursementController extends Controller
         if (!$user->hasPermission('reimbursement.pay')) {
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
-        $reimbursement = Reimbursement::findOrFail($id);
+        $query = Reimbursement::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursement = $query->findOrFail($id);
 
         if (!$reimbursement->isApproved()) {
             return ApiResponse::error('Only approved reimbursements can be marked as paid', null, 400);
@@ -339,7 +351,7 @@ class ReimbursementController extends Controller
 
     public function byEmployee(Request $request, $employee_id): JsonResponse
     {
-        $reimbursements = Reimbursement::where('employee_id', $employee_id)
+        $query = Reimbursement::where('employee_id', $employee_id)
             ->with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
@@ -347,8 +359,9 @@ class ReimbursementController extends Controller
                 'employee.department:id,name',
                 'employee.position:id,name',
                 'approver.profile:id,user_id,profile_photo_path'
-            ])
-            ->latest()
+            ]);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $reimbursements = $query->latest()
             ->paginate($request->integer('per_page', 10))
             ->withQueryString();
 
@@ -407,11 +420,7 @@ class ReimbursementController extends Controller
     public function submit(Request $request, $id): JsonResponse
     {
         $employee = $this->getAuthenticatedEmployee();
-        $reimbursement = Reimbursement::findOrFail($id);
-
-        if ($reimbursement->employee_id !== $employee->id) {
-            return ApiResponse::error('Access denied to this reimbursement', null, 403);
-        }
+        $reimbursement = Reimbursement::where('employee_id', $employee->id)->findOrFail($id);
 
         if (!$reimbursement->isDraft()) {
             return ApiResponse::error('Reimbursement is already submitted or processed', null, 400);

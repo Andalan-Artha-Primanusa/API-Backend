@@ -6,6 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Modules\Employee\Models\Employee;
 use App\Modules\Employee\Models\EmployeeLifecycleEvent;
 use App\Services\ApprovalFlowService;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +54,8 @@ class PromotionController
             });
         }
 
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+
         $status = $request->query('status');
         $search = $request->query('search');
 
@@ -91,7 +94,11 @@ class PromotionController
             'effective_date' => 'required|date',
         ]);
 
-        $employee = Employee::findOrFail($validated['employee_id']);
+$employee = Employee::findOrFail($validated['employee_id']);
+
+        if (!app(CompanyScopeService::class)->canAccessEmployeeCompany($employee->id, $request->user())) {
+            return ApiResponse::error('Forbidden', null, 403);
+        }
 
         DB::beginTransaction();
         try {
@@ -145,7 +152,9 @@ class PromotionController
     public function approve(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $event = EmployeeLifecycleEvent::with('employee', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+        $eventQuery = EmployeeLifecycleEvent::with('employee', 'approvalFlow.steps.role', 'approvalFlow.steps.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($eventQuery, $request);
+        $event = $eventQuery->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
@@ -225,7 +234,9 @@ class PromotionController
     public function reject(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $event = EmployeeLifecycleEvent::with('employee', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+        $eventQuery = EmployeeLifecycleEvent::with('employee', 'approvalFlow.steps.role', 'approvalFlow.steps.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($eventQuery, $request);
+        $event = $eventQuery->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
@@ -313,7 +324,9 @@ class PromotionController
     public function destroy(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $event = EmployeeLifecycleEvent::findOrFail($id);
+        $eventQuery = EmployeeLifecycleEvent::query();
+        app(CompanyScopeService::class)->applyThroughEmployee($eventQuery, $request);
+        $event = $eventQuery->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
@@ -387,7 +400,9 @@ class PromotionController
             return ApiResponse::error('Employee record not found', null, 404);
         }
 
-        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+        $eventQuery = EmployeeLifecycleEvent::with('employee');
+        app(CompanyScopeService::class)->applyThroughEmployee($eventQuery, $request);
+        $event = $eventQuery->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
@@ -430,7 +445,9 @@ class PromotionController
             return ApiResponse::error('Forbidden', null, 403);
         }
 
-        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+        $eventQuery = EmployeeLifecycleEvent::with('employee');
+        app(CompanyScopeService::class)->applyThroughEmployee($eventQuery, $request);
+        $event = $eventQuery->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);
@@ -474,7 +491,9 @@ class PromotionController
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        $event = EmployeeLifecycleEvent::with('employee')->findOrFail($id);
+        $eventQuery = EmployeeLifecycleEvent::with('employee');
+        app(CompanyScopeService::class)->applyThroughEmployee($eventQuery, $request);
+        $event = $eventQuery->findOrFail($id);
 
         if ($event->event_type !== 'promotion') {
             return ApiResponse::error('Invalid event type', null, 400);

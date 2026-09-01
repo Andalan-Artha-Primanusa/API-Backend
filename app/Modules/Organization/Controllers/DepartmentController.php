@@ -5,12 +5,30 @@ namespace App\Modules\Organization\Controllers;
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use App\Modules\Organization\Models\Department;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class DepartmentController extends Controller
 {
+    private function applyCompanyScope($query, Request $request)
+    {
+        $scope = new CompanyScopeService();
+        $selected = $scope->selectedCompanyId($request);
+
+        if ($selected) {
+            return $query->where(fn ($q) => $q->where('company_id', $selected)->orWhereNull('company_id'));
+        }
+
+        if (!$scope->canViewAll($request->user())) {
+            $ids = $scope->availableCompanyIds($request->user());
+            return $query->where(fn ($q) => $q->whereIn('company_id', $ids)->orWhereNull('company_id'));
+        }
+
+        return $query;
+    }
+
     /**
      * GET /departments - List all departments with pagination
      */
@@ -30,6 +48,7 @@ class DepartmentController extends Controller
             $search = $validated['search'] ?? null;
 
             $query = Department::withCount('employees');
+            $this->applyCompanyScope($query, $request);
 
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -68,6 +87,8 @@ class DepartmentController extends Controller
                 'description' => 'nullable|string|max:1000',
                 'manager_id'  => 'nullable|integer|exists:users,id',
             ]);
+
+            $validated['company_id'] = $validated['company_id'] ?? (new CompanyScopeService())->selectedCompanyId($request);
 
             $department = Department::create($validated);
             $department->load('manager');

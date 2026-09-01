@@ -72,17 +72,30 @@ class ApprovalFlowController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'module' => 'required|string|max:100|unique:approval_flows,module,NULL,id,is_active,1',
+            'module' => 'required|string|max:100',
+            'company_id' => 'nullable|integer|exists:companies,id',
             'steps' => 'required|array|min:1',
             'steps.*.step_order' => 'required|integer|min:1|distinct',
             'steps.*.role_id' => 'required|exists:roles,id',
             'steps.*.user_id' => 'nullable|exists:users,id',
         ]);
 
-        $flow = DB::transaction(function () use ($validated) {
+        $companyId = $validated['company_id'] ?? null;
+
+        $exists = ApprovalFlow::where('module', $validated['module'])
+            ->where('is_active', true)
+            ->where('company_id', $companyId)
+            ->exists();
+
+        if ($exists) {
+            return ApiResponse::error('Approval flow already exists for this module/company while active', null, 422);
+        }
+
+        $flow = DB::transaction(function () use ($validated, $companyId) {
             $flow = ApprovalFlow::create([
                 'name' => $validated['name'],
                 'module' => $validated['module'],
+                'company_id' => $companyId,
                 'is_active' => true,
             ]);
 
@@ -194,6 +207,32 @@ class ApprovalFlowController extends Controller
     public function history(Request $request, string $module, int $moduleId): JsonResponse
     {
         try {
+            $user = $request->user();
+
+            // Gap-4 fix: approval history tidak boleh dibaca sembarang user login.
+            $modulePermissions = [
+                'leave'               => ['leave.view', 'leave.approve'],
+                'assignment_letter'   => ['assignment_letter.approve'],
+                'overtime'            => ['overtime.view', 'overtime.approve'],
+                'training'            => ['training.view', 'training.enroll'],
+                'reimbursement'       => ['reimbursement.view', 'reimbursement.approve'],
+                'promotion'           => ['career.promotion.approve'],
+                'asset_assignment'    => ['asset.view', 'asset.assign'],
+                'benefit_assignment'  => ['benefit.view'],
+                'shift_swap'          => ['shift_swap.view'],
+                'document'            => ['document.view', 'document.approve'],
+                'payroll'             => ['payroll.view', 'payroll.approve'],
+                'kpi'                 => ['kpi.view'],
+            ];
+
+            $allowed = $user->isSuperAdmin()
+                || $user->hasPermission('admin.approval_flow.manage')
+                || $user->hasAnyPermission($modulePermissions[$module] ?? []);
+
+            if (!$allowed) {
+                return ApiResponse::error('Forbidden', 'No permission to view approval history', 403);
+            }
+
             $approvalService = app(ApprovalFlowService::class);
             $history = $approvalService->getHistory($module, $moduleId);
 

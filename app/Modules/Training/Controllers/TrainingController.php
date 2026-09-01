@@ -10,6 +10,7 @@ use App\Models\TrainingProgressHistory;
 use App\Models\TrainingProgram;
 use App\Models\UserNotification;
 use App\Services\ApprovalFlowService;
+use App\Services\CompanyScopeService;
 use App\Traits\HasEmployee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,6 +71,8 @@ class TrainingController extends Controller
             });
         }
 
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+
         return ApiResponse::success('Training programs retrieved successfully', $query->paginate($validated['per_page'] ?? 10)->withQueryString());
     }
 
@@ -93,6 +96,8 @@ class TrainingController extends Controller
             'status' => 'sometimes|string|in:draft,active,completed,cancelled',
         ]);
 
+        $validated['company_id'] = $validated['company_id'] ?? app(CompanyScopeService::class)->selectedCompanyId($request);
+
         $program = TrainingProgram::create($validated);
 
         return ApiResponse::success('Training program created successfully', $program, 201);
@@ -100,7 +105,7 @@ class TrainingController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $program = TrainingProgram::with([
+        $programQuery = TrainingProgram::with([
             'enrollments.employee:id,user_id,employee_code,department_id,position_id',
             'enrollments.employee.user:id,name,email',
             'enrollments.employee.user.profile:id,user_id',
@@ -108,7 +113,11 @@ class TrainingController extends Controller
             'enrollments.employee.position:id,name',
             'enrollments.employee.manager:id,name,email',
             'enrollments.employee.manager.profile:id,user_id'
-        ])->find($id);
+        ]);
+
+        app(CompanyScopeService::class)->applyEmployeeScope($programQuery, $request);
+
+        $program = $programQuery->find($id);
 
         if (!$program) {
             return ApiResponse::error('Training program not found', null, 404);
@@ -191,7 +200,9 @@ class TrainingController extends Controller
             'employee_ids.*' => 'required|exists:employees,id',
         ]);
 
-        $program = TrainingProgram::find($id);
+        $programQuery = TrainingProgram::query();
+        app(CompanyScopeService::class)->applyEmployeeScope($programQuery, $request);
+        $program = $programQuery->find($id);
 
         if (!$program) {
             return ApiResponse::error('Training program not found', null, 404);
@@ -244,7 +255,7 @@ class TrainingController extends Controller
     public function myTrainings(Request $request): JsonResponse
     {
         if ($this->canUseAdminTrainingViews($request)) {
-            $data = TrainingEnrollment::with([
+            $query = TrainingEnrollment::with([
                     'program:id,title,category,mode,start_date,end_date,status', 
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
@@ -252,7 +263,11 @@ class TrainingController extends Controller
                     'employee.department:id,name',
                     'employee.position:id,name'
                 ])
-                ->latest()
+                ->latest();
+
+            app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+
+            $data = $query
                 ->paginate($request->integer('per_page', 10))
                 ->withQueryString();
 
@@ -291,7 +306,9 @@ class TrainingController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+        $enrollmentQuery = TrainingEnrollment::with('program', 'employee.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($enrollmentQuery, $request);
+        $enrollment = $enrollmentQuery->find($id);
 
         if (!$enrollment) {
             return ApiResponse::error('Training enrollment not found', null, 404);
@@ -356,7 +373,9 @@ class TrainingController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $enrollment = TrainingEnrollment::with('program', 'employee.user')->find($id);
+        $enrollmentQuery = TrainingEnrollment::with('program', 'employee.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($enrollmentQuery, $request);
+        $enrollment = $enrollmentQuery->find($id);
 
         if (!$enrollment) {
             return ApiResponse::error('Training enrollment not found', null, 404);
@@ -398,7 +417,9 @@ class TrainingController extends Controller
 
         if (!$this->canUseAdminTrainingViews($request)) {
             $employee = $this->getAuthenticatedEmployee();
-            $enrollment = TrainingEnrollment::find($id);
+            $enrollmentQuery = TrainingEnrollment::query();
+            app(CompanyScopeService::class)->applyThroughEmployee($enrollmentQuery, $request);
+            $enrollment = $enrollmentQuery->find($id);
             if (!$enrollment || $enrollment->employee_id !== $employee->id) {
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
@@ -417,7 +438,7 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollments = TrainingEnrollment::with([
+        $query = TrainingEnrollment::with([
                 'program:id,title,category,mode,start_date,end_date,status', 
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
@@ -426,7 +447,11 @@ class TrainingController extends Controller
                 'employee.position:id,name',
                 'approvalFlow.steps.role', 
                 'approvalFlow.steps.user'
-            ])->latest()->paginate($request->integer('per_page', 10))->withQueryString();
+            ])->latest();
+
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+
+        $enrollments = $query->paginate($request->integer('per_page', 10))->withQueryString();
 
         $service = app(ApprovalFlowService::class);
         $enrollments->getCollection()->transform(function ($item) use ($service, $user) {
@@ -464,13 +489,17 @@ class TrainingController extends Controller
             });
         }
 
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+
         return ApiResponse::success('Available trainings retrieved successfully', $query->paginate($validated['per_page'] ?? 10)->withQueryString());
     }
 
     public function selfEnroll(Request $request, int $id): JsonResponse
     {
         $employee = $this->getAuthenticatedEmployee();
-        $program = TrainingProgram::find($id);
+        $programQuery = TrainingProgram::query();
+        app(CompanyScopeService::class)->applyEmployeeScope($programQuery, $request);
+        $program = $programQuery->find($id);
 
         if (!$program) {
             return ApiResponse::error('Training program not found', null, 404);
@@ -522,7 +551,9 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollment = TrainingEnrollment::with('program', 'employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->find($id);
+        $enrollmentQuery = TrainingEnrollment::with('program', 'employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($enrollmentQuery, $request);
+        $enrollment = $enrollmentQuery->find($id);
 
         if (!$enrollment) {
             return ApiResponse::error('Training enrollment not found', null, 404);
@@ -577,6 +608,7 @@ class TrainingController extends Controller
             return ApiResponse::error('Only pending enrollments can be approved', null, 400);
         }
 
+        app(ApprovalFlowService::class)->guardNotSelfApproval($enrollment, $user);
         $enrollment->update(['status' => 'enrolled']);
 
         if ($enrollment->employee?->user) {
@@ -611,7 +643,9 @@ class TrainingController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $enrollment = TrainingEnrollment::with('program', 'employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->find($id);
+        $enrollmentQuery = TrainingEnrollment::with('program', 'employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($enrollmentQuery, $request);
+        $enrollment = $enrollmentQuery->find($id);
 
         if (!$enrollment) {
             return ApiResponse::error('Training enrollment not found', null, 404);
@@ -660,6 +694,7 @@ class TrainingController extends Controller
             return ApiResponse::error('Only pending enrollments can be rejected', null, 400);
         }
 
+        app(ApprovalFlowService::class)->guardNotSelfApproval($enrollment, $user, 'Anda tidak dapat menolak pengajuan training milik Anda sendiri.');
         $enrollment->update(['status' => 'cancelled']);
 
         if ($enrollment->employee?->user) {

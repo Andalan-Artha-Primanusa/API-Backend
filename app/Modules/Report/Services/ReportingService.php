@@ -131,15 +131,15 @@ class ReportingService
                 'total_payroll_count' => $payrolls->count(),
                 'total_salary' => $payrolls->sum('basic_salary'),
                 'total_allowance' => $payrolls->sum('allowance'),
-                'total_deduction' => $payrolls->sum('deduction'),
+                'total_deduction' => $payrolls->sum('total_deduction'),
                 'total_bonus' => $payrolls->sum('bonus'),
-                'total_net_pay' => $payrolls->sum('net_pay'),
-                'average_salary' => $payrolls->avg('net_pay') ?? 0,
+                'total_net_pay' => $payrolls->sum('take_home_pay'),
+                'average_salary' => $payrolls->avg('take_home_pay') ?? 0,
             ],
             'by_status' => $payrolls->groupBy('status')->map(fn($group) => [
                 'status' => $group->first()->status,
                 'count' => $group->count(),
-                'total' => $group->sum('net_pay'),
+                'total' => $group->sum('take_home_pay'),
             ])->values(),
         ];
     }
@@ -234,7 +234,7 @@ class ReportingService
             ->get();
 
         return [
-            'total_amount' => $data->sum('net_pay'),
+            'total_amount' => $data->sum('take_home_pay'),
             'approved' => $data->where('status', 'approved')->count(),
             'paid' => $data->where('status', 'paid')->count(),
             'pending' => $data->where('status', 'draft')->count(),

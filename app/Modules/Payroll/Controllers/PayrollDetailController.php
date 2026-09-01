@@ -21,11 +21,13 @@ class PayrollDetailController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $payroll = Payroll::with([
+        $query = Payroll::with([
             'employee.user.profile',
             'employee.manager.profile',
             'details'
-        ])->find($payroll_id);
+        ]);
+        app(\App\Services\CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $payroll = $query->find($payroll_id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -59,7 +61,9 @@ class PayrollDetailController extends Controller
             'details.*.amount' => 'required|numeric|min:0',
         ]);
 
-        $payroll = Payroll::findOrFail($request->payroll_id);
+        $query = Payroll::query();
+        app(\App\Services\CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $payroll = $query->findOrFail($request->payroll_id);
 
         if ($payroll->status !== 'draft') {
             return ApiResponse::error('Payroll has already been processed', null, 400);
@@ -90,7 +94,11 @@ class PayrollDetailController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $detail = PayrollDetail::with('payroll.employee.user.profile')->find($id);
+        $detail = PayrollDetail::with('payroll.employee.user.profile')
+            ->whereHas('payroll', function($q) use ($request) {
+                app(\App\Services\CompanyScopeService::class)->applyThroughEmployee($q, $request);
+            })
+            ->find($id);
 
         if (!$detail) {
             return ApiResponse::error("Detail ID $id not found", null, 404);
@@ -137,7 +145,11 @@ class PayrollDetailController extends Controller
 
         try {
             foreach ($request->details as $item) {
-                $detail = PayrollDetail::with('payroll.employee.user.profile')->find($item['id']);
+                $detail = PayrollDetail::with('payroll.employee.user.profile')
+                    ->whereHas('payroll', function($q) use ($request) {
+                        app(\App\Services\CompanyScopeService::class)->applyThroughEmployee($q, $request);
+                    })
+                    ->find($item['id']);
 
                 if (!$detail) {
                     $errors[] = [
@@ -192,7 +204,11 @@ class PayrollDetailController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $detail = PayrollDetail::with('payroll.employee.user.profile')->find($id);
+        $detail = PayrollDetail::with('payroll.employee.user.profile')
+            ->whereHas('payroll', function($q) use ($request) {
+                app(\App\Services\CompanyScopeService::class)->applyThroughEmployee($q, $request);
+            })
+            ->find($id);
 
         if (!$detail) {
             return ApiResponse::error('Detail not found', null, 404);

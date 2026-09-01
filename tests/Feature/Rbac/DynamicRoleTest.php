@@ -89,7 +89,7 @@ class DynamicRoleTest extends TestCase
         $role = Role::create(['name' => 'team_lead']);
 
         $perms = Permission::whereIn('name', [
-            'employee.view', 'task.view', 'task.create',
+            'employee.view', 'leave.view', 'leave.create',
         ])->pluck('id');
 
         $role->permissions()->sync($perms);
@@ -98,7 +98,7 @@ class DynamicRoleTest extends TestCase
         $user->roles()->sync([$role->id]);
 
         $this->assertTrue($user->hasPermission('employee.view'));
-        $this->assertTrue($user->hasPermission('task.view'));
+        $this->assertTrue($user->hasPermission('leave.view'));
         $this->assertFalse($user->hasPermission('payroll.view'));
     }
 

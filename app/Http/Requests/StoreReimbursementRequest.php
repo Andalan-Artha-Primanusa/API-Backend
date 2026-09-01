@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreReimbursementRequest extends FormRequest
 {
@@ -32,7 +33,12 @@ class StoreReimbursementRequest extends FormRequest
 
         // If the admin is creating for an employee
         if (request()->routeIs('*.store') && !request()->routeIs('*createMyReimbursement*')) {
-            $rules['employee_id'] = 'required|exists:employees,id';
+            $rules['employee_id'] = [
+                'required',
+                Rule::exists('employees', 'id')->where(function ($query) {
+                    app(\App\Services\CompanyScopeService::class)->applyEmployeeScope($query, request());
+                })
+            ];
         }
 
         return $rules;

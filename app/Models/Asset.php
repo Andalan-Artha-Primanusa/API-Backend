@@ -19,6 +19,7 @@ class Asset extends Model
         'purchase_date',
         'purchase_price',
         'notes',
+        'company_id',
     ];
 
     protected $casts = [

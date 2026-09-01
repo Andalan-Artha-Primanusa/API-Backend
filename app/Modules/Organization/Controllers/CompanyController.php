@@ -86,7 +86,15 @@ class CompanyController extends Controller
                 $company->logo_path = $file->storeAs('company/logo', $storedName, 'public');
             }
 
-            $company->save();
+$company->save();
+
+            // Auto-assign creator when they are not Head Office (cannot view all companies)
+            if (!$this->companyScope->canViewAll($request->user())) {
+                UserCompanyAccess::updateOrCreate(
+                    ['user_id' => $request->user()->id, 'company_id' => $company->id],
+                    ['scope_role' => 'owner', 'is_default' => true]
+                );
+            }
 
             return ApiResponse::success('Company data created successfully', $company->fresh(), 201);
 
@@ -265,6 +273,27 @@ class CompanyController extends Controller
         $company->update(['status' => 'inactive']);
 
         return ApiResponse::success('Company deactivated', $company->fresh());
+    }
+
+public function listUsers(Request $request, int $id): JsonResponse
+    {
+        if (!$request->user()->hasPermission('company.assign_user')) {
+            return ApiResponse::error('Forbidden', 'Insufficient permissions', 403);
+        }
+
+        $company = Company::findOrFail($id);
+
+        $accesses = UserCompanyAccess::query()
+            ->where('company_id', $company->id)
+            ->with(['user:id,name,email', 'company:id,name,code'])
+            ->orderBy('is_default', 'desc')
+            ->orderBy('id')
+            ->get();
+
+        return ApiResponse::success('Company user access retrieved', [
+            'company' => $company->only(['id', 'name', 'code']),
+            'accesses' => $accesses,
+        ]);
     }
 
     public function assignUser(Request $request, int $id): JsonResponse

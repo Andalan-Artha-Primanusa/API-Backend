@@ -5,12 +5,30 @@ namespace App\Modules\Organization\Controllers;
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use App\Models\Location;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class LocationController extends Controller
 {
+    private function applyCompanyScope($query, Request $request)
+    {
+        $scope = new CompanyScopeService();
+        $selected = $scope->selectedCompanyId($request);
+
+        if ($selected) {
+            return $query->where(fn ($q) => $q->where('company_id', $selected)->orWhereNull('company_id'));
+        }
+
+        if (!$scope->canViewAll($request->user())) {
+            $ids = $scope->availableCompanyIds($request->user());
+            return $query->where(fn ($q) => $q->whereIn('company_id', $ids)->orWhereNull('company_id'));
+        }
+
+        return $query;
+    }
+
     /**
      * GET /locations - List all locations with pagination
      */
@@ -29,7 +47,8 @@ class LocationController extends Controller
             $perPage = $validated['per_page'] ?? 10;
             $search = $validated['search'] ?? null;
 
-            $query = Location::select(['id', 'name', 'latitude', 'longitude', 'radius', 'created_at', 'updated_at']);
+            $query = Location::select(['id', 'name', 'latitude', 'longitude', 'radius', 'company_id', 'created_at', 'updated_at']);
+            $this->applyCompanyScope($query, $request);
 
             if ($search) {
                 $query->where('name', 'like', '%' . $search . '%');
@@ -78,6 +97,8 @@ class LocationController extends Controller
                 'longitude' => 'required|numeric|between:-180,180',
                 'radius'    => 'required|integer|min:10|max:5000',
             ]);
+
+            $validated['company_id'] = $validated['company_id'] ?? (new CompanyScopeService())->selectedCompanyId($request);
 
             $location = Location::create($validated);
 

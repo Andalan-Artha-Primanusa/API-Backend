@@ -85,7 +85,7 @@ class PayrollController extends Controller
 
     public function show(Request $request, $id): JsonResponse
     {
-        $data = Payroll::with([
+        $query = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
@@ -95,7 +95,9 @@ class PayrollController extends Controller
             'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
-        ])->find($id);
+        ]);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $data = $query->find($id);
 
         if (!$data) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -128,7 +130,9 @@ class PayrollController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
-            $employee = Employee::findOrFail($request->employee_id);
+            $employeeQuery = Employee::query();
+            $this->companyScope->applyEmployeeScope($employeeQuery, $request);
+            $employee = $employeeQuery->findOrFail($request->employee_id);
 
             $exists = Payroll::where('employee_id', $employee->id)
                 ->where('period', $request->period)
@@ -214,7 +218,9 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -252,7 +258,9 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -291,7 +299,9 @@ class PayrollController extends Controller
             return ApiResponse::error('Approval flow untuk Payroll belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
         }
 
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -340,7 +350,9 @@ class PayrollController extends Controller
             return ApiResponse::error('Approval flow untuk Payroll belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
         }
 
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -388,7 +400,9 @@ class PayrollController extends Controller
             'reason' => 'required|string|max:1000',
         ]);
 
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -429,7 +443,9 @@ class PayrollController extends Controller
      */
     public function approve(Request $request, $id): JsonResponse
     {
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -457,7 +473,9 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $payroll = Payroll::find($id);
+        $query = Payroll::query();
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -505,10 +523,11 @@ class PayrollController extends Controller
 
         $period = $request->period;
 
-        $payrolls = Payroll::with('reimbursements')
+        $query = Payroll::with('reimbursements')
             ->where('period', $period)
-            ->where('status', 'approved')
-            ->get();
+            ->where('status', 'approved');
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payrolls = $query->get();
 
         if ($payrolls->isEmpty()) {
             return ApiResponse::error("No approved payrolls found for period {$period}", null, 404);
@@ -578,7 +597,7 @@ class PayrollController extends Controller
             return ApiResponse::error('Forbidden', 'You are not authorized', 403);
         }
 
-        $payroll = Payroll::with([
+        $query = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
@@ -588,7 +607,9 @@ class PayrollController extends Controller
             'employee.manager.profile:id,user_id,profile_photo_path',
             'details',
             'reimbursements'
-        ])->find($id);
+        ]);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -600,14 +621,16 @@ class PayrollController extends Controller
     public function exportSlipCsv(Request $request, int $id)
     {
         $user    = $request->user();
-        $payroll = Payroll::with([
+        $query = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'details'
-        ])->find($id);
+        ]);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -653,14 +676,16 @@ class PayrollController extends Controller
     public function exportSlipPdf(Request $request, int $id)
     {
         $user    = $request->user();
-        $payroll = Payroll::with([
+        $query = Payroll::with([
             'employee:id,user_id,employee_code,department_id,position_id',
             'employee.user:id,name,email',
             'employee.user.profile:id,user_id,profile_photo_path',
             'employee.department:id,name',
             'employee.position:id,name',
             'details'
-        ])->find($id);
+        ]);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payroll = $query->find($id);
 
         if (!$payroll) {
             return ApiResponse::error('Payroll not found', null, 404);
@@ -706,6 +731,7 @@ class PayrollController extends Controller
         $query = Payroll::with(['employee.user.profile', 'employee.user'])
             ->where('period', $period)
             ->whereIn('status', ['approved', 'paid']);
+        $this->companyScope->applyThroughEmployee($query, $request);
 
         if ($bankFilter) {
             $query->whereHas('employee.user.profile', function ($q) use ($bankFilter) {
@@ -768,15 +794,16 @@ class PayrollController extends Controller
         $request->validate(['period' => 'required|string|max:50']);
 
         $period   = $request->input('period');
-        $payrolls = Payroll::with([
+        $query = Payroll::with([
                 'employee:id,user_id,employee_code,department_id,position_id',
                 'employee.user:id,name,email',
                 'employee.user.profile:id,user_id,profile_photo_path',
                 'employee.department:id,name',
                 'employee.position:id,name',
             ])
-            ->where('period', $period)
-            ->get();
+            ->where('period', $period);
+        $this->companyScope->applyThroughEmployee($query, $request);
+        $payrolls = $query->get();
 
         if ($payrolls->isEmpty()) {
             return ApiResponse::error('No payroll data found for the selected period', null, 404);

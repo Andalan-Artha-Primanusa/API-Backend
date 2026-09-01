@@ -13,7 +13,9 @@ class SeveranceController
 {
     public function calculate(Request $request, int $employeeId): JsonResponse
     {
-        $employee = Employee::with('user.profile')->findOrFail($employeeId);
+        $query = Employee::with('user.profile');
+        app(\App\Services\CompanyScopeService::class)->applyEmployeeScope($query, $request);
+        $employee = $query->findOrFail($employeeId);
         $terminationDate = $request->input('termination_date') ?? $employee->termination_date;
         $hireDate = $employee->hire_date;
         if (!$hireDate || !$terminationDate) {
@@ -31,7 +33,9 @@ class SeveranceController
 
     public function exportExcel(Request $request, int $employeeId)
     {
-        $employee = Employee::with('user.profile')->findOrFail($employeeId);
+        $query = Employee::with('user.profile');
+        app(\App\Services\CompanyScopeService::class)->applyEmployeeScope($query, $request);
+        $employee = $query->findOrFail($employeeId);
         $terminationDate = $request->input('termination_date') ?? $employee->termination_date;
         $hireDate = $employee->hire_date;
         if (!$hireDate || !$terminationDate) {

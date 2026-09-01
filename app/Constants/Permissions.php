@@ -24,13 +24,6 @@ class Permissions
         'employee.offboard' => 'Start offboarding process',
     ];
 
-    const TASK = [
-        'task.view' => 'View tasks',
-        'task.create' => 'Create tasks',
-        'task.update' => 'Update tasks',
-        'task.delete' => 'Delete tasks',
-    ];
-
     const LEAVE = [
         'leave.view' => 'View leave requests',
         'leave.create' => 'Create leave request',
@@ -153,13 +146,6 @@ class Permissions
         'performance.review.update' => 'Update performance review',
         'performance.review.submit' => 'Submit performance review',
         'performance.review.approve' => 'Approve performance review',
-    ];
-
-    const CALIBRATION = [
-        'calibration.view' => 'View calibration sessions',
-        'calibration.create' => 'Create calibration session',
-        'calibration.participate' => 'Participate in calibration',
-        'calibration.manage' => 'Manage calibration process',
     ];
 
     const CAREER = [
@@ -290,7 +276,6 @@ class Permissions
     {
         return array_merge(
             self::EMPLOYEE,
-            self::TASK,
             self::LEAVE,
             self::ATTENDANCE,
             self::PATROL,
@@ -304,7 +289,6 @@ class Permissions
             self::ASSIGNMENT_LETTER,
             self::BENEFIT,
             self::PERFORMANCE,
-            self::CALIBRATION,
             self::CAREER,
             self::ENGAGEMENT,
             self::ORGANIZATION,

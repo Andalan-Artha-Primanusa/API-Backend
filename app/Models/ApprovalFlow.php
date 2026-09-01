@@ -9,6 +9,7 @@ class ApprovalFlow extends Model
     protected $fillable = [
         'name',
         'module',
+        'company_id',
         'is_active',
     ];
 

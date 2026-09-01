@@ -8,6 +8,7 @@ use App\Models\OvertimeRequest;
 use App\Models\OvertimeEvidence;
 use App\Models\UserNotification;
 use App\Services\ApprovalFlowService;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -106,6 +107,8 @@ class OvertimeController extends Controller
                 $query->where('status', $request->status);
             }
 
+            app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+
             $data = $query->paginate($request->integer('per_page', 10))->withQueryString();
             $service = app(ApprovalFlowService::class);
             $data->getCollection()->transform(function ($item) use ($service, $user) {
@@ -131,7 +134,7 @@ class OvertimeController extends Controller
         }
 
         try {
-            $requests = OvertimeRequest::where('status', 'pending')
+            $query = OvertimeRequest::where('status', 'pending')
                 ->with([
                     'employee:id,user_id,employee_code,department_id,position_id',
                     'employee.user:id,name,email',
@@ -146,8 +149,11 @@ class OvertimeController extends Controller
                     'approvalFlow.steps.role',
                     'approvalFlow.steps.user'
                 ])
-                ->latest('date')
-                ->paginate($request->integer('per_page', 10))
+                ->latest('date');
+
+            app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+
+            $requests = $query->paginate($request->integer('per_page', 10))
                 ->withQueryString();
 
             $service = app(ApprovalFlowService::class);
@@ -174,7 +180,9 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $overtimeRequest = OvertimeRequest::with('employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+        $query = OvertimeRequest::with('employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $overtimeRequest = $query->findOrFail($id);
 
         // Apply approval flow on first approval if not yet configured
         if (!$overtimeRequest->approval_flow_id && $overtimeRequest->status === 'pending') {
@@ -234,6 +242,7 @@ class OvertimeController extends Controller
             return ApiResponse::error('Request already processed', null, 422);
         }
 
+        app(ApprovalFlowService::class)->guardNotSelfApproval($overtimeRequest, $user);
         $overtimeRequest->update([
             'status' => 'approved',
             'approved_by' => $user->id,
@@ -278,7 +287,9 @@ class OvertimeController extends Controller
             'reject_reason' => 'sometimes|string|max:500',
         ]);
 
-        $overtimeRequest = OvertimeRequest::with('employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user')->findOrFail($id);
+        $query = OvertimeRequest::with('employee.user', 'approvalFlow.steps.role', 'approvalFlow.steps.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $overtimeRequest = $query->findOrFail($id);
 
         // Use approval flow if configured
         if ($overtimeRequest->approval_flow_id) {
@@ -329,6 +340,7 @@ class OvertimeController extends Controller
             return ApiResponse::error('Request already processed', null, 422);
         }
 
+        app(ApprovalFlowService::class)->guardNotSelfApproval($overtimeRequest, $user, 'Anda tidak dapat menolak pengajuan lembur milik Anda sendiri.');
         $overtimeRequest->update([
             'status' => 'rejected',
             'reject_reason' => $validated['reject_reason'] ?? null,
@@ -442,7 +454,9 @@ class OvertimeController extends Controller
      */
     public function downloadEvidence(Request $request, int $id)
     {
-        $evidence = OvertimeEvidence::with('overtimeRequest.employee')->findOrFail($id);
+        $query = OvertimeEvidence::with('overtimeRequest.employee');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request, 'overtimeRequest.employee');
+        $evidence = $query->findOrFail($id);
 
         if (!$evidence->file_path || !Storage::disk('public')->exists($evidence->file_path)) {
             return ApiResponse::error('File not found', null, 404);
@@ -462,7 +476,9 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $overtimeRequest = OvertimeRequest::findOrFail($id);
+        $query = OvertimeRequest::query();
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $overtimeRequest = $query->findOrFail($id);
 
         $evidences = OvertimeEvidence::where('overtime_request_id', $overtimeRequest->id)
             ->with(['uploader:id,name', 'reviewer:id,name'])
@@ -484,7 +500,9 @@ class OvertimeController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $evidence = OvertimeEvidence::with('overtimeRequest.employee.user')->findOrFail($id);
+        $query = OvertimeEvidence::with('overtimeRequest.employee.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request, 'overtimeRequest.employee');
+        $evidence = $query->findOrFail($id);
 
         if ($evidence->status !== 'pending') {
             return ApiResponse::error('Evidence already reviewed', null, 422);
@@ -525,7 +543,9 @@ class OvertimeController extends Controller
             'review_notes' => 'sometimes|string|max:500',
         ]);
 
-        $evidence = OvertimeEvidence::with('overtimeRequest.employee.user')->findOrFail($id);
+        $query = OvertimeEvidence::with('overtimeRequest.employee.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request, 'overtimeRequest.employee');
+        $evidence = $query->findOrFail($id);
 
         if ($evidence->status !== 'pending') {
             return ApiResponse::error('Evidence already reviewed', null, 422);

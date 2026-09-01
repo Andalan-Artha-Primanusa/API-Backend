@@ -3,6 +3,7 @@
 namespace App\Modules\Report\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Services\CompanyScopeService;
 use App\Services\ReportingService;
 use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,8 @@ class ReportingController extends Controller
 
         try {
             $filters = $request->only(['department', 'month', 'year', 'start_date', 'end_date']);
-            $data = $this->reportingService->getDashboardSummary($filters);
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getDashboardSummary($filters, $companyId);
 
             return ApiResponse::success('Dashboard summary retrieved successfully', $data);
         } catch (\Exception $e) {
@@ -40,7 +42,8 @@ class ReportingController extends Controller
 
         try {
             $filters = $request->only(['start_date', 'end_date']);
-            $data = $this->reportingService->getAttendanceAnalytics($filters);
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getAttendanceAnalytics($filters, $companyId);
 
             return ApiResponse::success('Attendance analytics retrieved successfully', $data);
         } catch (\Exception $e) {
@@ -57,7 +60,8 @@ class ReportingController extends Controller
 
         try {
             $filters = $request->only(['year']);
-            $data = $this->reportingService->getLeaveAnalytics($filters);
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getLeaveAnalytics($filters, $companyId);
 
             return ApiResponse::success('Leave analytics retrieved successfully', $data);
         } catch (\Exception $e) {
@@ -74,7 +78,8 @@ class ReportingController extends Controller
 
         try {
             $filters = $request->only(['start_date', 'end_date', 'month', 'year']);
-            $data = $this->reportingService->getPayrollAnalytics($filters);
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getPayrollAnalytics($filters, $companyId);
 
             return ApiResponse::success('Payroll analytics retrieved successfully', $data);
         } catch (\Exception $e) {
@@ -90,7 +95,8 @@ class ReportingController extends Controller
         $this->authorizeReporting($request);
 
         try {
-            $data = $this->reportingService->getCompetencyAnalytics();
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getCompetencyAnalytics($companyId);
 
             return ApiResponse::success('Competency analytics retrieved successfully', $data);
         } catch (\Exception $e) {
@@ -107,7 +113,8 @@ class ReportingController extends Controller
 
         try {
             $filters = $request->only(['year']);
-            $data = $this->reportingService->getEmployeeLifecycleAnalytics($filters);
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getEmployeeLifecycleAnalytics($filters, $companyId);
 
             return ApiResponse::success('Employee lifecycle analytics retrieved successfully', $data);
         } catch (\Exception $e) {
@@ -123,7 +130,8 @@ class ReportingController extends Controller
         $this->authorizeReporting($request);
 
         try {
-            $data = $this->reportingService->getAssetAnalytics();
+            $companyId = app(CompanyScopeService::class)->selectedCompanyId($request);
+            $data = $this->reportingService->getAssetAnalytics($companyId);
 
             return ApiResponse::success('Asset analytics retrieved successfully', $data);
         } catch (\Exception $e) {

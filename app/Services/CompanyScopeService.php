@@ -127,4 +127,24 @@ class CompanyScopeService
 
         return $query;
     }
+
+    public function canAccessCompany(?int $companyId, $user): bool
+    {
+        if (!$companyId) {
+            return $this->canViewAll($user);
+        }
+
+        if ($this->canViewAll($user)) {
+            return true;
+        }
+
+        return $this->availableCompanyIds($user)->contains($companyId);
+    }
+
+    public function canAccessEmployeeCompany(int $employeeId, $user): bool
+    {
+        $companyId = \App\Modules\Employee\Models\Employee::whereKey($employeeId)->value('company_id');
+
+        return $this->canAccessCompany($companyId, $user);
+    }
 }

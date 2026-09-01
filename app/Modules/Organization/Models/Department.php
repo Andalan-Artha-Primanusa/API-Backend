@@ -16,6 +16,7 @@ class Department extends Model
         'code',
         'description',
         'manager_id',
+        'company_id',
     ];
 
     protected $casts = [

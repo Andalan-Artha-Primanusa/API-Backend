@@ -10,6 +10,7 @@ use App\Models\ApprovalFlow;
 use App\Models\Kpi;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\StoreKpiRequest;
+use App\Services\CompanyScopeService;
 use App\Traits\HasEmployee;
 
 class KpiController extends Controller
@@ -47,6 +48,8 @@ class KpiController extends Controller
             // Optimized query with eager loading
             $query = Kpi::with(self::KPI_RELATIONS)
                 ->latest();
+
+            app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
 
             // Scope by manager subordinates if not admin/hr
             if ($user->isManager() && !$user->isAdmin() && !$user->isHR()) {
@@ -86,6 +89,10 @@ class KpiController extends Controller
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
+            if (!app(CompanyScopeService::class)->canAccessEmployeeCompany($request->validated()['employee_id'], $request->user())) {
+                return ApiResponse::error('Forbidden', 'No permission', 403);
+            }
+
             $kpi = Kpi::create(array_merge(
                 $request->validated(),
                 [
@@ -116,8 +123,9 @@ class KpiController extends Controller
                 throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
-            $kpi = Kpi::with(self::KPI_RELATIONS)
-                ->findOrFail($id);
+            $kpiQuery = Kpi::with(self::KPI_RELATIONS);
+            app(CompanyScopeService::class)->applyThroughEmployee($kpiQuery, $request);
+            $kpi = $kpiQuery->findOrFail($id);
 
             $user = $request->user();
             $isOwner = $kpi->employee?->user_id === $user->id;
@@ -147,7 +155,9 @@ class KpiController extends Controller
                 throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
-            $kpi = Kpi::findOrFail($id);
+            $kpiQuery = Kpi::query();
+            app(CompanyScopeService::class)->applyThroughEmployee($kpiQuery, $request);
+            $kpi = $kpiQuery->findOrFail($id);
             $user = $request->user();
 
             if (!$user->hasPermission('kpi.update')) {
@@ -193,7 +203,9 @@ class KpiController extends Controller
                 throw ValidationException::withMessages(['id' => 'ID KPI tidak valid']);
             }
 
-            $kpi = Kpi::select(['id', 'employee_id', 'title', 'target', 'achievement', 'status'])->findOrFail($id);
+            $kpiQuery = Kpi::select(['id', 'employee_id', 'title', 'target', 'achievement', 'status']);
+            app(CompanyScopeService::class)->applyThroughEmployee($kpiQuery, $request);
+            $kpi = $kpiQuery->findOrFail($id);
             $user = $request->user();
 
             if (!$user->hasPermission('kpi.delete')) {
@@ -230,11 +242,11 @@ class KpiController extends Controller
                 return ApiResponse::error('Forbidden', 'No permission', 403);
             }
 
-            $kpis = Kpi::with(self::KPI_RELATIONS)
+            $kpisQuery = Kpi::with(self::KPI_RELATIONS)
                 ->where('employee_id', $employee_id)
-                ->latest()
-                ->paginate($request->integer('per_page', 10))
-                ->withQueryString();
+                ->latest();
+            app(CompanyScopeService::class)->applyThroughEmployee($kpisQuery, $request);
+            $kpis = $kpisQuery->paginate($request->integer('per_page', 10))->withQueryString();
 
             return ApiResponse::success('KPI karyawan', $kpis);
 
@@ -260,7 +272,9 @@ class KpiController extends Controller
                 return ApiResponse::error('Approval flow untuk KPI belum dikonfigurasi. Silakan buat di menu Alur Persetujuan terlebih dahulu.', null, 400);
             }
 
-            $kpi = Kpi::with(self::KPI_RELATIONS)->findOrFail($id);
+            $kpiQuery = Kpi::with(self::KPI_RELATIONS);
+            app(CompanyScopeService::class)->applyThroughEmployee($kpiQuery, $request);
+            $kpi = $kpiQuery->findOrFail($id);
             $user = $request->user();
 
             if (!$user->hasPermission('kpi.approve')) {
@@ -271,9 +285,11 @@ class KpiController extends Controller
                 return ApiResponse::error('Status tidak valid', 'Hanya KPI dengan status submitted yang bisa disetujui', 400);
             }
 
+            $approvalService = app(\App\Services\ApprovalFlowService::class);
+            $approvalService->guardNotSelfApproval($kpi, $user);
+
             // Correct Flow Integration: Use ApprovalFlowService
             try {
-                $approvalService = app(\App\Services\ApprovalFlowService::class);
                 $result = $approvalService->processApproval($kpi, $user, 'approved', $request->note);
                 
                 $kpi = $result['model'];
@@ -283,7 +299,9 @@ class KpiController extends Controller
                     $result['final'] ? 'KPI berhasil disetujui sepenuhnya' : 'KPI disetujui - menunggu tahap berikutnya', 
                     $kpi
                 );
-            } catch (\Exception $e) {
+            } catch (\DomainException $e) {
+                return ApiResponse::error($e->getMessage(), null, 403);
+            } catch (\RuntimeException $e) {
                 // Simple Fallback
                 $kpi->update(['status' => 'approved']);
                 return ApiResponse::success('KPI berhasil disetujui', $kpi->fresh(self::KPI_RELATIONS));

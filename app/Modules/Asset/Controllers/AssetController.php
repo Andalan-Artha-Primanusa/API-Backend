@@ -9,6 +9,7 @@ use App\Models\AssetAssignment as InventoryAssetAssignment;
 use App\Modules\Employee\Models\Employee;
 use App\Models\UserNotification;
 use App\Services\ApprovalFlowService;
+use App\Services\CompanyScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -56,6 +57,8 @@ class AssetController extends Controller
             });
         }
 
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+
         return ApiResponse::success('Assets retrieved successfully', $query->paginate($validated['per_page'] ?? 10));
     }
 
@@ -81,6 +84,8 @@ class AssetController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $validated['company_id'] = $validated['company_id'] ?? app(CompanyScopeService::class)->selectedCompanyId($request);
+
         $asset = InventoryAsset::create($validated);
 
         return ApiResponse::success('Asset created successfully', $asset, 201);
@@ -88,7 +93,7 @@ class AssetController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $asset = InventoryAsset::with([
+        $query = InventoryAsset::with([
             'assignments.employee:id,user_id,employee_code,department_id,position_id',
             'assignments.employee.user:id,name,email',
             'assignments.employee.user.profile:id,user_id,profile_photo_path',
@@ -96,7 +101,9 @@ class AssetController extends Controller
             'assignments.employee.position:id,name',
             'assignments.assignedBy:id,name,email',
             'assignments.assignedBy.profile:id,user_id,profile_photo_path'
-        ])->find($id);
+        ]);
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+        $asset = $query->find($id);
 
         if (!$asset) {
             return ApiResponse::error('Asset not found', null, 404);
@@ -123,7 +130,9 @@ class AssetController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $asset = InventoryAsset::find($id);
+        $query = InventoryAsset::query();
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+        $asset = $query->find($id);
 
         if (!$asset) {
             return ApiResponse::error('Asset not found', null, 404);
@@ -156,7 +165,9 @@ class AssetController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $asset = InventoryAsset::with('assignments')->find($id);
+        $query = InventoryAsset::with('assignments');
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+        $asset = $query->find($id);
 
         if (!$asset) {
             return ApiResponse::error('Asset not found', null, 404);
@@ -182,10 +193,16 @@ class AssetController extends Controller
             'assigned_at' => 'nullable|date',
         ]);
 
-        $asset = InventoryAsset::find($id);
+        $query = InventoryAsset::query();
+        app(CompanyScopeService::class)->applyEmployeeScope($query, $request);
+        $asset = $query->find($id);
 
         if (!$asset) {
             return ApiResponse::error('Asset not found', null, 404);
+        }
+
+        if (!app(CompanyScopeService::class)->canAccessEmployeeCompany((int) $validated['employee_id'], $request->user())) {
+            return ApiResponse::error('Forbidden', null, 403);
         }
 
         if ($asset->status === 'retired') {
@@ -254,7 +271,9 @@ class AssetController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $assignment = InventoryAssetAssignment::with('approvalFlow.steps.role', 'approvalFlow.steps.user', 'asset')->findOrFail($assignmentId);
+        $query = InventoryAssetAssignment::with('approvalFlow.steps.role', 'approvalFlow.steps.user', 'asset');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $assignment = $query->findOrFail($assignmentId);
 
         if (!$assignment->approval_flow_id) {
             return ApiResponse::error('No approval flow configured for this assignment', null, 400);
@@ -295,7 +314,9 @@ class AssetController extends Controller
             return ApiResponse::error('Forbidden', 'No permission', 403);
         }
 
-        $assignment = InventoryAssetAssignment::with('approvalFlow.steps.role', 'approvalFlow.steps.user', 'asset')->findOrFail($assignmentId);
+        $query = InventoryAssetAssignment::with('approvalFlow.steps.role', 'approvalFlow.steps.user', 'asset');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $assignment = $query->findOrFail($assignmentId);
 
         if (!$assignment->approval_flow_id) {
             return ApiResponse::error('No approval flow configured for this assignment', null, 400);
@@ -340,7 +361,9 @@ class AssetController extends Controller
             'condition' => 'nullable|string|in:new,good,fair,damaged,retired',
         ]);
 
-        $assignment = InventoryAssetAssignment::with('asset', 'employee.user')->find($assignmentId);
+        $query = InventoryAssetAssignment::with('asset', 'employee.user');
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
+        $assignment = $query->find($assignmentId);
 
         if (!$assignment) {
             return ApiResponse::error('Assignment not found', null, 404);
@@ -459,6 +482,8 @@ class AssetController extends Controller
         if (!empty($validated['status'])) {
             $query->where('status', $validated['status']);
         }
+
+        app(CompanyScopeService::class)->applyThroughEmployee($query, $request);
 
         $assignments = $query->paginate($validated['per_page'] ?? 10);
         $service = app(ApprovalFlowService::class);
