@@ -14,7 +14,7 @@ return [
     // WAJIB dikonfigurasi via .env di production:
     //   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
     // Default hanya untuk development (localhost Vite dev server).
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')),
+    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173', 'https://timly-hris.netlify.app')),
 
     'allowed_origins_patterns' => [],
 
