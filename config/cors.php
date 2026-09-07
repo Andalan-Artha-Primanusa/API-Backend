@@ -1,5 +1,20 @@
 <?php
 
+$defaultAllowedOrigins = [
+    'http://localhost:5173',
+    'https://timly-hris.netlify.app',
+];
+
+$envAllowedOrigins = array_filter(array_map(
+    'trim',
+    explode(',', env('CORS_ALLOWED_ORIGINS', ''))
+));
+
+$allowedOrigins = array_values(array_unique(array_merge(
+    $defaultAllowedOrigins,
+    $envAllowedOrigins
+)));
+
 return [
 
     'paths' => [
@@ -11,10 +26,9 @@ return [
     // Jangan gunakan ['*'] di production karena mengizinkan TRACE, CONNECT, dll.
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    // WAJIB dikonfigurasi via .env di production:
+    // Additional production origins can be configured in .env:
     //   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
-    // Default hanya untuk development (localhost Vite dev server).
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')),
+    'allowed_origins' => $allowedOrigins,
 
     'allowed_origins_patterns' => [],
 
