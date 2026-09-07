@@ -209,6 +209,38 @@ class LeaveService
             ];
         }
 
+        if ($action === 'rejected' && $this->canBypassLeaveApprovalStep($approver)) {
+            $this->releaseAnnualLeave($leave);
+
+            $leave->update([
+                'status' => LeaveStatus::Rejected,
+                'approved_by' => $approver->id,
+                'approved_at' => now(),
+                'approval_note' => $note,
+            ]);
+
+            $this->recordHistory($leave, $approver, 'rejected', $note);
+
+            return [
+                'leave' => $leave->fresh([
+                    'user:id,name,email',
+                    'user.profile:id,user_id,profile_photo_path',
+                    'employee:id,user_id,employee_code,department_id,position_id',
+                    'employee.user:id,name,email',
+                    'employee.user.profile:id,user_id,profile_photo_path',
+                    'employee.department:id,name',
+                    'employee.position:id,name',
+                    'leaveType:id,name',
+                    'flow.steps.role:id,name',
+                    'approver.profile:id,user_id,profile_photo_path'
+                ]),
+                'final' => true,
+                'action' => 'rejected',
+                'override' => true,
+                'approved_by_role' => $approver->isSuperAdmin() ? User::ROLE_SUPER_ADMIN : 'admin_or_hr',
+            ];
+        }
+
         if (!$leave->flow) {
             throw new \DomainException('Approval flow not found.');
         }
