@@ -151,6 +151,10 @@ class LeaveService
         }
 
         if ($request) {
+            if ($request->filled('status')) {
+                $query->where('status', $request->input('status'));
+            }
+
             $this->companyScope->applyThroughEmployee($query, $request);
         }
 
@@ -170,9 +174,12 @@ class LeaveService
             throw new \DomainException('Leave request has already been processed.');
         }
 
-        // Super admin can approve directly without waiting for step turn.
-        // This does not alter approval flow steps, so super_admin remains invisible in flow tables.
-        if ($action === 'approved' && $approver->isSuperAdmin()) {
+        if ((int) $approver->id === (int) $leave->user_id) {
+            throw new \DomainException('Anda tidak dapat menyetujui permintaan cuti Anda sendiri.');
+        }
+
+        // Admin/HR approvers can approve directly without waiting for the configured step role.
+        if ($action === 'approved' && $this->canBypassLeaveApprovalStep($approver)) {
             $leave->update([
                 'status' => LeaveStatus::Approved,
                 'approved_by' => $approver->id,
@@ -198,7 +205,7 @@ class LeaveService
                 'final' => true,
                 'action' => 'approved',
                 'override' => true,
-                'approved_by_role' => User::ROLE_SUPER_ADMIN,
+                'approved_by_role' => $approver->isSuperAdmin() ? User::ROLE_SUPER_ADMIN : 'admin_or_hr',
             ];
         }
 
@@ -220,11 +227,6 @@ class LeaveService
 
         if (!is_null($step->user_id) && $step->user_id !== $approver->id) {
             throw new \DomainException('This request is assigned to a specific approver.');
-        }
-
-        // Anti self-approval: user tidak boleh menyetujui/menolak permintaan miliknya sendiri
-        if ($approver->id === $leave->user_id) {
-            throw new \DomainException('Anda tidak dapat menyetujui permintaan cuti Anda sendiri.');
         }
 
         // Dynamic scope: jika role step tidak punya HR-level permission, batasi ke subordinate
@@ -372,12 +374,12 @@ class LeaveService
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
         if ((int) $leave->user_id === (int) $user->id) {
             return false;
+        }
+
+        if ($this->canBypassLeaveApprovalStep($user)) {
+            return true;
         }
 
         if (!$leave->flow) {
@@ -567,6 +569,14 @@ class LeaveService
         $balance->forceFill([
             'pending_days' => max(0, (int) $balance->pending_days - $days),
         ])->save();
+    }
+
+    private function canBypassLeaveApprovalStep(User $user): bool
+    {
+        return $user->isSuperAdmin()
+            || $user->isAdmin()
+            || $user->isHR()
+            || $user->hasPermission('leave.policy.manage');
     }
 }
 
