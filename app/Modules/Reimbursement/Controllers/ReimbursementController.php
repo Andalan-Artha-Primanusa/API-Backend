@@ -98,7 +98,7 @@ class ReimbursementController extends Controller
         ]));
     }
 
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
         $query = Reimbursement::with([
             'employee:id,user_id,employee_code,department_id,position_id',
@@ -153,7 +153,7 @@ class ReimbursementController extends Controller
         ]));
     }
 
-    public function destroy($id): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
         $query = Reimbursement::with(['employee.user', 'approver']);
         $this->companyScope->applyThroughEmployee($query, $request);

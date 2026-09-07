@@ -422,12 +422,14 @@ class LeaveService
         $newDays = Leave::calculateDays($newStart, $newEnd);
 
         return DB::transaction(function () use ($leave, $data, $oldDays, $newStart, $newEnd, $newDays) {
-            $balance = $this->getOrCreateAnnualBalance($leave->employee_id, (int) date('Y', strtotime($newStart)));
-            $balance->decrement('pending_days', $oldDays);
-            if ($balance->availableDays() < $newDays) {
+            $oldBalance = $this->getOrCreateAnnualBalance($leave->employee_id, (int) Carbon::parse($leave->start_date)->format('Y'));
+            $this->decreasePendingDays($oldBalance, $oldDays);
+
+            $newBalance = $this->getOrCreateAnnualBalance($leave->employee_id, (int) date('Y', strtotime($newStart)));
+            if ($newBalance->availableDays() < $newDays) {
                 throw new \DomainException('Insufficient leave balance for this update.');
             }
-            $balance->increment('pending_days', $newDays);
+            $newBalance->increment('pending_days', $newDays);
 
             $leave->update([
                 'start_date' => $newStart,
@@ -501,8 +503,10 @@ class LeaveService
         $year = (int) Carbon::parse($leave->start_date)->format('Y');
         $balance = $this->getOrCreateAnnualBalance($leave->employee_id, $year);
 
-        $balance->decrement('pending_days', $leave->total_days);
-        $balance->increment('used_days', $leave->total_days);
+        $balance->forceFill([
+            'pending_days' => max(0, (int) $balance->pending_days - (int) $leave->total_days),
+            'used_days' => (int) $balance->used_days + (int) $leave->total_days,
+        ])->save();
     }
 
     private function releaseAnnualLeave(Leave $leave): void
@@ -512,9 +516,13 @@ class LeaveService
         $year = (int) Carbon::parse($leave->start_date)->format('Y');
         $balance = $this->getOrCreateAnnualBalance($leave->employee_id, $year);
 
-        if ($balance->pending_days >= $leave->total_days) {
-            $balance->decrement('pending_days', $leave->total_days);
-        }
+        $this->decreasePendingDays($balance, (int) $leave->total_days);
+    }
+
+    private function decreasePendingDays(EmployeeLeaveBalance $balance, int $days): void
+    {
+        $balance->forceFill([
+            'pending_days' => max(0, (int) $balance->pending_days - $days),
+        ])->save();
     }
 }
-
