@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Modules\Administration\Models\Role;
 use App\Repositories\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Modules\User\Models\User;
 use Illuminate\Support\Str;
@@ -53,6 +54,31 @@ class UserService
             'profile',
             'employee.manager.profile',
         ]);
+    }
+
+    /**
+     * Authenticate against the existing SQL Server user table.
+     * The legacy table stores credentials in ms_sa_permission.
+     */
+    public function loginLegacy(array $data): object
+    {
+        $login = trim($data['email']);
+
+        $user = DB::connection()->table('ms_sa_permission')
+            ->where('isActiveUser', 1)
+            ->where(function ($query) use ($login) {
+                $query->whereRaw('LOWER(LTRIM(RTRIM(UserID))) = LOWER(?)', [$login])
+                    ->orWhereRaw('LOWER(LTRIM(RTRIM(EmailAddress))) = LOWER(?)', [$login]);
+            })
+            ->first();
+
+        if (! $user || rtrim((string) $user->Password) !== $data['password']) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid email or password'],
+            ]);
+        }
+
+        return $user;
     }
 
     public function findOrCreateFromGoogle($googleUser): User

@@ -95,42 +95,25 @@ class AuthController extends Controller
     {
         try {
             $validated = $request->validate([
-                'email'    => 'required|email',
+                // The legacy SQL Server table accepts either EmailAddress or UserID.
+                'email'    => 'required|string|max:255',
                 'password' => 'required|min:6',
             ]);
 
-            // Attempt login via service
-            $user = $this->userService->login($validated);
-
-            if (!$user) {
-                return ApiResponse::error('Invalid credentials', null, 401);
-            }
-
-            // Delete old tokens and create new one
-            $user->tokens()->delete();
-            $token = $user->createToken('api-token', ['*'])->plainTextToken;
-
-            // Load relations without schema-fragile column lists; production databases may lag optional profile/employee columns.
-            $user->load([
-                'roles',
-                'roles.permissions',
-                'profile',
-                'employee.department',
-                'employee.position',
-                'employee.location',
-                'employee.workSchedule',
-                'employee.manager',
-                'employee.manager.profile',
-                'companyAccesses.company',
-                'companies',
-            ]);
-
-            $effectivePermissions = $this->resolveEffectivePermissions($user);
+            // Authenticate against dbo.ms_sa_permission on SQL Server.
+            $legacyUser = $this->userService->loginLegacy($validated);
 
             return ApiResponse::success('Login successful', [
-                'user' => $user,
-                'effective_permissions' => $effectivePermissions,
-                'token' => $token,
+                'user' => [
+                    'user_id' => $legacyUser->UserID,
+                    'name' => $legacyUser->CompleteUserName ?? null,
+                    'email' => $legacyUser->EmailAddress,
+                    'role_id' => $legacyUser->UserRoleID,
+                    'is_active' => (bool) $legacyUser->isActiveUser,
+                    'is_first_login' => (bool) $legacyUser->isFirstLogin,
+                ],
+                'effective_permissions' => [],
+                'token' => null,
             ]);
 
         } catch (ValidationException $e) {
