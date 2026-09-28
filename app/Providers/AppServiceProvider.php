@@ -34,7 +34,8 @@ class AppServiceProvider extends ServiceProvider
         Connection::resolverFor('dblib', function ($connection, $database, $prefix = '', $config = []) {
             $host = $config['host'] ?? '127.0.0.1';
             $port = $config['port'] ?? 1433;
-            $dsn = "dblib:host={$host}:{$port};dbname={$database}";
+            $tdsVersion = $config['tds_version'] ?? '7.4';
+            $dsn = "dblib:host={$host}:{$port};dbname={$database};version={$tdsVersion}";
 
             $pdo = new PDO(
                 $dsn,

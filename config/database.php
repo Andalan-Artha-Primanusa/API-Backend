@@ -122,6 +122,7 @@ return [
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'UTF-8'),
+            'tds_version' => env('DB_TDS_VERSION', '7.4'),
             'prefix' => '',
             'prefix_indexes' => true,
         ],
