@@ -6,6 +6,9 @@ use Illuminate\Support\ServiceProvider;
 use App\Repositories\UserRepository;
 use App\Repositories\UserRepositoryInterface;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Database\Connection;
+use Illuminate\Database\SqlServerConnection;
+use PDO;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +29,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Laravel has no built-in dblib connector. Use PDO_DBLIB/FreeTDS
+        // while keeping Laravel's SQL Server grammar and query builder.
+        Connection::resolverFor('dblib', function ($connection, $database, $prefix = '', $config = []) {
+            $host = $config['host'] ?? '127.0.0.1';
+            $port = $config['port'] ?? 1433;
+            $dsn = "dblib:host={$host}:{$port};dbname={$database}";
+
+            $pdo = new PDO(
+                $dsn,
+                $config['username'] ?? '',
+                $config['password'] ?? '',
+                $config['options'] ?? []
+            );
+
+            return new SqlServerConnection($pdo, $database, $prefix, $config);
+        });
+
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
             $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173')), '/');
 
